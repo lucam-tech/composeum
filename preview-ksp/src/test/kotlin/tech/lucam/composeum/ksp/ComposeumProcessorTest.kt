@@ -458,7 +458,7 @@ class ComposeumProcessorTest {
             .firstOrNull { it.isFile && it.name == "$name.kt" }
 
     @Test
-    fun `unsupported type is allowed when options provided`() {
+    fun `error when options are used with unsupported custom type`() {
         val result = compile(
             SourceFile.kotlin(
                 "Preview.kt",
@@ -480,8 +480,44 @@ class ComposeumProcessorTest {
                 """,
             ),
         )
-        // Verify no KSP validation errors — compilation of generated code may fail until TASK-009.
-        assertTrue(!result.messages.contains("error: @ComposePreview") && !result.messages.contains("error: @PreviewParam"))
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains(
+                "@PreviewParam parameter 'custom' uses options but has unsupported type 'MyCustomType'",
+            ),
+        )
+    }
+
+    @Test
+    fun `error when options are used with Int parameter`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+                import tech.lucam.composeum.annotation.PreviewParam
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun myPreview(
+                    @PreviewParam(label = "Count", options = ["1", "2"])
+                    count: Int = 1,
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains(
+                "@PreviewParam parameter 'count' uses options but has unsupported type 'kotlin.Int'",
+            ),
+        )
     }
 
     // ── Registry generation tests ─────────────────────────────────────────────

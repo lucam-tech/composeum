@@ -208,12 +208,23 @@ internal object Validator {
                     ?.value as? List<*>
                     ?: emptyList<Any>()
 
-                if (options.isEmpty()) {
-                    val paramType = param.type.resolve()
-                    val declaration = paramType.declaration
-                    val isEnum = (declaration as? KSClassDeclaration)?.classKind == ClassKind.ENUM_CLASS
-                    val fqn = declaration.qualifiedName?.asString()
+                val paramType = param.type.resolve()
+                val declaration = paramType.declaration
+                val isEnum = (declaration as? KSClassDeclaration)?.classKind == ClassKind.ENUM_CLASS
+                val fqn = declaration.qualifiedName?.asString()
 
+                if (options.isNotEmpty() && !isEnum && fqn != "kotlin.String") {
+                    val typeName = fqn ?: paramType.toString()
+                    val paramName = param.name?.asString() ?: "unknown"
+                    logger.error(
+                        "@PreviewParam parameter '$paramName' uses options but has unsupported type '$typeName'. " +
+                            "Dropdown options are only supported for String and enum parameters.",
+                        param,
+                    )
+                    valid = false
+                }
+
+                if (options.isEmpty()) {
                     if (!isEnum && fqn !in SUPPORTED_TYPE_FQNS) {
                         val isList = fqn == "kotlin.collections.List"
                         val isDataClass = (declaration as? KSClassDeclaration)
