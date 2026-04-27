@@ -646,6 +646,102 @@ class ComposeumProcessorTest {
         )
     }
 
+    @Test
+    fun `error when options contain duplicates`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+                import tech.lucam.composeum.annotation.PreviewParam
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun myPreview(
+                    @PreviewParam(label = "Text", options = ["a", "a"]) text: String = "a",
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains(
+                "@PreviewParam parameter 'text' has duplicate dropdown options. Each option must be unique.",
+            ),
+        )
+    }
+
+    @Test
+    fun `error when default is not present in options`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+                import tech.lucam.composeum.annotation.PreviewParam
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun myPreview(
+                    @PreviewParam(label = "Text", default = "c", options = ["a", "b"]) text: String = "a",
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains(
+                "@PreviewParam parameter 'text' default 'c' is not present in options [a, b].",
+            ),
+        )
+    }
+
+    @Test
+    fun `error when enum options contain unknown constants`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+                import tech.lucam.composeum.annotation.PreviewParam
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+                enum class ButtonVariant { Primary, Secondary }
+
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun myPreview(
+                    @PreviewParam(
+                        label = "Variant",
+                        default = "Primary",
+                        options = ["Primary", "Missing"],
+                    )
+                    variant: ButtonVariant = ButtonVariant.Primary,
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains(
+                "@PreviewParam parameter 'variant' has enum options [Missing] that are not valid constants of 'ButtonVariant'.",
+            ),
+        )
+    }
+
     // ── Registry generation tests ─────────────────────────────────────────────
 
     @Test

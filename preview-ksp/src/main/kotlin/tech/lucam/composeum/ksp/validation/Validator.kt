@@ -249,6 +249,10 @@ internal object Validator {
                     valid = false
                 }
 
+                if (options.isNotEmpty() && !validatePreviewParamOptions(param, options, logger)) {
+                    valid = false
+                }
+
                 if (fqn == "kotlin.collections.List" && !isSupportedListElementType(paramType)) {
                     val elementType = paramType.arguments.firstOrNull()?.type?.resolve()
                     val elementTypeName = elementType?.declaration?.qualifiedName?.asString()
@@ -376,6 +380,68 @@ internal object Validator {
                     else -> false
                 }
             }
+    }
+
+    private fun validatePreviewParamOptions(
+        param: com.google.devtools.ksp.symbol.KSValueParameter,
+        options: List<*>,
+        logger: KSPLogger,
+    ): Boolean {
+        val optionValues = options.filterIsInstance<String>()
+        val paramName = param.name?.asString() ?: "unknown"
+        var valid = true
+
+        if (optionValues.any { it.isBlank() }) {
+            logger.error(
+                "@PreviewParam parameter '$paramName' has blank dropdown options. Options must be non-empty strings.",
+                param,
+            )
+            valid = false
+        }
+
+        if (optionValues.size != optionValues.toSet().size) {
+            logger.error(
+                "@PreviewParam parameter '$paramName' has duplicate dropdown options. Each option must be unique.",
+                param,
+            )
+            valid = false
+        }
+
+        val previewParamAnn = param.annotations.firstOrNull { ann ->
+            ann.annotationType.resolve().declaration.qualifiedName?.asString() == PREVIEW_PARAM_FQN
+        } ?: return valid
+
+        val defaultValue = previewParamAnn.arguments
+            .firstOrNull { it.name?.asString() == "default" }
+            ?.value as? String
+            ?: ""
+        if (defaultValue.isNotEmpty() && defaultValue !in optionValues) {
+            logger.error(
+                "@PreviewParam parameter '$paramName' default '$defaultValue' is not present in options $optionValues.",
+                param,
+            )
+            valid = false
+        }
+
+        val resolvedType = param.type.resolve()
+        val declaration = resolvedType.declaration as? KSClassDeclaration
+        if (declaration?.classKind == ClassKind.ENUM_CLASS) {
+            val enumValues = declaration.declarations
+                .filterIsInstance<KSClassDeclaration>()
+                .filter { it.classKind == ClassKind.ENUM_ENTRY }
+                .map { it.simpleName.asString() }
+                .toSet()
+            val invalidOptions = optionValues.filterNot { it in enumValues }
+            if (invalidOptions.isNotEmpty()) {
+                logger.error(
+                    "@PreviewParam parameter '$paramName' has enum options $invalidOptions that are not valid constants of '${declaration.simpleName.asString()}'.",
+                    param,
+                )
+                valid = false
+            }
+        }
+
+        return valid
     }
 
     private fun isListType(typeName: String): Boolean =
