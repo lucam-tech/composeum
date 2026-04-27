@@ -1901,4 +1901,63 @@ class ComposeumProcessorTest {
         assertTrue("List<String> should pass strict-mode validation",
             !result.messages.contains("error: @PreviewParam"))
     }
+
+    @Test
+    fun `error when List preview param uses unsupported custom element type`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+                import tech.lucam.composeum.annotation.PreviewParam
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+                data class Item(val value: String)
+
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun myPreview(
+                    @PreviewParam(label = "Items") items: List<Item> = listOf(Item("a")),
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains(
+                "@PreviewParam parameter 'items' uses unsupported list element type 'Item'",
+            ),
+        )
+    }
+
+    @Test
+    fun `List enum param is allowed in strict mode`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+                import tech.lucam.composeum.annotation.PreviewParam
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+                enum class State { Idle, Loading }
+
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun myPreview(
+                    @PreviewParam(label = "States", default = "Idle|Loading")
+                    states: List<State> = listOf(State.Idle),
+                ) {}
+                """,
+            ),
+        )
+
+        assertTrue("List<Enum> should pass strict-mode validation",
+            !result.messages.contains("error: @PreviewParam"))
+    }
 }

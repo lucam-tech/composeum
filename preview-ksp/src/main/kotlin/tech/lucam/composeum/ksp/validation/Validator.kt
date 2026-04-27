@@ -249,6 +249,21 @@ internal object Validator {
                     valid = false
                 }
 
+                if (fqn == "kotlin.collections.List" && !isSupportedListElementType(paramType)) {
+                    val elementType = paramType.arguments.firstOrNull()?.type?.resolve()
+                    val elementTypeName = elementType?.declaration?.qualifiedName?.asString()
+                        ?: elementType?.toString()
+                        ?: "unknown"
+                    val paramName = param.name?.asString() ?: "unknown"
+                    logger.error(
+                        "@PreviewParam parameter '$paramName' uses unsupported list element type '$elementTypeName'. " +
+                            "Composeum only supports List<String>, List<Boolean>, List<Int>, List<Long>, " +
+                            "List<Float>, List<Double>, and List<Enum>.",
+                        param,
+                    )
+                    valid = false
+                }
+
                 if (options.isEmpty()) {
                     if (!isEnum && fqn !in SUPPORTED_TYPE_FQNS) {
                         val isList = fqn == "kotlin.collections.List"
@@ -368,6 +383,21 @@ internal object Validator {
 
     private fun isSealedClass(classDecl: KSClassDeclaration?): Boolean =
         classDecl != null && Modifier.SEALED in classDecl.modifiers
+
+    private fun isSupportedListElementType(listType: KSType): Boolean {
+        val elementType = listType.arguments.firstOrNull()?.type?.resolve() ?: return false
+        val elementDecl = elementType.declaration as? KSClassDeclaration
+        val elementTypeName = elementType.declaration.qualifiedName?.asString() ?: elementType.toString()
+        val isEnumElement = elementDecl?.classKind == ClassKind.ENUM_CLASS
+        return isEnumElement || elementTypeName in setOf(
+            "kotlin.String",
+            "kotlin.Boolean",
+            "kotlin.Int",
+            "kotlin.Long",
+            "kotlin.Float",
+            "kotlin.Double",
+        )
+    }
 
     private fun groupImplementsPreviewGroup(
         function: KSFunctionDeclaration,
