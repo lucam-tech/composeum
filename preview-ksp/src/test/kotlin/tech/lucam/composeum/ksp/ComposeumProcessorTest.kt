@@ -821,6 +821,75 @@ class ComposeumProcessorTest {
     }
 
     @Test
+    fun `error when ViewPreview applied to extension function`() {
+        val result = compileWithView(
+            SourceFile.kotlin(
+                "XmlPreview.kt",
+                """
+                package com.example
+                import android.view.View
+                import tech.lucam.composeum.annotation.ViewPreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+
+                object MyGroup : PreviewGroup { override val name = "G" }
+
+                @ViewPreview(name = "Bad", group = MyGroup::class)
+                fun String.badViewPreview(): View = View()
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(result.messages.contains("@ViewPreview functions must not be extension functions"))
+    }
+
+    @Test
+    fun `error when ViewPreview applied to generic function`() {
+        val result = compileWithView(
+            SourceFile.kotlin(
+                "XmlPreview.kt",
+                """
+                package com.example
+                import android.view.View
+                import tech.lucam.composeum.annotation.ViewPreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+
+                object MyGroup : PreviewGroup { override val name = "G" }
+
+                @ViewPreview(name = "Bad", group = MyGroup::class)
+                fun <T> badViewPreview(): View = View()
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(result.messages.contains("@ViewPreview functions must not declare type parameters"))
+    }
+
+    @Test
+    fun `error when ViewPreview applied to suspend function`() {
+        val result = compileWithView(
+            SourceFile.kotlin(
+                "XmlPreview.kt",
+                """
+                package com.example
+                import android.view.View
+                import tech.lucam.composeum.annotation.ViewPreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+
+                object MyGroup : PreviewGroup { override val name = "G" }
+
+                @ViewPreview(name = "Bad", group = MyGroup::class)
+                suspend fun badViewPreview(): View = View()
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(result.messages.contains("@ViewPreview functions must not be suspend"))
+    }
+
+    @Test
     fun `error when ViewPreview function does not return View`() {
         val result = compileWithView(
             SourceFile.kotlin(
@@ -1000,6 +1069,69 @@ class ComposeumProcessorTest {
         assertTrue(content.contains("GeneratedAndroidPreviewGroup_Buttons"))
         assertTrue(content.contains("\"Buttons\""))
         assertTrue(content.contains("paramForm = null"))
+    }
+
+    @Test
+    fun `error when @Preview applied to extension function`() {
+        val result = compileWithAndroidPreview(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import androidx.compose.ui.tooling.preview.Preview
+
+                @Preview(name = "Bad")
+                @Composable
+                fun String.badPreview() {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(result.messages.contains("@Preview functions must not be extension functions"))
+    }
+
+    @Test
+    fun `error when @Preview applied to generic function`() {
+        val result = compileWithAndroidPreview(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import androidx.compose.ui.tooling.preview.Preview
+
+                @Preview(name = "Bad")
+                @Composable
+                fun <T> badPreview() {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(result.messages.contains("@Preview functions must not declare type parameters"))
+    }
+
+    @Test
+    fun `error when @Preview applied to suspend function`() {
+        val result = compileWithAndroidPreview(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import androidx.compose.ui.tooling.preview.Preview
+
+                @Preview(name = "Bad")
+                @Composable
+                suspend fun badPreview() {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(result.messages.contains("@Preview functions must not be suspend"))
     }
 
     @Test
