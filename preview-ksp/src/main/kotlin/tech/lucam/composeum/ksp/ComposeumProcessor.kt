@@ -46,7 +46,7 @@ internal class ComposeumProcessor(
 
         val models = (composeModels + viewModels + androidPreviewModels).toList()
 
-        if (models.isNotEmpty()) {
+        if (models.isNotEmpty() && !reportDuplicateKeys(models)) {
             val fnPkg = models.first().functionPackage
             val defaultPackage = if (fnPkg.isEmpty()) "generated" else "$fnPkg.generated"
             val registryPackage = environment.options["composeum.registryPackage"] ?: defaultPackage
@@ -58,5 +58,26 @@ internal class ComposeumProcessor(
         }
 
         return emptyList()
+    }
+
+    private fun reportDuplicateKeys(models: List<tech.lucam.composeum.ksp.model.PreviewModel>): Boolean {
+        var hasDuplicates = false
+        models.groupBy { it.key }
+            .filterValues { it.size > 1 }
+            .forEach { (key, duplicates) ->
+                hasDuplicates = true
+                val sources = duplicates.joinToString { model ->
+                    when {
+                        model.isAndroidPreview -> "@Preview"
+                        model.isViewPreview -> "@ViewPreview"
+                        else -> "@ComposePreview"
+                    }
+                }
+                logger.error(
+                    "Duplicate preview key '$key' detected from $sources. " +
+                        "Each discovered preview must have a unique fully-qualified function name.",
+                )
+            }
+        return hasDuplicates
     }
 }

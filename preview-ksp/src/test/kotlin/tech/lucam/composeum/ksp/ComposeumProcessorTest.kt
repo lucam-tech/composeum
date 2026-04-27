@@ -1327,6 +1327,36 @@ class ComposeumProcessorTest {
     }
 
     @Test
+    fun `error when the same function is collected by ComposePreview and Preview`() {
+        val result = compileWithAndroidPreview(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import androidx.compose.ui.tooling.preview.Preview
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+
+                @ComposePreview(name = "Compose", group = MyGroup::class)
+                @Preview(name = "Android", group = "Group")
+                @Composable
+                fun buttonPreview() {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains(
+                "Duplicate preview key 'com.example.buttonPreview' detected from @ComposePreview, @Preview.",
+            ),
+        )
+    }
+
+    @Test
     fun `error when @Preview applied to extension function`() {
         val result = compileWithAndroidPreview(
             SourceFile.kotlin(
