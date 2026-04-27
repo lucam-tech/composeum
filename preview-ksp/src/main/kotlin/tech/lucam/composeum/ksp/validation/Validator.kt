@@ -215,6 +215,15 @@ internal object Validator {
                 valid = false
             }
 
+            if (param.isVararg) {
+                val name = param.name?.asString() ?: "unknown"
+                logger.error(
+                    "@PreviewParam parameter '$name' must not be vararg. Composeum does not support vararg preview parameters.",
+                    param,
+                )
+                valid = false
+            }
+
             if (strictTypes) {
                 @Suppress("UNCHECKED_CAST")
                 val options = previewParamAnn.arguments

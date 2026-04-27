@@ -346,6 +346,36 @@ class ComposeumProcessorTest {
     }
 
     @Test
+    fun `error when PreviewParam parameter is vararg`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+                import tech.lucam.composeum.annotation.PreviewParam
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun myPreview(
+                    @PreviewParam(label = "Tags") vararg tags: String,
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains(
+                "@PreviewParam parameter 'tags' must not be vararg. Composeum does not support vararg preview parameters.",
+            ),
+        )
+    }
+
+    @Test
     fun `multiple ComposePreview violations are all reported`() {
         val result = compile(
             SourceFile.kotlin(
