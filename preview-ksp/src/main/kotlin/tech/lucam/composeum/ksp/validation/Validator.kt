@@ -224,6 +224,8 @@ internal object Validator {
                 valid = false
             }
 
+            if (!validatePreviewParamDefault(param, logger)) valid = false
+
             if (strictTypes) {
                 @Suppress("UNCHECKED_CAST")
                 val options = previewParamAnn.arguments
@@ -274,6 +276,98 @@ internal object Validator {
         }
         return valid
     }
+
+    private fun validatePreviewParamDefault(
+        param: com.google.devtools.ksp.symbol.KSValueParameter,
+        logger: KSPLogger,
+    ): Boolean {
+        val previewParamAnn = param.annotations.firstOrNull { ann ->
+            ann.annotationType.resolve().declaration.qualifiedName?.asString() == PREVIEW_PARAM_FQN
+        } ?: return true
+
+        val defaultValue = previewParamAnn.arguments
+            .firstOrNull { it.name?.asString() == "default" }
+            ?.value as? String
+            ?: ""
+
+        if (defaultValue.isEmpty()) return true
+
+        val resolvedType = param.type.resolve()
+        val declaration = resolvedType.declaration
+        val typeName = declaration.qualifiedName?.asString() ?: resolvedType.toString()
+        val isNullable = resolvedType.isMarkedNullable
+        val classDecl = declaration as? KSClassDeclaration
+        val isEnum = classDecl?.classKind == ClassKind.ENUM_CLASS
+
+        if (isNullable && defaultValue == "null") return true
+
+        val isValid = when {
+            isEnum -> classDecl!!.declarations
+                .filterIsInstance<KSClassDeclaration>()
+                .filter { it.classKind == ClassKind.ENUM_ENTRY }
+                .any { it.simpleName.asString() == defaultValue }
+            typeName == "kotlin.Boolean" -> defaultValue == "true" || defaultValue == "false"
+            typeName == "kotlin.Int" -> defaultValue.toIntOrNull() != null
+            typeName == "kotlin.Long" -> defaultValue.toLongOrNull() != null
+            typeName == "kotlin.Float" -> defaultValue.toFloatOrNull() != null
+            typeName == "kotlin.Double" -> defaultValue.toDoubleOrNull() != null
+            typeName == "androidx.compose.ui.graphics.Color" -> defaultValue.toLongOrNull() != null
+            typeName == "androidx.compose.ui.unit.Dp" -> defaultValue.toFloatOrNull() != null
+            typeName == "androidx.compose.ui.unit.TextUnit" -> defaultValue.toFloatOrNull() != null
+            isSealedClass(classDecl) -> classDecl!!.getSealedSubclasses()
+                .any { it.simpleName.asString() == defaultValue }
+            isListType(typeName) -> validateListDefault(resolvedType, defaultValue)
+            else -> true
+        }
+
+        if (!isValid) {
+            val paramName = param.name?.asString() ?: "unknown"
+            logger.error(
+                "@PreviewParam parameter '$paramName' has invalid default '$defaultValue' for type '$typeName'.",
+                param,
+            )
+        }
+
+        return isValid
+    }
+
+    private fun validateListDefault(type: KSType, rawDefault: String): Boolean {
+        val elementType = type.arguments.firstOrNull()?.type?.resolve() ?: return false
+        val elementDecl = elementType.declaration as? KSClassDeclaration
+        val elementTypeName = elementType.declaration.qualifiedName?.asString() ?: elementType.toString()
+        val isEnumElement = elementDecl?.classKind == ClassKind.ENUM_CLASS
+        val enumValues = if (isEnumElement) {
+            elementDecl!!.declarations
+                .filterIsInstance<KSClassDeclaration>()
+                .filter { it.classKind == ClassKind.ENUM_ENTRY }
+                .map { it.simpleName.asString() }
+                .toSet()
+        } else {
+            emptySet()
+        }
+
+        return rawDefault
+            .split("|")
+            .filter { it.isNotEmpty() }
+            .all { item ->
+                when {
+                    isEnumElement -> item in enumValues
+                    elementTypeName == "kotlin.String" -> true
+                    elementTypeName == "kotlin.Boolean" -> item == "true" || item == "false"
+                    elementTypeName == "kotlin.Int" -> item.toIntOrNull() != null
+                    elementTypeName == "kotlin.Long" -> item.toLongOrNull() != null
+                    elementTypeName == "kotlin.Float" -> item.toFloatOrNull() != null
+                    elementTypeName == "kotlin.Double" -> item.toDoubleOrNull() != null
+                    else -> false
+                }
+            }
+    }
+
+    private fun isListType(typeName: String): Boolean =
+        typeName == "kotlin.collections.List"
+
+    private fun isSealedClass(classDecl: KSClassDeclaration?): Boolean =
+        classDecl != null && Modifier.SEALED in classDecl.modifiers
 
     private fun groupImplementsPreviewGroup(
         function: KSFunctionDeclaration,

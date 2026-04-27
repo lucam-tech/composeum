@@ -376,6 +376,102 @@ class ComposeumProcessorTest {
     }
 
     @Test
+    fun `error when PreviewParam Int default is invalid`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+                import tech.lucam.composeum.annotation.PreviewParam
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun myPreview(
+                    @PreviewParam(label = "Count", default = "abc") count: Int = 1,
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains(
+                "@PreviewParam parameter 'count' has invalid default 'abc' for type 'kotlin.Int'.",
+            ),
+        )
+    }
+
+    @Test
+    fun `error when PreviewParam enum default is invalid`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+                import tech.lucam.composeum.annotation.PreviewParam
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+                enum class ButtonVariant { Primary, Secondary }
+
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun myPreview(
+                    @PreviewParam(label = "Variant", default = "Missing")
+                    variant: ButtonVariant = ButtonVariant.Primary,
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains(
+                "@PreviewParam parameter 'variant' has invalid default 'Missing' for type 'ButtonVariant'.",
+            ),
+        )
+    }
+
+    @Test
+    fun `error when PreviewParam sealed default is invalid`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+                import tech.lucam.composeum.annotation.PreviewParam
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+                sealed class UiState {
+                    object Loading : UiState()
+                    data class Success(val message: String) : UiState()
+                }
+
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun myPreview(
+                    @PreviewParam(label = "State", default = "Unknown") state: UiState = UiState.Loading,
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains(
+                "@PreviewParam parameter 'state' has invalid default 'Unknown' for type 'UiState'.",
+            ),
+        )
+    }
+
+    @Test
     fun `multiple ComposePreview violations are all reported`() {
         val result = compile(
             SourceFile.kotlin(
