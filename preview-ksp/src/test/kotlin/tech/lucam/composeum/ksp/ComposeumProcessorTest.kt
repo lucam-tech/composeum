@@ -225,6 +225,75 @@ class ComposeumProcessorTest {
     }
 
     @Test
+    fun `error when ComposePreview applied to extension function`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun String.extensionPreview() {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(result.messages.contains("@ComposePreview functions must not be extension functions"))
+    }
+
+    @Test
+    fun `error when ComposePreview applied to generic function`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun <T> genericPreview() {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(result.messages.contains("@ComposePreview functions must not declare type parameters"))
+    }
+
+    @Test
+    fun `error when ComposePreview applied to suspend function`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                suspend fun suspendPreview() {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(result.messages.contains("@ComposePreview functions must not be suspend"))
+    }
+
+    @Test
     fun `error when group does not implement PreviewGroup`() {
         val result = compile(
             SourceFile.kotlin(

@@ -49,6 +49,8 @@ internal object Validator {
             valid = false
         }
 
+        if (!validateFunctionShape(function, logger, "@ComposePreview")) valid = false
+
         if (!groupImplementsPreviewGroup(function, resolver)) {
             logger.error("group must implement PreviewGroup", function)
             valid = false
@@ -77,6 +79,8 @@ internal object Validator {
             valid = false
         }
 
+        if (!validateFunctionShape(function, logger, "@Preview")) valid = false
+
         if (!validatePreviewParams(function, logger, strictTypes)) valid = false
 
         return valid
@@ -97,6 +101,8 @@ internal object Validator {
             logger.error("@ViewPreview functions must not be @Composable", function)
             valid = false
         }
+
+        if (!validateFunctionShape(function, logger, "@ViewPreview")) valid = false
 
         if (!returnsView(function, resolver)) {
             logger.error(
@@ -143,6 +149,31 @@ internal object Validator {
         function.annotations.any { ann ->
             ann.annotationType.resolve().declaration.qualifiedName?.asString() == COMPOSABLE_FQN
         }
+
+    private fun validateFunctionShape(
+        function: KSFunctionDeclaration,
+        logger: KSPLogger,
+        annotationName: String,
+    ): Boolean {
+        var valid = true
+
+        if (function.extensionReceiver != null) {
+            logger.error("$annotationName functions must not be extension functions", function)
+            valid = false
+        }
+
+        if (function.typeParameters.isNotEmpty()) {
+            logger.error("$annotationName functions must not declare type parameters", function)
+            valid = false
+        }
+
+        if (Modifier.SUSPEND in function.modifiers) {
+            logger.error("$annotationName functions must not be suspend", function)
+            valid = false
+        }
+
+        return valid
+    }
 
     private fun validatePreviewParams(
         function: KSFunctionDeclaration,
