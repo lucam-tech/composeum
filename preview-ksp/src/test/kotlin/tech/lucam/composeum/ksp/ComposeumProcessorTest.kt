@@ -1163,6 +1163,72 @@ class ComposeumProcessorTest {
     }
 
     @Test
+    fun `param form emits PreviewDropdownField for enum param`() {
+        val (result, compilation) = compileRetaining(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.*
+
+                object MyGroup : PreviewGroup { override val name = "G" }
+                enum class ButtonVariant { Primary, Secondary, Destructive }
+
+                @ComposePreview(name = "T", group = MyGroup::class)
+                @Composable
+                fun myPreview(
+                    @PreviewParam(label = "Variant", default = "Secondary")
+                    variant: ButtonVariant = ButtonVariant.Secondary,
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        val form = findGeneratedFile(compilation, "myPreviewParamForm")
+        assertNotNull("myPreviewParamForm.kt was not generated", form)
+        val formContent = form!!.readText()
+        assertTrue("Enum params should use PreviewDropdownField", formContent.contains("PreviewDropdownField"))
+        assertTrue("Form should include enum default", formContent.contains("?: \"Secondary\""))
+        assertTrue("Form should list Primary option", formContent.contains("\"Primary\""))
+        assertTrue("Form should list Secondary option", formContent.contains("\"Secondary\""))
+        assertTrue("Form should list Destructive option", formContent.contains("\"Destructive\""))
+    }
+
+    @Test
+    fun `registry composable reads enum param from string state`() {
+        val (result, compilation) = compileRetaining(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.*
+
+                object MyGroup : PreviewGroup { override val name = "G" }
+                enum class ButtonVariant { Primary, Secondary, Destructive }
+
+                @ComposePreview(name = "T", group = MyGroup::class)
+                @Composable
+                fun myPreview(
+                    @PreviewParam(label = "Variant", default = "Secondary")
+                    variant: ButtonVariant = ButtonVariant.Secondary,
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        val registry = findGeneratedFile(compilation, "GeneratedPreviewRegistry")
+        assertNotNull("GeneratedPreviewRegistry.kt was not generated", registry)
+        val regContent = registry!!.readText()
+        assertTrue("Registry should read enum state as a String", regContent.contains("_state.get<String>(\"variant\")"))
+        assertTrue("Registry should use the enum default name", regContent.contains("?: \"Secondary\""))
+        assertTrue("Registry should convert state back to enum", regContent.contains("ButtonVariant.valueOf"))
+    }
+
+    @Test
     fun `param form emits data class section with sub-fields`() {
         val (result, compilation) = compileRetaining(
             SourceFile.kotlin(
