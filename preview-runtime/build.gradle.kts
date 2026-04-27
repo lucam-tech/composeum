@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    id("publish-library")
+    id("com.gradleup.nmcp")
 }
 
 description = "Compose Preview — runtime browser UI and registry model"
@@ -68,6 +70,20 @@ android {
         // Disable lint in this sandbox — lint-gradle is not cached and the network is unreachable.
         checkReleaseBuilds = false
         abortOnError = false
+    }
+}
+
+nmcp {
+    centralPortal {
+        username.set(
+            providers.gradleProperty("mavenCentralUsername")
+                .orElse(providers.environmentVariable("MAVEN_CENTRAL_USERNAME"))
+        )
+        password.set(
+            providers.gradleProperty("mavenCentralPassword")
+                .orElse(providers.environmentVariable("MAVEN_CENTRAL_PASSWORD"))
+        )
+        publishingType.set("USER_MANAGED")
     }
 }
 

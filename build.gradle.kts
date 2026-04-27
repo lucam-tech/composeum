@@ -6,6 +6,32 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.nmcp)
+}
+
+// Aggregate the three library modules into a single Maven Central deployment bundle.
+// Run: ./gradlew publishAggregationToCentralPortal
+//
+// Credentials (set in ~/.gradle/gradle.properties, never commit):
+//   mavenCentralUsername=<portal-token-username>
+//   mavenCentralPassword=<portal-token-password>
+//
+// Generate a token at https://central.sonatype.com → Account → Generate User Token.
+nmcpAggregation {
+    centralPortal {
+        username.set(
+            providers.gradleProperty("mavenCentralUsername")
+                .orElse(providers.environmentVariable("MAVEN_CENTRAL_USERNAME"))
+        )
+        password.set(
+            providers.gradleProperty("mavenCentralPassword")
+                .orElse(providers.environmentVariable("MAVEN_CENTRAL_PASSWORD"))
+        )
+        publishingType.set("USER_MANAGED")
+    }
+    // Discovers all subprojects that apply com.gradleup.nmcp (i.e. publish-library).
+    // :sample is excluded because it uses the android-application plugin, not publish-library.
+    publishAllProjectsProbablyBreakingProjectIsolation()
 }
 
 // Pin androidx.lifecycle to the version cached in this sandbox (no network access).

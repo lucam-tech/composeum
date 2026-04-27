@@ -79,7 +79,7 @@ tech.lucam:preview-runtime:<version>
 tech.lucam:preview-ksp:<version>
 ```
 
-> Current version: `0.1.0-SNAPSHOT`
+> Current version: `0.1.0`
 
 > 🚧 **Work in Progress**
 > The library will be available on Maven shortly. For now, you can include it locally.

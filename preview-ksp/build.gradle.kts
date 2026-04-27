@@ -1,5 +1,7 @@
 plugins {
     id("kotlin-library")
+    id("publish-library")
+    id("com.gradleup.nmcp")
 }
 
 description = "Compose Preview — KSP annotation processor"
@@ -22,4 +24,18 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.compile.testing.ksp)
+}
+
+nmcp {
+    centralPortal {
+        username.set(
+            providers.gradleProperty("mavenCentralUsername")
+                .orElse(providers.environmentVariable("MAVEN_CENTRAL_USERNAME"))
+        )
+        password.set(
+            providers.gradleProperty("mavenCentralPassword")
+                .orElse(providers.environmentVariable("MAVEN_CENTRAL_PASSWORD"))
+        )
+        publishingType.set("USER_MANAGED")
+    }
 }
