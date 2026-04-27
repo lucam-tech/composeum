@@ -472,6 +472,37 @@ class ComposeumProcessorTest {
     }
 
     @Test
+    fun `error when PreviewParam data class default string is provided`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+                import tech.lucam.composeum.annotation.PreviewParam
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+                data class Config(val text: String)
+
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun myPreview(
+                    @PreviewParam(label = "Config", default = "ignored") config: Config = Config("hello"),
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains(
+                "@PreviewParam parameter 'config' does not support string defaults for data class type 'Config'.",
+            ),
+        )
+    }
+
+    @Test
     fun `multiple ComposePreview violations are all reported`() {
         val result = compile(
             SourceFile.kotlin(
@@ -1948,6 +1979,37 @@ class ComposeumProcessorTest {
     }
 
     @Test
+    fun `error when data class preview param contains nested list field`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+                import tech.lucam.composeum.annotation.PreviewParam
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+                data class Config(val tags: List<String>)
+
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun myPreview(
+                    @PreviewParam(label = "Config") config: Config = Config(listOf("a")),
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains(
+                "@PreviewParam parameter 'config' contains unsupported nested field 'tags' of type 'kotlin.collections.List'.",
+            ),
+        )
+    }
+
+    @Test
     fun `sealed class param is allowed in strict mode`() {
         val result = compile(
             SourceFile.kotlin(
@@ -1971,6 +2033,41 @@ class ComposeumProcessorTest {
         )
         assertTrue("Sealed class should pass strict-mode validation",
             !result.messages.contains("error: @PreviewParam"))
+    }
+
+    @Test
+    fun `error when sealed preview param subtype contains nested data class field`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+                import tech.lucam.composeum.annotation.PreviewParam
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+                data class Payload(val message: String)
+                sealed class State {
+                    data class Loaded(val payload: Payload) : State()
+                    object Idle : State()
+                }
+
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun myPreview(
+                    @PreviewParam(label = "State", default = "Loaded") state: State = State.Idle,
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains(
+                "@PreviewParam parameter 'state' subtype 'Loaded' contains unsupported nested field 'payload' of type 'Payload'.",
+            ),
+        )
     }
 
     @Test

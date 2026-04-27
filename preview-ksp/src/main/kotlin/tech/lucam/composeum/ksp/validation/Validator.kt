@@ -268,6 +268,10 @@ internal object Validator {
                     valid = false
                 }
 
+                if (isUnsupportedNestedComplexType(declaration as? KSClassDeclaration, logger, param)) {
+                    valid = false
+                }
+
                 if (options.isEmpty()) {
                     if (!isEnum && fqn !in SUPPORTED_TYPE_FQNS) {
                         val isList = fqn == "kotlin.collections.List"
@@ -319,6 +323,16 @@ internal object Validator {
         val isEnum = classDecl?.classKind == ClassKind.ENUM_CLASS
 
         if (isNullable && defaultValue == "null") return true
+
+        if (classDecl != null && Modifier.DATA in classDecl.modifiers) {
+            val paramName = param.name?.asString() ?: "unknown"
+            logger.error(
+                "@PreviewParam parameter '$paramName' does not support string defaults for data class type '$typeName'. " +
+                    "Use the function signature default value instead.",
+                param,
+            )
+            return false
+        }
 
         val isValid = when {
             isEnum -> classDecl!!.declarations
@@ -463,6 +477,55 @@ internal object Validator {
             "kotlin.Float",
             "kotlin.Double",
         )
+    }
+
+    private fun isUnsupportedNestedComplexType(
+        classDecl: KSClassDeclaration?,
+        logger: KSPLogger,
+        param: com.google.devtools.ksp.symbol.KSValueParameter,
+    ): Boolean {
+        val paramName = param.name?.asString() ?: "unknown"
+        if (classDecl != null && Modifier.DATA in classDecl.modifiers) {
+            return classDecl.primaryConstructor?.parameters?.any { nestedParam ->
+                val nestedType = nestedParam.type.resolve()
+                if (!isUnsupportedNestedExpansionType(nestedType)) return@any false
+                val nestedName = nestedParam.name?.asString() ?: "unknown"
+                val nestedTypeName = nestedType.declaration.qualifiedName?.asString() ?: nestedType.toString()
+                logger.error(
+                    "@PreviewParam parameter '$paramName' contains unsupported nested field '$nestedName' of type '$nestedTypeName'. " +
+                        "Nested data class, sealed class, and List fields are not supported inside expanded data class previews.",
+                    param,
+                )
+                true
+            } == true
+        }
+
+        if (classDecl != null && Modifier.SEALED in classDecl.modifiers) {
+            return classDecl.getSealedSubclasses().any { subtype ->
+                subtype.primaryConstructor?.parameters?.any { nestedParam ->
+                    val nestedType = nestedParam.type.resolve()
+                    if (!isUnsupportedNestedExpansionType(nestedType)) return@any false
+                    val nestedName = nestedParam.name?.asString() ?: "unknown"
+                    val nestedTypeName = nestedType.declaration.qualifiedName?.asString() ?: nestedType.toString()
+                    logger.error(
+                        "@PreviewParam parameter '$paramName' subtype '${subtype.simpleName.asString()}' contains unsupported nested field " +
+                            "'$nestedName' of type '$nestedTypeName'. Nested data class, sealed class, and List fields are not supported inside expanded sealed previews.",
+                        param,
+                    )
+                    true
+                } == true
+            }
+        }
+
+        return false
+    }
+
+    private fun isUnsupportedNestedExpansionType(type: KSType): Boolean {
+        val declaration = type.declaration as? KSClassDeclaration ?: return false
+        val typeName = declaration.qualifiedName?.asString() ?: type.toString()
+        return typeName == "kotlin.collections.List" ||
+            Modifier.DATA in declaration.modifiers ||
+            Modifier.SEALED in declaration.modifiers
     }
 
     private fun groupImplementsPreviewGroup(
