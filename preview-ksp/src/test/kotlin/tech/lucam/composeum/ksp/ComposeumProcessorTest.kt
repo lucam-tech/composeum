@@ -311,7 +311,11 @@ class ComposeumProcessorTest {
             ),
         )
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("group must implement PreviewGroup"))
+        assertTrue(
+            result.messages.contains(
+                "@ComposePreview group 'NotAGroup' must implement PreviewGroup",
+            ),
+        )
     }
 
     @Test
@@ -368,7 +372,8 @@ class ComposeumProcessorTest {
             ),
         )
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
-        assertTrue(result.messages.contains("customTypeField"))
+        assertTrue(result.messages.contains("@PreviewParam parameter 'custom' uses custom type 'MyCustomType'"))
+        assertTrue(result.messages.contains("customTypeField<MyCustomType>"))
     }
 
     @Test

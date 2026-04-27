@@ -52,7 +52,10 @@ internal object Validator {
         if (!validateFunctionShape(function, logger, "@ComposePreview")) valid = false
 
         if (!groupImplementsPreviewGroup(function, resolver)) {
-            logger.error("group must implement PreviewGroup", function)
+            logger.error(
+                "@ComposePreview group '${groupTypeName(function, COMPOSE_PREVIEW_FQN)}' must implement PreviewGroup",
+                function,
+            )
             valid = false
         }
 
@@ -128,7 +131,10 @@ internal object Validator {
         }
 
         if (!groupImplementsPreviewGroup(function, resolver, VIEW_PREVIEW_FQN)) {
-            logger.error("group must implement PreviewGroup", function)
+            logger.error(
+                "@ViewPreview group '${groupTypeName(function, VIEW_PREVIEW_FQN)}' must implement PreviewGroup",
+                function,
+            )
             valid = false
         }
 
@@ -216,12 +222,14 @@ internal object Validator {
                             ?.let { Modifier.SEALED in it.modifiers } == true
                         if (!isList && !isDataClass && !isSealed) {
                             val typeName = fqn ?: paramType.toString()
+                            val simpleTypeName = typeName.substringAfterLast('.')
+                            val paramName = param.name?.asString() ?: "unknown"
                             // Custom (non-primitive) types are handled at runtime via
                             // PreviewConfig.customTypeFields. Emit a warning so the developer
                             // knows they must register a CustomParamField for this type.
                             logger.warn(
-                                "@PreviewParam: '$typeName' is a custom type — register a " +
-                                    "customTypeField<${typeName.substringAfterLast('.')}> in PreviewConfig " +
+                                "@PreviewParam parameter '$paramName' uses custom type '$typeName'. " +
+                                    "Register previewConfig { customTypeField<$simpleTypeName>(initialValue = ...) { ... } } " +
                                     "to provide an initial value and a custom widget.",
                                 param,
                             )
@@ -251,5 +259,22 @@ internal object Validator {
             ?.asStarProjectedType() ?: return true
 
         return previewGroupType.isAssignableFrom(groupType)
+    }
+
+    private fun groupTypeName(
+        function: KSFunctionDeclaration,
+        annotationFqn: String,
+    ): String {
+        val ann = function.annotations.firstOrNull { a ->
+            a.annotationType.resolve().declaration.qualifiedName?.asString() == annotationFqn
+        } ?: return "unknown"
+
+        val groupType = ann.arguments
+            .firstOrNull { it.name?.asString() == "group" }
+            ?.value as? KSType
+            ?: return "unknown"
+
+        return groupType.declaration.qualifiedName?.asString()
+            ?: groupType.toString()
     }
 }
