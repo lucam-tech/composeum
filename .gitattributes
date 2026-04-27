@@ -1,0 +1,8 @@
+# Ensure container bootstrap files keep Unix line endings on all platforms.
+.devcontainer/** text eol=lf
+
+# Shell scripts must stay LF to avoid /bin/bash^M errors.
+*.sh text eol=lf
+
+# Gradle wrapper script is executed in Linux containers.
+gradlew text eol=lf

@@ -1,0 +1,72 @@
+[versions]
+android-gradle            = "8.13.2"
+kotlin                    = "2.0.21"
+ksp                       = "2.0.21-1.0.28"
+compose-bom               = "2024.12.01"
+compose-multiplatform     = "1.7.1"
+navigation-compose        = "2.8.5"
+navigation-compose-cmp    = "2.8.0-alpha10"
+datastore                 = "1.1.1"
+activity                  = "1.9.3"
+collections-immutable     = "0.3.8"
+kotlinx-serialization     = "1.7.3"
+junit                     = "4.13.2"
+robolectric               = "4.13"
+coroutines                = "1.9.0"
+compile-testing-ksp       = "1.6.0"
+kotlinpoet                = "2.0.0"
+nmcp                      = "0.1.3"
+
+[libraries]
+# Compose (Android-only BOM + Android artifacts)
+compose-bom               = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
+compose-ui                = { group = "androidx.compose.ui", name = "ui" }
+compose-ui-tooling        = { group = "androidx.compose.ui", name = "ui-tooling" }
+compose-material3         = { group = "androidx.compose.material3", name = "material3" }
+compose-foundation        = { group = "androidx.compose.foundation", name = "foundation" }
+# Compose Multiplatform (commonMain of :preview-runtime)
+compose-multiplatform-runtime    = { group = "org.jetbrains.compose.runtime",    name = "runtime",    version.ref = "compose-multiplatform" }
+compose-multiplatform-ui         = { group = "org.jetbrains.compose.ui",          name = "ui",         version.ref = "compose-multiplatform" }
+compose-multiplatform-material3  = { group = "org.jetbrains.compose.material3",   name = "material3",  version.ref = "compose-multiplatform" }
+compose-multiplatform-foundation = { group = "org.jetbrains.compose.foundation",  name = "foundation", version.ref = "compose-multiplatform" }
+compose-multiplatform-icons-ext  = { group = "org.jetbrains.compose.material",    name = "material-icons-extended", version.ref = "compose-multiplatform" }
+# Navigation
+navigation-compose        = { group = "androidx.navigation",           name = "navigation-compose", version.ref = "navigation-compose" }
+navigation-compose-cmp    = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "navigation-compose-cmp" }
+datastore-preferences     = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+activity-compose          = { group = "androidx.activity", name = "activity-compose", version.ref = "activity" }
+collections-immutable     = { group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version.ref = "collections-immutable" }
+kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+
+# KSP
+ksp-api                   = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp" }
+
+# KotlinPoet
+kotlinpoet                = { group = "com.squareup", name = "kotlinpoet", version.ref = "kotlinpoet" }
+kotlinpoet-ksp            = { group = "com.squareup", name = "kotlinpoet-ksp", version.ref = "kotlinpoet" }
+
+# Testing
+junit                     = { group = "junit", name = "junit", version.ref = "junit" }
+robolectric               = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+compile-testing-ksp       = { group = "com.github.tschuchortdev", name = "kotlin-compile-testing-ksp", version.ref = "compile-testing-ksp" }
+kotlinx-coroutines-test   = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+compose-ui-test-junit4    = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+compose-ui-test-manifest  = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+
+# Build-logic plugin artifacts (compileOnly in build-logic/build.gradle.kts)
+android-gradlePlugin      = { group = "com.android.tools.build", name = "gradle", version.ref = "android-gradle" }
+kotlin-gradlePlugin       = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-composePlugin      = { group = "org.jetbrains.kotlin", name = "compose-compiler-gradle-plugin", version.ref = "kotlin" }
+ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+
+[plugins]
+android-application       = { id = "com.android.application", version.ref = "android-gradle" }
+android-library           = { id = "com.android.library", version.ref = "android-gradle" }
+kotlin-android            = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-jvm                = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-multiplatform      = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-compose            = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization      = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp                       = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+nmcp                      = { id = "com.gradleup.nmcp.aggregation", version.ref = "nmcp" }
