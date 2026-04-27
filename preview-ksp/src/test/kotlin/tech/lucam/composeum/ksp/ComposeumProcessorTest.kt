@@ -346,6 +346,37 @@ class ComposeumProcessorTest {
     }
 
     @Test
+    fun `multiple ComposePreview violations are all reported`() {
+        val result = compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewParam
+
+                object NotAGroup
+
+                @ComposePreview(name = "Broken", group = NotAGroup::class)
+                @Composable
+                fun String.brokenPreview(
+                    @PreviewParam(label = "Text") text: String,
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(result.messages.contains("@ComposePreview functions must not be extension functions"))
+        assertTrue(result.messages.contains("@ComposePreview group 'NotAGroup' must implement PreviewGroup"))
+        assertTrue(
+            result.messages.contains(
+                "@PreviewParam parameter 'text' must have a default value in the function signature",
+            ),
+        )
+    }
+
+    @Test
     fun `custom type emits warning in strict mode but compiles successfully`() {
         // Custom types (not enum, data class, sealed, or known primitive) are supported
         // via PreviewConfig.customTypeFields. A warning is emitted to remind the developer
@@ -912,6 +943,32 @@ class ComposeumProcessorTest {
             ),
         )
         assertTrue("Should error on non-View return type", result.messages.contains("must return android.view.View"))
+    }
+
+    @Test
+    fun `error when ViewPreview group does not implement PreviewGroup`() {
+        val result = compileWithView(
+            SourceFile.kotlin(
+                "XmlPreview.kt",
+                """
+                package com.example
+                import android.view.View
+                import tech.lucam.composeum.annotation.ViewPreview
+
+                object NotAGroup
+
+                @ViewPreview(name = "Bad", group = NotAGroup::class)
+                fun badViewPreview(): View = View()
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains(
+                "@ViewPreview group 'com.example.NotAGroup' must implement PreviewGroup",
+            ),
+        )
     }
 
     @Test
