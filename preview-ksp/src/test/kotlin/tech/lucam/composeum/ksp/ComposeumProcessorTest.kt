@@ -1008,6 +1008,37 @@ class ComposeumProcessorTest {
     }
 
     @Test
+    fun `error when ViewPreview uses PreviewParam`() {
+        val result = compileWithView(
+            SourceFile.kotlin(
+                "XmlPreview.kt",
+                """
+                package com.example
+                import android.content.Context
+                import android.view.View
+                import tech.lucam.composeum.annotation.PreviewGroup
+                import tech.lucam.composeum.annotation.PreviewParam
+                import tech.lucam.composeum.annotation.ViewPreview
+
+                object MyGroup : PreviewGroup { override val name = "G" }
+
+                @ViewPreview(name = "Bad", group = MyGroup::class)
+                fun badViewPreview(
+                    @PreviewParam(label = "Context") context: Context,
+                ): View = View()
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue(
+            result.messages.contains(
+                "@ViewPreview does not support @PreviewParam. Remove @PreviewParam from parameter 'context'.",
+            ),
+        )
+    }
+
+    @Test
     fun `ComposePreview and ViewPreview are both emitted in the same registry`() {
         val (result, compilation) = compileRetainingWithView(
             SourceFile.kotlin(

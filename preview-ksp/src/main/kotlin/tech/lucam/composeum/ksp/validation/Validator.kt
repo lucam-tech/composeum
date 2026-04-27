@@ -130,6 +130,20 @@ internal object Validator {
             valid = false
         }
 
+        params.forEach { param ->
+            val hasPreviewParam = param.annotations.any { ann ->
+                ann.annotationType.resolve().declaration.qualifiedName?.asString() == PREVIEW_PARAM_FQN
+            }
+            if (hasPreviewParam) {
+                val paramName = param.name?.asString() ?: "unknown"
+                logger.error(
+                    "@ViewPreview does not support @PreviewParam. Remove @PreviewParam from parameter '$paramName'.",
+                    param,
+                )
+                valid = false
+            }
+        }
+
         if (!groupImplementsPreviewGroup(function, resolver, VIEW_PREVIEW_FQN)) {
             logger.error(
                 "@ViewPreview group '${groupTypeName(function, VIEW_PREVIEW_FQN)}' must implement PreviewGroup",
