@@ -76,12 +76,20 @@ afterEvaluate {
     }
 
     signing {
-        val signingKey = providers.gradleProperty("signingKey").orNull
-        val signingPassword = providers.gradleProperty("signingPassword").orNull
+        val signingKeyId = providers.gradleProperty("signingKeyId")
+            .orElse(providers.environmentVariable("GPG_KEY_ID"))
+            .orNull
+        val signingKey = providers.gradleProperty("signingKey")
+            .orElse(providers.environmentVariable("GPG_SIGNING_KEY"))
+            .orNull
+        val signingPassword = providers.gradleProperty("signingPassword")
+            .orElse(providers.environmentVariable("GPG_SIGNING_PASSWORD"))
+            .orNull
         if (signingKey != null) {
             // Export your key with: gpg --armor --export-secret-keys <KEY_ID>
-            // Set signingKey and signingPassword in ~/.gradle/gradle.properties
-            useInMemoryPgpKeys(signingKey, signingPassword)
+            // Set signingKey/signingPassword in ~/.gradle/gradle.properties or
+            // GPG_SIGNING_KEY/GPG_SIGNING_PASSWORD in the environment.
+            useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
             sign(publishing.publications)
         }
     }

@@ -11,7 +11,9 @@ Annotate your composables with `@ComposePreview`, run KSP, and get a fully inter
 - [What it does](#what-it-does)
 - [Screenshots](#screenshots)
 - [Installation](#installation)
+- [5-minute setup](#5-minute-setup)
 - [Quick start](#quick-start)
+- [Troubleshooting](#troubleshooting)
 - [Annotation reference](#annotation-reference)
 - [Defining preview groups](#defining-preview-groups)
 - [KSP configuration](#ksp-configuration)
@@ -52,7 +54,36 @@ No reflection is used. Every composable is discovered and registered at compile 
 
 ## Installation
 
-Add the following to your app module's `build.gradle.kts`:
+Composeum publishes three artifacts:
+
+```
+tech.lucam.composeum:preview-annotation:0.1.0
+tech.lucam.composeum:preview-runtime:0.1.0
+tech.lucam.composeum:preview-ksp:0.1.0
+```
+
+> Current version: `0.1.0`
+
+Recommended usage:
+
+- Add `preview-annotation` to every module that declares previews
+- Add `preview-ksp` to those same modules via `ksp(...)`
+- Add `preview-runtime` only to the Android app/debug module that hosts the browser
+
+Current support:
+
+- Android browser hosting via `ComposeumBrowserActivity`
+- Shared preview declarations from `commonMain`
+- Wasm/Web runtime support in `preview-runtime`
+
+The fastest setup path below is Android-first because that is the most direct
+consumer flow today.
+
+---
+
+## 5-minute setup
+
+### 1. Configure the module that contains previews
 
 ```kotlin
 plugins {
@@ -60,29 +91,75 @@ plugins {
 }
 
 dependencies {
-    // Runtime — browser UI and registry model
-    implementation("tech.lucam:preview-runtime:<version>")
+    implementation("tech.lucam.composeum:preview-annotation:0.1.0")
+    ksp("tech.lucam.composeum:preview-ksp:0.1.0")
+}
 
-    // Annotation — @ComposePreview, @PreviewParam, PreviewGroup
-    implementation("tech.lucam:preview-annotation:<version>")
+ksp {
+    // Optional: defaults to "<first preview package>.generated"
+    arg("composeum.registryPackage", "com.example.previews.generated")
 
-    // KSP processor — compile-time only, never on runtime classpath
-    ksp("tech.lucam:preview-ksp:<version>")
+    // Optional: defaults to "GeneratedPreviewRegistry"
+    arg("composeum.registryName", "GeneratedPreviewRegistry")
 }
 ```
 
-**Maven coordinates:**
+### 2. Add the runtime to the browser app module
 
+```kotlin
+dependencies {
+    implementation("tech.lucam.composeum:preview-runtime:0.1.0")
+}
 ```
-tech.lucam:preview-annotation:<version>
-tech.lucam:preview-runtime:<version>
-tech.lucam:preview-ksp:<version>
+
+### 3. Add one group and one preview
+
+```kotlin
+import androidx.compose.runtime.Composable
+import tech.lucam.composeum.annotation.ComposePreview
+import tech.lucam.composeum.annotation.PreviewGroup
+
+sealed interface AppPreviews : PreviewGroup {
+    data object Components : AppPreviews {
+        override val name = "Components"
+    }
+}
+
+@ComposePreview(name = "Primary Button", group = AppPreviews.Components::class)
+@Composable
+fun PrimaryButtonPreview() {
+    PrimaryButton(label = "Click me")
+}
 ```
 
-> Current version: `0.1.0`
+### 4. Host the generated registry in a debug activity
 
-> 🚧 **Work in Progress**
-> The library will be available on Maven shortly. For now, you can include it locally.
+```kotlin
+import com.example.previews.generated.GeneratedPreviewRegistry
+import tech.lucam.composeum.runtime.config.previewConfig
+import tech.lucam.composeum.runtime.ui.ComposeumBrowserActivity
+
+class PreviewCatalogActivity : ComposeumBrowserActivity() {
+    override val registry = GeneratedPreviewRegistry
+
+    override val config = previewConfig {
+        browserWrapper { content ->
+            MyAppTheme { content() }
+        }
+    }
+}
+```
+
+### 5. Register the activity
+
+```xml
+<activity
+    android:name=".PreviewCatalogActivity"
+    android:exported="true" />
+```
+
+Build and launch the activity. Composeum discovers annotated previews during
+KSP and renders them in the browser at runtime.
 
 ---
 
@@ -125,14 +202,15 @@ fun PrimaryButtonPreview() {
 
 ### 3. Launch the browser
 
-Extend `ComposeumBrowserActivity` in your debug/sample app:
+The canonical Android path is to subclass `ComposeumBrowserActivity` in a
+debug-only or internal tools module:
 
 ```kotlin
-import tech.lucam.composeum.runtime.GeneratedPreviewRegistry
-import tech.lucam.composeum.runtime.ui.ComposeumBrowserActivity
+import com.example.previews.generated.GeneratedPreviewRegistry
 import tech.lucam.composeum.runtime.config.previewConfig
+import tech.lucam.composeum.runtime.ui.ComposeumBrowserActivity
 
-class MainActivity : ComposeumBrowserActivity() {
+class PreviewCatalogActivity : ComposeumBrowserActivity() {
 
     override val registry = GeneratedPreviewRegistry
 
@@ -148,7 +226,7 @@ Declare it in `AndroidManifest.xml`:
 
 ```xml
 <activity
-    android:name=".MainActivity"
+    android:name=".PreviewCatalogActivity"
     android:exported="true">
     <intent-filter>
         <action android:name="android.intent.action.MAIN" />
@@ -158,6 +236,97 @@ Declare it in `AndroidManifest.xml`:
 ```
 
 Build and run. The browser opens with all discovered previews.
+
+If you do not want it in the launcher, omit the `intent-filter` and open the
+activity from your debug menu or internal navigation.
+
+### 4. Multi-module setup
+
+Run KSP in every module that declares previews, then merge the generated
+registries in the browser app:
+
+```kotlin
+// :feature-auth/build.gradle.kts
+plugins {
+    id("com.google.devtools.ksp")
+}
+
+dependencies {
+    implementation("tech.lucam.composeum:preview-annotation:0.1.0")
+    ksp("tech.lucam.composeum:preview-ksp:0.1.0")
+}
+
+ksp {
+    arg("composeum.registryPackage", "com.example.auth.generated")
+    arg("composeum.registryName", "AuthPreviewRegistry")
+}
+```
+
+```kotlin
+// :preview-app/src/main/kotlin/.../PreviewCatalogActivity.kt
+import com.example.auth.generated.AuthPreviewRegistry
+import com.example.feed.generated.FeedPreviewRegistry
+import tech.lucam.composeum.runtime.CompositePreviewRegistry
+
+class PreviewCatalogActivity : ComposeumBrowserActivity() {
+    override val registry = CompositePreviewRegistry(
+        AuthPreviewRegistry,
+        FeedPreviewRegistry,
+    )
+}
+```
+
+Each module's generated registry is independent. `CompositePreviewRegistry`
+merges them at runtime and keeps the first entry when keys overlap.
+
+---
+
+## Troubleshooting
+
+### `GeneratedPreviewRegistry` cannot be resolved
+
+Check all of the following:
+
+- The module with previews applies `com.google.devtools.ksp`
+- That same module depends on `preview-annotation` and `ksp(preview-ksp)`
+- Your preview functions are annotated with `@ComposePreview`
+- You imported the generated package that matches your KSP configuration
+
+If you do not set `composeum.registryPackage`, the default package is:
+`<first preview function package>.generated`.
+
+### A preview does not appear in the browser
+
+Common causes:
+
+- The function is not `@Composable`
+- The function is not annotated with `@ComposePreview`
+- A `@PreviewParam` parameter is missing a Kotlin default value
+- The preview lives in a module where KSP is not configured
+
+### Browser activity compiles but renders unthemed UI
+
+Wrap the browser in your app theme:
+
+```kotlin
+override val config = previewConfig {
+    browserWrapper { content ->
+        MyAppTheme { content() }
+    }
+}
+```
+
+### Android Studio `@Preview` annotations are not imported automatically
+
+Composeum only processes Android Studio `@Preview` annotations when:
+
+```kotlin
+ksp {
+    arg("composeum.includeAndroidPreview", "true")
+}
+```
+
+Without that flag, only `@ComposePreview` and `@ViewPreview` are processed.
 
 ---
 
@@ -269,7 +438,7 @@ Pass KSP arguments in your module's `build.gradle.kts`:
 
 ```kotlin
 ksp {
-    arg("composeum.registryPackage", "com.example.myapp")
+    arg("composeum.registryPackage", "com.example.myapp.generated")
     arg("composeum.registryName", "GeneratedPreviewRegistry")   // default
     arg("composeum.includeAndroidPreview", "false")             // default
 }
@@ -277,7 +446,7 @@ ksp {
 
 | Argument                          | Default                    | Description                                                             |
 | --------------------------------- | -------------------------- | ----------------------------------------------------------------------- |
-| `composeum.registryPackage`       | _(required)_               | Package for the generated `GeneratedPreviewRegistry` class              |
+| `composeum.registryPackage`       | `<first preview package>.generated` | Package for the generated `GeneratedPreviewRegistry` class    |
 | `composeum.registryName`          | `GeneratedPreviewRegistry` | Class name for the generated registry                                   |
 | `composeum.includeAndroidPreview` | `false`                    | Also process `@androidx.compose.ui.tooling.preview.Preview` annotations |
 
@@ -438,11 +607,7 @@ enum class AlertSeverity { Info, Warning, Error }
 
 // Register a widget for it
 previewConfig {
-    customTypeField<AlertSeverity>(
-        defaultValue = AlertSeverity.Info,
-        serialize = { it.name },
-        deserialize = { AlertSeverity.valueOf(it) },
-    ) { current, onUpdate ->
+    customTypeField(initialValue = AlertSeverity.Info) { current, onUpdate ->
         // Your widget composable
         Row {
             AlertSeverity.entries.forEach { severity ->
@@ -487,10 +652,18 @@ val config = previewConfig {
     groupExpansionMode = GroupExpansionMode.SUBSCREEN  // or INLINE
 
     // --- Locale options shown in settings ---
-    localeOptions = listOf("en", "de", "fr", "ja")
+    localeOptions = listOf(
+        LocaleOption("en", "English"),
+        LocaleOption("de", "Deutsch"),
+        LocaleOption("fr", "Français"),
+        LocaleOption("ja", "Japanese"),
+    )
 
     // --- Top bar actions ---
-    topBarAction(icon = Icons.Default.Info, contentDescription = "About") {
+    topBarAction(
+        contentDescription = "About",
+        icon = { Icon(Icons.Default.Info, contentDescription = null) },
+    ) {
         // onClick handler
         showAboutDialog()
     }
@@ -501,18 +674,18 @@ val config = previewConfig {
 
     // --- Custom settings panel items ---
     settingsItems = listOf(
-        SettingsItem.BuiltIn(BuiltInSettingId.DARK_MODE),
-        SettingsItem.BuiltIn(BuiltInSettingId.FONT_SCALE),
-        SettingsItem.BuiltIn(BuiltInSettingId.UI_SCALE),
-        SettingsItem.BuiltIn(BuiltInSettingId.LOCALE),
-        SettingsItem.Custom {
+        SettingItem.BuiltIn(BuiltInSettingId.THEME),
+        SettingItem.BuiltIn(BuiltInSettingId.FONT_SCALE),
+        SettingItem.BuiltIn(BuiltInSettingId.UI_SCALE),
+        SettingItem.BuiltIn(BuiltInSettingId.LOCALE),
+        SettingItem.Custom("reset") {
             // Any composable, e.g. a reset button
             OutlinedButton(onClick = { /* reset */ }) { Text("Reset all") }
         },
     )
 
     // --- Custom type widgets ---
-    customTypeField<AlertSeverity>( /* ... */ ) { current, onUpdate -> /* widget */ }
+    customTypeField(initialValue = AlertSeverity.Info) { current, onUpdate -> /* widget */ }
 }
 ```
 
@@ -632,13 +805,17 @@ In a multi-module project, run KSP in each module that contains `@ComposePreview
 **`:feature-auth/build.gradle.kts`**
 
 ```kotlin
+plugins {
+    id("com.google.devtools.ksp")
+}
+
 dependencies {
-    implementation("tech.lucam:preview-annotation:<version>")
-    ksp("tech.lucam:preview-ksp:<version>")
+    implementation("tech.lucam.composeum:preview-annotation:0.1.0")
+    ksp("tech.lucam.composeum:preview-ksp:0.1.0")
 }
 
 ksp {
-    arg("composeum.registryPackage", "com.example.auth")
+    arg("composeum.registryPackage", "com.example.auth.generated")
     arg("composeum.registryName", "AuthPreviewRegistry")
 }
 ```
@@ -647,7 +824,7 @@ ksp {
 
 ```kotlin
 ksp {
-    arg("composeum.registryPackage", "com.example.feed")
+    arg("composeum.registryPackage", "com.example.feed.generated")
     arg("composeum.registryName", "FeedPreviewRegistry")
 }
 ```
@@ -726,7 +903,7 @@ tech.lucam.composeum.runtime.store       # DataStore keys, settings model
 **Prerequisites:** JDK 17+, Android SDK with API 35.
 
 ```bash
-git clone https://github.com/lucamoser/composeum.git
+git clone https://github.com/lucam-tech/composeum.git
 cd composeum
 
 # Build everything

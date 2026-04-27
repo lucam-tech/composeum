@@ -11,6 +11,7 @@ description = "Compose Preview — runtime browser UI and registry model"
 
 kotlin {
     androidTarget {
+        publishLibraryVariants("release")
         compilations.all {
             kotlinOptions { jvmTarget = "17" }
         }
