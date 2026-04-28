@@ -78,6 +78,9 @@ fun GroupListScreen(
     val settings = LocalResolvedSettings.current
     var query by remember { mutableStateOf("") }
     val rootNodes = remember(registry.entries) { buildGroupTree(registry.entries) }
+    val (rootPreviewNodes, groupedRootNodes) = remember(rootNodes) {
+        rootNodes.partition { it.isLeaf && it.name.isEmpty() && it.description.isEmpty() }
+    }
 
     // All unique tags from the registry, sorted alphabetically.
     val allTags = remember(registry.entries) {
@@ -135,8 +138,11 @@ fun GroupListScreen(
 
         if (!isFiltered) {
             LazyColumn {
+                rootPreviewNodes.forEach { node ->
+                    entryGridItem(node.key, node.entries, config, 0, onEntrySelected)
+                }
                 treeItems(
-                    nodes = rootNodes,
+                    nodes = groupedRootNodes,
                     expandedKeys = expandedKeys,
                     inlineExpandedKeys = inlineExpandedKeys,
                     onToggle = { key ->
@@ -159,16 +165,22 @@ fun GroupListScreen(
             val filtered = remember(query, selectedTags, rootNodes) {
                 filterNodes(rootNodes, query, selectedTags)
             }
-            if (filtered.isEmpty()) {
+            val (filteredRootPreviewNodes, filteredGroupedNodes) = remember(filtered) {
+                filtered.partition { it.isLeaf && it.name.isEmpty() && it.description.isEmpty() }
+            }
+            if (filteredRootPreviewNodes.isEmpty() && filteredGroupedNodes.isEmpty()) {
                 Text(
-                    text = "No groups match your search.",
+                    text = "No previews match your search.",
                     modifier = Modifier.padding(16.dp),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             } else {
                 LazyColumn {
+                    filteredRootPreviewNodes.forEach { node ->
+                        entryGridItem(node.key, node.entries, config, 0, onEntrySelected)
+                    }
                     searchItems(
-                        nodes = filtered,
+                        nodes = filteredGroupedNodes,
                         inlineExpandedKeys = inlineExpandedKeys,
                         onInlineToggle = { key ->
                             inlineExpandedKeys = if (key in inlineExpandedKeys) inlineExpandedKeys - key

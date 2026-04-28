@@ -13,27 +13,37 @@ private const val COMPOSE_PREVIEW_FQN = "tech.lucam.composeum.annotation.Compose
 private const val VIEW_PREVIEW_FQN = "tech.lucam.composeum.annotation.ViewPreview"
 private const val ANDROID_PREVIEW_FQN = "androidx.compose.ui.tooling.preview.Preview"
 private const val PREVIEW_PARAM_FQN = "tech.lucam.composeum.annotation.PreviewParam"
+private const val PREVIEW_GROUP_FQN = "tech.lucam.composeum.annotation.PreviewGroup"
 private const val CONTEXT_FQN = "android.content.Context"
+private const val GENERATED_TOP_LEVEL_GROUP = "GeneratedComposePreviewTopLevelGroup"
 
 /** Converts a validated @ComposePreview function declaration into a [PreviewModel]. */
 internal object ModelBuilder {
 
-    fun build(function: KSFunctionDeclaration): PreviewModel {
+    fun build(function: KSFunctionDeclaration, enableKdoc: Boolean = false): PreviewModel {
         val previewAnn = function.annotations.first { ann ->
             ann.annotationType.resolve().declaration.qualifiedName?.asString() == COMPOSE_PREVIEW_FQN
         }
 
         val args = previewAnn.arguments.associate { it.name?.asString() to it.value }
+        val kdoc = if (enableKdoc) KDocParser.parse(function.docString) else null
 
-        val name = args["name"] as? String ?: ""
-        val description = args["description"] as? String ?: ""
+        val name = (args["name"] as? String ?: "").ifEmpty { function.simpleName.asString() }
+        val description = (args["description"] as? String ?: "").ifEmpty { kdoc?.summary.orEmpty() }
         @Suppress("UNCHECKED_CAST")
-        val tags = (args["tags"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+        val tags = ((args["tags"] as? List<*>)?.filterIsInstance<String>() ?: emptyList())
+            .ifEmpty { kdoc?.tags.orEmpty() }
         val groupType = args["group"] as? KSType
 
-        val (groupExpression, groupImport) = resolveGroupExpression(groupType)
+        val hasExplicitGroup = groupType?.declaration?.qualifiedName?.asString() != PREVIEW_GROUP_FQN
+        val (groupExpression, groupImport, syntheticGroupDisplayName) = if (hasExplicitGroup) {
+            val (expression, groupImport) = resolveGroupExpression(groupType)
+            Triple(expression, groupImport, null)
+        } else {
+            Triple(GENERATED_TOP_LEVEL_GROUP, "", "")
+        }
 
-        val params = collectPreviewParams(function)
+        val params = collectPreviewParams(function, kdoc?.paramDescriptions.orEmpty())
 
         return PreviewModel(
             key = function.qualifiedName?.asString() ?: "",
@@ -45,6 +55,7 @@ internal object ModelBuilder {
             functionSimpleName = function.simpleName.asString(),
             functionPackage = function.packageName.asString(),
             params = params,
+            syntheticGroupDisplayName = syntheticGroupDisplayName,
             sourceFile = function.containingFile?.filePath ?: "",
             sourceLine = (function.location as? FileLocation)?.lineNumber ?: 0,
         )
@@ -55,29 +66,31 @@ internal object ModelBuilder {
      * The group string from @Preview is mapped to a synthetic [PreviewGroup] object that will be
      * emitted alongside the registry. @PreviewParam parameters are supported just like @ComposePreview.
      */
-    fun buildAndroidPreview(function: KSFunctionDeclaration): PreviewModel {
+    fun buildAndroidPreview(function: KSFunctionDeclaration, enableKdoc: Boolean = false): PreviewModel {
         val ann = function.annotations.first { a ->
             a.annotationType.resolve().declaration.qualifiedName?.asString() == ANDROID_PREVIEW_FQN
         }
         val args = ann.arguments.associate { it.name?.asString() to it.value }
+        val kdoc = if (enableKdoc) KDocParser.parse(function.docString) else null
         val name = (args["name"] as? String ?: "").ifEmpty { function.simpleName.asString() }
         val groupStr = args["group"] as? String ?: ""
         val groupDisplayName = groupStr.ifEmpty { "Android Previews" }
         val syntheticObjName = syntheticGroupObjectName(groupStr)
 
-        val params = collectPreviewParams(function)
+        val params = collectPreviewParams(function, kdoc?.paramDescriptions.orEmpty())
 
         return PreviewModel(
             key = function.qualifiedName?.asString() ?: "",
             name = name,
             groupExpression = syntheticObjName,
             groupImport = "",
-            description = "",
-            tags = emptyList(),
+            description = kdoc?.summary.orEmpty(),
+            tags = kdoc?.tags.orEmpty(),
             functionSimpleName = function.simpleName.asString(),
             functionPackage = function.packageName.asString(),
             params = params,
             isAndroidPreview = true,
+            syntheticGroupDisplayName = groupDisplayName,
             androidPreviewGroupName = groupDisplayName,
             sourceFile = function.containingFile?.filePath ?: "",
             sourceLine = (function.location as? FileLocation)?.lineNumber ?: 0,
@@ -85,17 +98,19 @@ internal object ModelBuilder {
     }
 
     /** Converts a validated @ViewPreview function declaration into a [PreviewModel]. */
-    fun buildViewPreview(function: KSFunctionDeclaration): PreviewModel {
+    fun buildViewPreview(function: KSFunctionDeclaration, enableKdoc: Boolean = false): PreviewModel {
         val ann = function.annotations.first { a ->
             a.annotationType.resolve().declaration.qualifiedName?.asString() == VIEW_PREVIEW_FQN
         }
 
         val args = ann.arguments.associate { it.name?.asString() to it.value }
+        val kdoc = if (enableKdoc) KDocParser.parse(function.docString) else null
 
         val name = args["name"] as? String ?: ""
-        val description = args["description"] as? String ?: ""
+        val description = (args["description"] as? String ?: "").ifEmpty { kdoc?.summary.orEmpty() }
         @Suppress("UNCHECKED_CAST")
-        val tags = (args["tags"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
+        val tags = ((args["tags"] as? List<*>)?.filterIsInstance<String>() ?: emptyList())
+            .ifEmpty { kdoc?.tags.orEmpty() }
         val groupType = args["group"] as? KSType
 
         val (groupExpression, groupImport) = resolveGroupExpression(groupType)
@@ -120,7 +135,10 @@ internal object ModelBuilder {
         )
     }
 
-    private fun collectPreviewParams(function: KSFunctionDeclaration): List<ParamModel> =
+    private fun collectPreviewParams(
+        function: KSFunctionDeclaration,
+        kdocParamDescriptions: Map<String, String> = emptyMap(),
+    ): List<ParamModel> =
         function.parameters.mapNotNull { param ->
             val paramAnn = param.annotations.firstOrNull { ann ->
                 ann.annotationType.resolve().declaration.qualifiedName?.asString() == PREVIEW_PARAM_FQN
@@ -129,13 +147,15 @@ internal object ModelBuilder {
             val pArgs = paramAnn.arguments.associate { it.name?.asString() to it.value }
             val label = pArgs["label"] as? String ?: ""
             val defaultValue = pArgs["default"] as? String ?: ""
-            val paramDescription = pArgs["description"] as? String ?: ""
+            val paramName = param.name?.asString() ?: ""
+            val paramDescription = (pArgs["description"] as? String ?: "")
+                .ifEmpty { kdocParamDescriptions[paramName].orEmpty() }
             @Suppress("UNCHECKED_CAST")
             val options = (pArgs["options"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
 
             buildParamModel(
                 ksParam = param,
-                name = param.name?.asString() ?: "",
+                name = paramName,
                 label = label,
                 defaultValue = defaultValue,
                 description = paramDescription,

@@ -33,6 +33,11 @@ internal data class PreviewModel(
     /** True when built from a Jetpack Compose @Preview annotation (opt-in via KSP arg). */
     val isAndroidPreview: Boolean = false,
     /**
+     * Non-null when the registry generator must emit a synthetic PreviewGroup object for this
+     * entry instead of referencing a user-defined one.
+     */
+    val syntheticGroupDisplayName: String? = null,
+    /**
      * Original group string from @Preview.group (e.g. "Buttons"). Used to generate a synthetic
      * PreviewGroup object in the registry file. Empty means the default "Android Previews" group.
      */

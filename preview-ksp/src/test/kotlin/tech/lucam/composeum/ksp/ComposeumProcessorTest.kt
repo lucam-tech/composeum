@@ -4,6 +4,7 @@ import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.kspArgs
 import com.tschuchort.compiletesting.symbolProcessorProviders
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -137,8 +138,8 @@ class ComposeumProcessorTest {
         """
         package tech.lucam.composeum.annotation
         annotation class ComposePreview(
-            val name: String,
-            val group: kotlin.reflect.KClass<*>,
+            val name: String = "",
+            val group: kotlin.reflect.KClass<*> = PreviewGroup::class,
             val description: String = "",
             val tags: Array<String> = [],
         )
@@ -204,6 +205,14 @@ class ComposeumProcessorTest {
             inheritClassPath = false
         }.compile()
 
+    private fun kspArgs(
+        includeAndroidPreview: Boolean = false,
+        enableKdoc: Boolean = false,
+    ): MutableMap<String, String> = mutableMapOf(
+        "composeum.includeAndroidPreview" to includeAndroidPreview.toString(),
+        "composeum.enableKdoc" to enableKdoc.toString(),
+    )
+
     @Test
     fun `error when ComposePreview applied to non-Composable function`() {
         val result = compile(
@@ -222,6 +231,143 @@ class ComposeumProcessorTest {
         )
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
         assertTrue(result.messages.contains("@ComposePreview can only be applied to @Composable functions"))
+    }
+
+    @Test
+    fun `ComposePreview with empty name and group falls back to function name at top level`() {
+        val (result, compilation) = compileRetaining(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+
+                @ComposePreview
+                @Composable
+                fun fallbackPreview() {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        val file = findGeneratedFile(compilation, "GeneratedPreviewRegistry")
+        assertNotNull("GeneratedPreviewRegistry.kt was not generated", file)
+        val content = file!!.readText()
+        assertTrue(content.contains("name = \"fallbackPreview\""))
+        assertTrue(content.contains("GeneratedComposePreviewTopLevelGroup"))
+        assertTrue(content.contains("override val name: String = \"\""))
+    }
+
+    @Test
+    fun `KDoc support is disabled by default`() {
+        val (result, compilation) = compileRetaining(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.*
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+
+                /**
+                 * Hidden until KDoc support is enabled.
+                 *
+                 * @param text Hidden param description.
+                 */
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun myPreview(@PreviewParam(label = "Text") text: String = "hello") {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        val registry = findGeneratedFile(compilation, "GeneratedPreviewRegistry")!!.readText()
+        val form = findGeneratedFile(compilation, "myPreviewParamForm")!!.readText()
+        assertTrue(registry.contains("description = \"\","))
+        assertFalse(registry.contains("Hidden until KDoc support is enabled."))
+        assertFalse(form.contains("Hidden param description."))
+    }
+
+    @Test
+    fun `KDoc support fills preview description param descriptions and tags`() {
+        val (result, compilation) = compileRetainingWithKdoc(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.*
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+
+                /**
+                 * Primary button in its default state.
+                 *
+                 * Extra details should not be part of the summary.
+                 *
+                 * @param text Text shown on the button.
+                 * @tag button
+                 * @tags cta, controls
+                 */
+                @ComposePreview(name = "Test", group = MyGroup::class)
+                @Composable
+                fun myPreview(@PreviewParam(label = "Text") text: String = "hello") {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        val registry = findGeneratedFile(compilation, "GeneratedPreviewRegistry")!!.readText()
+        val form = findGeneratedFile(compilation, "myPreviewParamForm")!!.readText()
+        assertTrue(registry.contains("description = \"Primary button in its default state.\""))
+        assertTrue(registry.contains("tags = listOf(\"button\", \"cta\", \"controls\")"))
+        assertTrue(form.contains("description = \"Text shown on the button.\""))
+    }
+
+    @Test
+    fun `explicit annotation values override KDoc fallbacks`() {
+        val (result, compilation) = compileRetainingWithKdoc(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.*
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+
+                /**
+                 * KDoc summary.
+                 *
+                 * @param text KDoc param description.
+                 * @tag ignored
+                 */
+                @ComposePreview(
+                    name = "Test",
+                    group = MyGroup::class,
+                    description = "Explicit description",
+                    tags = ["explicit"]
+                )
+                @Composable
+                fun myPreview(
+                    @PreviewParam(label = "Text", description = "Explicit param description")
+                    text: String = "hello"
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        val registry = findGeneratedFile(compilation, "GeneratedPreviewRegistry")!!.readText()
+        val form = findGeneratedFile(compilation, "myPreviewParamForm")!!.readText()
+        assertTrue(registry.contains("description = \"Explicit description\""))
+        assertTrue(registry.contains("tags = listOf(\"explicit\")"))
+        assertFalse(registry.contains("ignored"))
+        assertTrue(form.contains("description = \"Explicit param description\""))
+        assertFalse(form.contains("KDoc param description."))
     }
 
     @Test
@@ -604,6 +750,7 @@ class ComposeumProcessorTest {
                 widgetStubs,
             ) + sources.toList()
             symbolProcessorProviders = listOf(ComposeumProcessorProvider())
+            kspArgs = kspArgs()
             inheritClassPath = false
         }
         return compilation.compile() to compilation
@@ -613,6 +760,45 @@ class ComposeumProcessorTest {
         compilation.workingDir
             .walkTopDown()
             .firstOrNull { it.isFile && it.name == "$name.kt" }
+
+    private fun compileRetainingWithKdoc(vararg sources: SourceFile): Pair<KotlinCompilation.Result, KotlinCompilation> {
+        val compilation = KotlinCompilation().apply {
+            this.sources = listOf(
+                composableStub,
+                colorStub,
+                dpAndTextUnitStub,
+                previewGroupStub,
+                previewParamStub,
+                composePreviewStub,
+                runtimeStubs,
+                widgetStubs,
+            ) + sources.toList()
+            symbolProcessorProviders = listOf(ComposeumProcessorProvider())
+            kspArgs = kspArgs(enableKdoc = true)
+            inheritClassPath = false
+        }
+        return compilation.compile() to compilation
+    }
+
+    private fun compileRetainingWithViewKdoc(vararg sources: SourceFile): Pair<KotlinCompilation.Result, KotlinCompilation> {
+        val compilation = KotlinCompilation().apply {
+            this.sources = listOf(
+                composableStub,
+                colorStub,
+                previewGroupStub,
+                previewParamStub,
+                composePreviewStub,
+                viewPreviewStub,
+            ) + androidViewStubs + listOf(
+                runtimeStubs,
+                widgetStubs,
+            ) + sources.toList()
+            symbolProcessorProviders = listOf(ComposeumProcessorProvider())
+            kspArgs = kspArgs(enableKdoc = true)
+            inheritClassPath = false
+        }
+        return compilation.compile() to compilation
+    }
 
     @Test
     fun `error when options are used with unsupported custom type`() {
@@ -1335,6 +1521,7 @@ class ComposeumProcessorTest {
                 viewPreviewStub,
             ) + androidViewStubs + sources.toList()
             symbolProcessorProviders = listOf(ComposeumProcessorProvider())
+            kspArgs = kspArgs()
             inheritClassPath = false
         }.compile()
 
@@ -1352,6 +1539,7 @@ class ComposeumProcessorTest {
                 widgetStubs,
             ) + sources.toList()
             symbolProcessorProviders = listOf(ComposeumProcessorProvider())
+            kspArgs = kspArgs()
             inheritClassPath = false
         }
         return compilation.compile() to compilation
@@ -1362,6 +1550,7 @@ class ComposeumProcessorTest {
     private fun compileWithAndroidPreview(
         vararg sources: SourceFile,
         includeAndroidPreview: Boolean = true,
+        enableKdoc: Boolean = false,
     ): KotlinCompilation.Result =
         KotlinCompilation().apply {
             this.sources = listOf(
@@ -1372,11 +1561,14 @@ class ComposeumProcessorTest {
                 androidPreviewStub,
             ) + sources.toList()
             symbolProcessorProviders = listOf(ComposeumProcessorProvider())
-            kspArgs = mutableMapOf("composeum.includeAndroidPreview" to includeAndroidPreview.toString())
+            kspArgs = kspArgs(includeAndroidPreview = includeAndroidPreview, enableKdoc = enableKdoc)
             inheritClassPath = false
         }.compile()
 
-    private fun compileRetainingWithAndroidPreview(vararg sources: SourceFile): Pair<KotlinCompilation.Result, KotlinCompilation> {
+    private fun compileRetainingWithAndroidPreview(
+        vararg sources: SourceFile,
+        enableKdoc: Boolean = false,
+    ): Pair<KotlinCompilation.Result, KotlinCompilation> {
         val compilation = KotlinCompilation().apply {
             this.sources = listOf(
                 composableStub,
@@ -1389,7 +1581,7 @@ class ComposeumProcessorTest {
                 widgetStubs,
             ) + sources.toList()
             symbolProcessorProviders = listOf(ComposeumProcessorProvider())
-            kspArgs = mutableMapOf("composeum.includeAndroidPreview" to "true")
+            kspArgs = kspArgs(includeAndroidPreview = true, enableKdoc = enableKdoc)
             inheritClassPath = false
         }
         return compilation.compile() to compilation
@@ -2152,5 +2344,64 @@ class ComposeumProcessorTest {
 
         assertTrue("List<Enum> should pass strict-mode validation",
             !result.messages.contains("error: @PreviewParam"))
+    }
+
+    @Test
+    fun `ViewPreview uses KDoc fallbacks when enabled`() {
+        val (result, compilation) = compileRetainingWithViewKdoc(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example
+                import android.content.Context
+                import android.view.View
+                import tech.lucam.composeum.annotation.*
+
+                object MyGroup : PreviewGroup { override val name = "Legacy" }
+
+                /**
+                 * Legacy XML card preview.
+                 *
+                 * @tags xml, legacy
+                 */
+                @ViewPreview(name = "XML Card", group = MyGroup::class)
+                fun myViewPreview(context: Context): View = View()
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        val registry = findGeneratedFile(compilation, "GeneratedPreviewRegistry")!!.readText()
+        assertTrue(registry.contains("description = \"Legacy XML card preview.\""))
+        assertTrue(registry.contains("tags = listOf(\"xml\", \"legacy\")"))
+    }
+
+    @Test
+    fun `Android Preview uses KDoc fallbacks when enabled`() {
+        val (result, compilation) = compileRetainingWithAndroidPreview(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import androidx.compose.ui.tooling.preview.Preview
+
+                /**
+                 * Android Studio preview fallback summary.
+                 *
+                 * @tag studio
+                 */
+                @Preview(name = "Card", group = "Cards")
+                @Composable
+                fun cardPreview() {}
+                """,
+            ),
+            enableKdoc = true,
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        val registry = findGeneratedFile(compilation, "GeneratedPreviewRegistry")!!.readText()
+        assertTrue(registry.contains("description = \"Android Studio preview fallback summary.\""))
+        assertTrue(registry.contains("tags = listOf(\"studio\")"))
     }
 }

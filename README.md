@@ -338,8 +338,8 @@ Without that flag, only `@ComposePreview` and `@ViewPreview` are processed.
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
 annotation class ComposePreview(
-    val name: String,
-    val group: KClass<out PreviewGroup>,
+    val name: String = "",
+    val group: KClass<out PreviewGroup> = PreviewGroup::class,
     val description: String = "",
     val tags: Array<String> = [],
 )
@@ -347,8 +347,8 @@ annotation class ComposePreview(
 
 | Parameter     | Required | Description                                                |
 | ------------- | -------- | ---------------------------------------------------------- |
-| `name`        | yes      | Display name shown in the browser                          |
-| `group`       | yes      | The `PreviewGroup` leaf this preview belongs to            |
+| `name`        | no       | Display name shown in the browser; defaults to the function name |
+| `group`       | no       | The `PreviewGroup` leaf this preview belongs to; omit it to place the preview at the browser top level |
 | `description` | no       | Shown below the preview name when descriptions are enabled |
 | `tags`        | no       | Searchable labels                                          |
 
@@ -441,6 +441,7 @@ ksp {
     arg("composeum.registryPackage", "com.example.myapp.generated")
     arg("composeum.registryName", "GeneratedPreviewRegistry")   // default
     arg("composeum.includeAndroidPreview", "false")             // default
+    arg("composeum.enableKdoc", "false")                        // default
 }
 ```
 
@@ -449,6 +450,50 @@ ksp {
 | `composeum.registryPackage`       | `<first preview package>.generated` | Package for the generated `GeneratedPreviewRegistry` class    |
 | `composeum.registryName`          | `GeneratedPreviewRegistry` | Class name for the generated registry                                   |
 | `composeum.includeAndroidPreview` | `false`                    | Also process `@androidx.compose.ui.tooling.preview.Preview` annotations |
+| `composeum.enableKdoc`            | `false`                    | Use KDoc for preview description/tag fallbacks and `@param` docs for `@PreviewParam.description` |
+
+### KDoc support
+
+KDoc fallback support is opt-in:
+
+```kotlin
+ksp {
+    arg("composeum.enableKdoc", "true")
+}
+```
+
+Precedence rules:
+
+1. Explicit annotation values win.
+2. Otherwise KDoc fallback is used.
+3. Otherwise the generated value is empty.
+
+Supported KDoc fallbacks:
+
+- function summary paragraph -> preview description
+- `@param name ...` -> `@PreviewParam.description`
+- `@tag foo` / `@tags foo, bar` -> preview tags
+
+Example:
+
+```kotlin
+/**
+ * Primary call-to-action button.
+ *
+ * @param label Text shown on the button.
+ * @tags button, cta
+ */
+@ComposePreview(group = AppGroup.Components::class)
+@Composable
+fun PrimaryButtonPreview(
+    @PreviewParam(label = "Label")
+    label: String = "Continue",
+) { ... }
+```
+
+With `composeum.enableKdoc=true`, the generated preview will use the function-name fallback
+for `name`, the KDoc summary for `description`, the KDoc tags for `tags`, and the KDoc
+`@param` text for the preview parameter description.
 
 ### Generated files
 

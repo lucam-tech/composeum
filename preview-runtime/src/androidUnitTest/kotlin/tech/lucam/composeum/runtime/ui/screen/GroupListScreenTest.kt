@@ -46,6 +46,10 @@ class GroupListScreenTest {
         }
     }
 
+    private val topLevelGroup = object : PreviewGroup {
+        override val name: String = ""
+    }
+
     private fun entry(
         name: String,
         group: PreviewGroup,
@@ -92,6 +96,24 @@ class GroupListScreenTest {
 
         composeRule.onNodeWithText("Buttons").assertIsDisplayed()
         composeRule.onNodeWithText("Cards").assertIsDisplayed()
+    }
+
+    @Test
+    fun `top level previews are shown without a blank group row`() {
+        composeRule.setContent {
+            MaterialTheme {
+                GroupListScreen(
+                    registry = registryOf(
+                        entry("RootPreview", topLevelGroup),
+                        entry("PrimaryButton", TestGroup.Buttons),
+                    ),
+                    onGroupSelected = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("RootPreview").assertIsDisplayed()
+        composeRule.onNodeWithText("Buttons").assertIsDisplayed()
     }
 
     @Test

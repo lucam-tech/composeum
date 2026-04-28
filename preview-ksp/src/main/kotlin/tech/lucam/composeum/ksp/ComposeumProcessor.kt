@@ -20,26 +20,28 @@ internal class ComposeumProcessor(
         ?.toBooleanStrictOrNull() ?: true
     private val includeAndroidPreview = environment.options["composeum.includeAndroidPreview"]
         ?.toBooleanStrictOrNull() ?: false
+    private val enableKdoc = environment.options["composeum.enableKdoc"]
+        ?.toBooleanStrictOrNull() ?: false
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val composeModels = resolver
             .getSymbolsWithAnnotation("tech.lucam.composeum.annotation.ComposePreview")
             .filterIsInstance<KSFunctionDeclaration>()
             .filter { Validator.validate(it, logger, resolver, strictTypes) }
-            .map { ModelBuilder.build(it) }
+            .map { ModelBuilder.build(it, enableKdoc) }
 
         val viewModels = resolver
             .getSymbolsWithAnnotation("tech.lucam.composeum.annotation.ViewPreview")
             .filterIsInstance<KSFunctionDeclaration>()
             .filter { Validator.validateViewPreview(it, logger, resolver) }
-            .map { ModelBuilder.buildViewPreview(it) }
+            .map { ModelBuilder.buildViewPreview(it, enableKdoc) }
 
         val androidPreviewModels = if (includeAndroidPreview) {
             resolver
                 .getSymbolsWithAnnotation("androidx.compose.ui.tooling.preview.Preview")
                 .filterIsInstance<KSFunctionDeclaration>()
                 .filter { Validator.validateAndroidPreview(it, logger, resolver, strictTypes) }
-                .map { ModelBuilder.buildAndroidPreview(it) }
+                .map { ModelBuilder.buildAndroidPreview(it, enableKdoc) }
         } else {
             emptySequence()
         }

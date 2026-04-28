@@ -36,7 +36,7 @@ class ModelBuilderTest {
                 .getSymbolsWithAnnotation("tech.lucam.composeum.annotation.ComposePreview")
                 .filterIsInstance<KSFunctionDeclaration>()
                 .filter { Validator.validate(it, env.logger, resolver, strictTypes = true) }
-                .mapTo(capturedModels) { ModelBuilder.build(it) }
+                .mapTo(capturedModels) { ModelBuilder.build(it, enableKdoc = true) }
             return emptyList()
         }
     }
@@ -77,8 +77,8 @@ class ModelBuilderTest {
         """
         package tech.lucam.composeum.annotation
         annotation class ComposePreview(
-            val name: String,
-            val group: kotlin.reflect.KClass<*>,
+            val name: String = "",
+            val group: kotlin.reflect.KClass<*> = PreviewGroup::class,
             val description: String = "",
             val tags: Array<String> = [],
         )
@@ -220,5 +220,97 @@ class ModelBuilderTest {
         assertEquals("theme", param.name)
         assertEquals("Theme", param.label)
         assertEquals(listOf("light", "dark", "contrast"), param.options)
+    }
+
+    @Test
+    fun `falls back to function name and synthetic top level group when name and group are omitted`() {
+        compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+
+                @ComposePreview
+                @Composable
+                fun fallbackPreview() {}
+                """,
+            ),
+        )
+
+        assertEquals(1, capturedModels.size)
+        val model = capturedModels[0]
+        assertEquals("fallbackPreview", model.name)
+        assertEquals("GeneratedComposePreviewTopLevelGroup", model.groupExpression)
+        assertEquals("", model.groupImport)
+        assertEquals("", model.syntheticGroupDisplayName)
+    }
+
+    @Test
+    fun `uses KDoc summary and param docs as fallbacks`() {
+        compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.*
+
+                object MyGroup : PreviewGroup { override val name = "Components" }
+
+                /**
+                 * Button shown in its default resting state.
+                 *
+                 * Additional details that should not be included in the summary.
+                 *
+                 * @param text Label shown on the button.
+                 */
+                @ComposePreview(name = "Button", group = MyGroup::class)
+                @Composable
+                fun buttonPreview(
+                    @PreviewParam(label = "Text") text: String = "Click me",
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(1, capturedModels.size)
+        val model = capturedModels[0]
+        assertEquals("Button shown in its default resting state.", model.description)
+        assertEquals("Label shown on the button.", model.params.single().description)
+    }
+
+    @Test
+    fun `explicit descriptions override KDoc fallbacks`() {
+        compile(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.*
+
+                object MyGroup : PreviewGroup { override val name = "Components" }
+
+                /**
+                 * KDoc summary.
+                 *
+                 * @param text KDoc param description.
+                 */
+                @ComposePreview(name = "Button", group = MyGroup::class, description = "Explicit preview description")
+                @Composable
+                fun buttonPreview(
+                    @PreviewParam(label = "Text", description = "Explicit param description")
+                    text: String = "Click me",
+                ) {}
+                """,
+            ),
+        )
+
+        assertEquals(1, capturedModels.size)
+        val model = capturedModels[0]
+        assertEquals("Explicit preview description", model.description)
+        assertEquals("Explicit param description", model.params.single().description)
     }
 }

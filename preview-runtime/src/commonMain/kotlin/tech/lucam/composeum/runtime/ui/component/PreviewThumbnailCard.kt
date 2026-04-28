@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
@@ -116,8 +117,9 @@ fun PreviewThumbnailCard(
 
 /**
  * Renders [entry] at a fixed logical width and scales the output down via [graphicsLayer]
- * to fill the available layout bounds. Uses a custom [layout] modifier so that the parent
- * sees the card's actual size while the composable renders at full logical resolution.
+ * when needed to fit the available layout bounds. Small previews keep their natural size;
+ * larger previews are scaled down to fit the card. Uses a custom [layout] modifier so that
+ * the parent sees the card's actual size while the composable renders at full logical resolution.
  */
 @Composable
 private fun ScaledPreviewContent(
@@ -133,18 +135,34 @@ private fun ScaledPreviewContent(
             modifier = Modifier
                 .fillMaxSize()
                 .layout { measurable, constraints ->
-                    // Measure content at a fixed logical width so it renders like a phone screen.
+                    // Allow content to keep its natural size up to a screen-sized logical viewport.
                     val logicalWidth = LOGICAL_WIDTH_PX_HINT.toInt().coerceAtLeast(constraints.maxWidth)
-                    val scale = constraints.maxWidth.toFloat() / logicalWidth
-                    val logicalHeight = if (scale > 0f) {
-                        (constraints.maxHeight / scale).toInt().coerceAtLeast(1)
-                    } else constraints.maxHeight
-
                     val placeable = measurable.measure(
-                        Constraints.fixed(logicalWidth, logicalHeight),
+                        Constraints(
+                            minWidth = 0,
+                            minHeight = 0,
+                            maxWidth = logicalWidth,
+                            maxHeight = constraints.maxHeight.coerceAtLeast(1),
+                        ),
                     )
+                    val widthScale = if (placeable.width > 0) {
+                        constraints.maxWidth.toFloat() / placeable.width.toFloat()
+                    } else {
+                        1f
+                    }
+                    val heightScale = if (placeable.height > 0) {
+                        constraints.maxHeight.toFloat() / placeable.height.toFloat()
+                    } else {
+                        1f
+                    }
+                    val scale = minOf(1f, widthScale, heightScale)
+                    val scaledWidth = (placeable.width * scale).toInt().coerceAtMost(constraints.maxWidth)
+                    val scaledHeight = (placeable.height * scale).toInt().coerceAtMost(constraints.maxHeight)
+                    val dx = ((constraints.maxWidth - scaledWidth) / 2f).toInt()
+                    val dy = ((constraints.maxHeight - scaledHeight) / 2f).toInt()
+
                     layout(constraints.maxWidth, constraints.maxHeight) {
-                        placeable.placeWithLayer(x = 0, y = 0) {
+                        placeable.placeWithLayer(x = dx, y = dy) {
                             scaleX = scale
                             scaleY = scale
                             transformOrigin = TransformOrigin(0f, 0f)
@@ -153,9 +171,9 @@ private fun ScaledPreviewContent(
                 },
         ) {
             if (previewWrapper != null) {
-                previewWrapper(entry) { PreviewRenderer(entry) }
+                previewWrapper(entry) { PreviewRenderer(entry, modifier = Modifier.wrapContentSize()) }
             } else {
-                PreviewRenderer(entry)
+                PreviewRenderer(entry, modifier = Modifier.wrapContentSize())
             }
         }
     }

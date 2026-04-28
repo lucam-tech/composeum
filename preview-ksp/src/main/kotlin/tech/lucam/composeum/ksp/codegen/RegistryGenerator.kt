@@ -59,10 +59,12 @@ internal object RegistryGenerator {
             }
         }
 
-        // Emit one private synthetic PreviewGroup object per unique @Preview group string.
+        // Emit one private synthetic PreviewGroup object per unique generated group string.
         val syntheticGroups = models
-            .filter { it.isAndroidPreview }
-            .associate { it.groupExpression to it.androidPreviewGroupName }
+            .mapNotNull { model ->
+                model.syntheticGroupDisplayName?.let { model.groupExpression to it }
+            }
+            .toMap()
         for ((objectName, displayName) in syntheticGroups) {
             fileBuilder.addType(
                 TypeSpec.objectBuilder(objectName)
