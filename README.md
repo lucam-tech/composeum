@@ -27,6 +27,7 @@ Annotate your composables with `@ComposePreview`, run KSP, and get a fully inter
 - [Advanced: source code links](#advanced-source-code-links)
 - [Multi-module projects](#multi-module-projects)
 - [Error isolation](#error-isolation)
+- [Known limitations](#known-limitations)
 - [Module architecture](#module-architecture)
 - [Building locally](#building-locally)
 
@@ -896,6 +897,16 @@ Each module's KSP output is independent. `CompositePreviewRegistry` merges them 
 Every composable rendered inside the browser is wrapped in crash-isolation logic. A broken or throwing composable displays an inline error card instead of crashing the browser.
 
 This means you can safely browse previews while some are in a broken state — useful during active development.
+
+---
+
+## Known limitations
+
+- The hosted browser flow is Android-first today. `preview-runtime` also contains shared/runtime pieces for Compose Multiplatform, but there is no native SwiftUI host and no iOS browser activity equivalent.
+- `@PreviewParam` supports primitives, enums, `Color`, `Dp`, `TextUnit`, lists of supported scalar values, and shallow data/sealed expansions. Deeply nested object graphs still require `previewConfig { customTypeField(...) }`.
+- `@ViewPreview` is intentionally narrow: it supports functions returning `android.view.View`, optionally with a single `Context` parameter, and it does not support `@PreviewParam`.
+- Composeum generates registries at compile time. If KSP is disabled or misconfigured for a source set, those previews will not appear in the browser.
+- Android Studio `@Preview` import support is opt-in through `composeum.includeAndroidPreview=true`; by default only `@ComposePreview` and `@ViewPreview` are collected.
 
 ---
 
