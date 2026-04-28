@@ -1253,6 +1253,78 @@ class ComposeumProcessorTest {
     // ── CMP-002: @ViewPreview + KMP source set verification ──────────────────
 
     @Test
+    fun `ComposePreview declared from commonMain style source is discovered`() {
+        val (result, compilation) = compileRetaining(
+            SourceFile.kotlin(
+                "src/commonMain/kotlin/com/example/CommonPreview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+
+                /**
+                 * Common preview exposed to both Android and Web targets.
+                 */
+                @ComposePreview
+                @Composable
+                fun commonButtonPreview() {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        val file = findGeneratedFile(compilation, "GeneratedPreviewRegistry")
+        assertNotNull("GeneratedPreviewRegistry.kt was not generated", file)
+        val content = file!!.readText()
+        assertTrue(content.contains("key = \"com.example.commonButtonPreview\""))
+        assertTrue(content.contains("name = \"commonButtonPreview\""))
+    }
+
+    @Test
+    fun `commonMain ComposePreview and androidMain ViewPreview are both emitted when both source sets are present`() {
+        val (result, compilation) = compileRetainingWithView(
+            SourceFile.kotlin(
+                "src/commonMain/kotlin/com/example/CommonPreview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+
+                object SharedGroup : PreviewGroup { override val name = "Shared" }
+
+                @ComposePreview(name = "Common Button", group = SharedGroup::class)
+                @Composable
+                fun commonButtonPreview() {}
+                """,
+            ),
+            SourceFile.kotlin(
+                "src/androidMain/kotlin/com/example/AndroidViewPreview.kt",
+                """
+                package com.example
+                import android.content.Context
+                import android.view.View
+                import tech.lucam.composeum.annotation.PreviewGroup
+                import tech.lucam.composeum.annotation.ViewPreview
+
+                object AndroidGroup : PreviewGroup { override val name = "Android Only" }
+
+                @ViewPreview(name = "Legacy Card", group = AndroidGroup::class)
+                fun legacyCardPreview(context: Context): View = View()
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        val file = findGeneratedFile(compilation, "GeneratedPreviewRegistry")
+        assertNotNull("GeneratedPreviewRegistry.kt was not generated", file)
+        val content = file!!.readText()
+        assertTrue(content.contains("commonButtonPreview"))
+        assertTrue(content.contains("legacyCardPreview"))
+        assertTrue(content.contains("AndroidView"))
+    }
+
+    @Test
     fun `ViewPreview with context param generates AndroidView factory with it`() {
         val (result, compilation) = compileRetainingWithView(
             SourceFile.kotlin(
