@@ -125,15 +125,10 @@ dependencies {
     implementation("tech.lucam.composeum:preview-annotation:0.1.0")
     ksp("tech.lucam.composeum:preview-ksp:0.1.0")
 }
-
-ksp {
-    // Optional: defaults to "<first preview package>.generated"
-    arg("composeum.registryPackage", "com.example.previews.generated")
-
-    // Optional: defaults to "GeneratedPreviewRegistry"
-    arg("composeum.registryName", "GeneratedPreviewRegistry")
-}
 ```
+
+No KSP arguments are required for the default path. Composeum will generate
+`GeneratedPreviewRegistry` in `<first preview package>.generated`.
 
 ### 2. Add the runtime to the browser app module
 
@@ -167,17 +162,10 @@ fun PrimaryButtonPreview() {
 
 ```kotlin
 import com.example.previews.generated.GeneratedPreviewRegistry
-import tech.lucam.composeum.runtime.config.previewConfig
 import tech.lucam.composeum.runtime.ui.ComposeumBrowserActivity
 
 class PreviewCatalogActivity : ComposeumBrowserActivity() {
     override val registry = GeneratedPreviewRegistry
-
-    override val config = previewConfig {
-        browserWrapper { content ->
-            MyAppTheme { content() }
-        }
-    }
 }
 ```
 
@@ -191,6 +179,9 @@ class PreviewCatalogActivity : ComposeumBrowserActivity() {
 
 Build and launch the activity. Composeum discovers annotated previews during
 KSP and renders them in the browser at runtime.
+
+Add `override val config = previewConfig { ... }` later only if you need custom
+browser wrappers, settings, themes, or source-link behaviour.
 
 ---
 
@@ -465,7 +456,9 @@ The KSP processor handles arbitrarily deep trees. The browser reconstructs the h
 
 ## KSP configuration
 
-Pass KSP arguments in your module's `build.gradle.kts`:
+The default integration path does not require any KSP arguments.
+
+Pass KSP arguments only when you need non-default behaviour:
 
 ```kotlin
 ksp {
@@ -974,7 +967,7 @@ The `:sample` module is intentionally small. It demonstrates the recommended
 default integration only:
 
 - one `ComposeumBrowserActivity` subclass
-- one generated registry
+- one generated registry using the inferred default package/name
 - one small sealed `PreviewGroup` hierarchy
 - a few `@ComposePreview` functions, including one parameterised preview
 

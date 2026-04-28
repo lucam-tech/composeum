@@ -44,11 +44,11 @@ Goal: make first-time integration fast, obvious, and stable.
 
 **Value:** High | **Risk:** Medium | **Effort:** Medium
 
-- [ ] Review required KSP arguments and remove any that can be inferred safely
-- [ ] Review generated registry naming defaults and simplify consumer-facing configuration
-- [ ] Review the default browser bootstrapping path and remove unnecessary manual steps
-- [ ] Separate advanced configuration from the default install path in docs and samples
-- [ ] Add tests for the default integration path where possible
+- [x] Review required KSP arguments and remove any that can be inferred safely
+- [x] Review generated registry naming defaults and simplify consumer-facing configuration
+- [x] Review the default browser bootstrapping path and remove unnecessary manual steps
+- [x] Separate advanced configuration from the default install path in docs and samples
+- [x] Add tests for the default integration path where possible
 
 ### RMAP-004 — Harden Maven Central publishing and CI release flow
 

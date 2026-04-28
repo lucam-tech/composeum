@@ -31,10 +31,6 @@ android {
     }
 }
 
-ksp {
-    arg("composeum.registryPackage", "tech.lucam.composeum.sample.generated")
-}
-
 dependencies {
     implementation(project(":preview-runtime"))
     ksp(project(":preview-ksp"))

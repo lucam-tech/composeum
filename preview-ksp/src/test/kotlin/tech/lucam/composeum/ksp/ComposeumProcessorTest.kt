@@ -270,6 +270,32 @@ class ComposeumProcessorTest {
     }
 
     @Test
+    fun `default registry package and name are inferred without KSP args`() {
+        val (result, compilation) = compileRetaining(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example.catalog
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+
+                @ComposePreview
+                @Composable
+                fun inferredRegistryPreview() {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        val file = findGeneratedFile(compilation, "GeneratedPreviewRegistry")
+        assertNotNull("GeneratedPreviewRegistry.kt was not generated", file)
+        val content = file!!.readText()
+        assertTrue(content.contains("package com.example.catalog.generated"))
+        assertTrue(content.contains("object GeneratedPreviewRegistry : PreviewRegistry"))
+        assertTrue(content.contains("key = \"com.example.catalog.inferredRegistryPreview\""))
+    }
+
+    @Test
     fun `KDoc support is disabled by default`() {
         val (result, compilation) = compileRetaining(
             SourceFile.kotlin(
