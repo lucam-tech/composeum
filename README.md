@@ -926,7 +926,7 @@ composeum/
 │       ├── androidMain/        # DataStoreSettingsStorage, Activity, Log adapter
 │       └── wasmJsMain/         # LocalStorageSettingsStorage, console.log adapter
 │
-└── sample/                     # Example Android app — reference implementation
+└── sample/                     # Minimal Android starter sample
 ```
 
 ### Dependency rules
@@ -936,7 +936,22 @@ composeum/
 | `:preview-annotation` | Kotlin stdlib only                                                  |
 | `:preview-ksp`        | `:preview-annotation`, KSP API, KotlinPoet — **never runtime**      |
 | `:preview-runtime`    | `:preview-annotation`, Compose Multiplatform, DataStore, Navigation |
-| `:sample`             | All three + your own app code                                       |
+| `:sample`             | All three + one minimal Android browser host                        |
+
+### Starter sample
+
+The `:sample` module is intentionally small. It demonstrates the recommended
+default integration only:
+
+- one `ComposeumBrowserActivity` subclass
+- one generated registry
+- one small sealed `PreviewGroup` hierarchy
+- a few `@ComposePreview` functions, including one parameterised preview
+
+It is not a feature showcase. Advanced configuration paths such as composite
+registries, custom parameter fields, per-group wrappers, source-link setup, and
+manual DSL registries are documented in the README sections above instead of
+being packed into the starter app.
 
 `:preview-ksp` is always a `ksp(...)` dependency, never `implementation(...)`.
 

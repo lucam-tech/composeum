@@ -33,8 +33,6 @@ android {
 
 ksp {
     arg("composeum.registryPackage", "tech.lucam.composeum.sample.generated")
-    arg("composeum.registryName", "GeneratedPreviewRegistry")
-    arg("composeum.includeAndroidPreview", "true")
 }
 
 dependencies {
