@@ -429,3 +429,6 @@ open class ComposeumBrowserActivity : ComponentActivity() {
 Users subclass `ComposeumBrowserActivity` to provide their registry and config.
 
 The `:sample` module demonstrates this Android-only integration pattern; it is not itself a CMP target.
+
+For the consumer-facing support matrix and target-status guidance, see
+`08-target-support.md`.

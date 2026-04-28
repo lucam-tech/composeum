@@ -65,10 +65,10 @@ Goal: make first-time integration fast, obvious, and stable.
 
 **Value:** Medium | **Risk:** Low | **Effort:** Small
 
-- [ ] Document the current target support matrix in plain language
-- [ ] Explain Android-only entry points vs shared/browser composable usage
-- [ ] Document what is stable vs experimental
-- [ ] Link adoption docs from the README and relevant spec sections
+- [x] Document the current target support matrix in plain language
+- [x] Explain Android-only entry points vs shared/browser composable usage
+- [x] Document what is stable vs experimental
+- [x] Link adoption docs from the README and relevant spec sections
 
 **Exit criteria**
 

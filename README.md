@@ -11,6 +11,7 @@ Annotate your composables with `@ComposePreview`, run KSP, and get a fully inter
 - [What it does](#what-it-does)
 - [Screenshots](#screenshots)
 - [Installation](#installation)
+- [Target support](#target-support)
 - [5-minute setup](#5-minute-setup)
 - [Quick start](#quick-start)
 - [Troubleshooting](#troubleshooting)
@@ -79,6 +80,35 @@ Current support:
 
 The fastest setup path below is Android-first because that is the most direct
 consumer flow today.
+
+---
+
+## Target support
+
+Use [docs/spec/08-target-support.md](docs/spec/08-target-support.md) for the
+plain-language support matrix and stability guidance.
+
+Short version:
+
+- Stable and recommended: Android hosting via `ComposeumBrowserActivity`
+- Stable: shared preview declarations consumed by Android builds
+- Experimental: wasm/browser hosting and opt-in Android Studio `@Preview` import
+- Unsupported: iOS and desktop-native browser hosts
+
+Android-only APIs:
+
+- `ComposeumBrowserActivity`
+- Android `ComposeumBrowser(...)` overload
+- `DataStoreSettingsStorage`
+- `@ViewPreview`
+
+Shared APIs:
+
+- `@ComposePreview`
+- `@PreviewParam`
+- `PreviewGroup`
+- `PreviewRegistry`
+- Common `ComposeumBrowser(...)` overload
 
 ---
 
