@@ -82,7 +82,7 @@ fun PreviewColorField(
                             ) else Modifier
                         )
                         .clickable { onValue(color) }
-                        .semantics { contentDescription = name },
+                        .semantics { contentDescription = "$label: $name" },
                 )
             }
         }

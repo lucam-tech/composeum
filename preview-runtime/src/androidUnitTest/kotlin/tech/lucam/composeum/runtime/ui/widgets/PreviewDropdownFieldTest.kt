@@ -2,6 +2,7 @@ package tech.lucam.composeum.runtime.ui.widgets
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import org.junit.Assert.assertEquals
@@ -24,6 +25,7 @@ class PreviewDropdownFieldTest {
             PreviewDropdownField(label = "Color", value = "Red", options = options, onValue = {})
         }
         composeRule.onNodeWithText("Red").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Color").assertExists()
     }
 
     @Test
@@ -33,7 +35,7 @@ class PreviewDropdownFieldTest {
             PreviewDropdownField(label = "Color", value = "Red", options = options, onValue = { received = it })
         }
         // Open the dropdown
-        composeRule.onNodeWithText("Red").performClick()
+        composeRule.onNodeWithContentDescription("Color").performClick()
         // Select a different option
         composeRule.onNodeWithText("Blue").performClick()
         assertEquals("Blue", received)

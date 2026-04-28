@@ -36,8 +36,8 @@ class PreviewColorFieldTest {
                 PreviewColorField(label = "Tint", value = Color.Unspecified, onValue = {})
             }
         }
-        composeRule.onNodeWithContentDescription("Primary").assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("Secondary").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Tint: Primary").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Tint: Secondary").assertIsDisplayed()
     }
 
     @Test
@@ -48,7 +48,7 @@ class PreviewColorFieldTest {
                 PreviewColorField(label = "Tint", value = Color.Unspecified, onValue = { received = it })
             }
         }
-        composeRule.onNodeWithContentDescription("Primary").performClick()
+        composeRule.onNodeWithContentDescription("Tint: Primary").performClick()
         assertNotNull(received)
     }
 }

@@ -2,6 +2,7 @@ package tech.lucam.composeum.runtime.ui.widgets
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTextReplacement
 import org.junit.Assert.assertEquals
@@ -22,6 +23,7 @@ class PreviewStringFieldTest {
             PreviewStringField(label = "Name", value = "hello", onValue = {})
         }
         composeRule.onNodeWithText("hello").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Name").assertExists()
     }
 
     @Test

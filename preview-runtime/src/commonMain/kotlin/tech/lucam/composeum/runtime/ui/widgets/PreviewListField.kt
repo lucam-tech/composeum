@@ -12,6 +12,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 /**
@@ -50,7 +52,10 @@ fun PreviewListField(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(end = 4.dp),
             )
-            TextButton(onClick = onAdd) {
+            TextButton(
+                onClick = onAdd,
+                modifier = Modifier.semantics { contentDescription = "$label add item" },
+            ) {
                 Text("+")
             }
         }
@@ -70,7 +75,12 @@ fun PreviewListField(
                 Column(modifier = Modifier.weight(1f)) {
                     itemContent(index)
                 }
-                IconButton(onClick = { onRemove(index) }) {
+                IconButton(
+                    onClick = { onRemove(index) },
+                    modifier = Modifier.semantics {
+                        contentDescription = "$label remove item ${index + 1}"
+                    },
+                ) {
                     Text("×", style = MaterialTheme.typography.labelLarge)
                 }
             }

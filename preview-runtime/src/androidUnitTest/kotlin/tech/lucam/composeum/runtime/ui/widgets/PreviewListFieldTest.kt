@@ -3,6 +3,7 @@ package tech.lucam.composeum.runtime.ui.widgets
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import org.junit.Assert.assertEquals
@@ -50,8 +51,17 @@ class PreviewListFieldTest {
         composeRule.setContent {
             PreviewListField(label = "Items", itemCount = 0, onAdd = { addClicked = true }, onRemove = {}) { _ -> }
         }
-        composeRule.onNodeWithText("+").performClick()
+        composeRule.onNodeWithContentDescription("Items add item").performClick()
         assertEquals(true, addClicked)
+    }
+
+    @Test
+    fun `remove button exposes item-specific content description`() {
+        composeRule.setContent {
+            PreviewListField(label = "Items", itemCount = 2, onAdd = {}, onRemove = {}) { _ -> }
+        }
+        composeRule.onNodeWithContentDescription("Items remove item 1").assertExists()
+        composeRule.onNodeWithContentDescription("Items remove item 2").assertExists()
     }
 
     @Test

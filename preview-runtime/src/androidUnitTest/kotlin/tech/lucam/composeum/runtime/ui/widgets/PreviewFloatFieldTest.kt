@@ -4,6 +4,7 @@ import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
 import org.junit.Assert.assertNotNull
@@ -26,6 +27,7 @@ class PreviewFloatFieldTest {
         }
         composeRule.onNodeWithText("Opacity").assertExists()
         composeRule.onNodeWithText("0.50").assertExists()
+        composeRule.onNodeWithContentDescription("Opacity").assertExists()
     }
 
     @Test
