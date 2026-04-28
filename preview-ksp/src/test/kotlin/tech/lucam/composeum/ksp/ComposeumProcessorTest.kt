@@ -213,6 +213,13 @@ class ComposeumProcessorTest {
         "composeum.enableKdoc" to enableKdoc.toString(),
     )
 
+    private fun assertHasExactMessage(result: KotlinCompilation.Result, expected: String) {
+        assertTrue(
+            "Expected compiler output to contain:\n$expected\n\nActual output:\n${result.messages}",
+            result.messages.contains(expected),
+        )
+    }
+
     @Test
     fun `error when ComposePreview applied to non-Composable function`() {
         val result = compile(
@@ -230,7 +237,10 @@ class ComposeumProcessorTest {
             ),
         )
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("@ComposePreview can only be applied to @Composable functions"))
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'notComposable' must be annotated with @Composable. Add @Composable to 'notComposable' or remove @ComposePreview.",
+        )
     }
 
     @Test
@@ -390,7 +400,10 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("@ComposePreview functions must not be extension functions"))
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'extensionPreview' must not be an extension function. Move the receiver into a regular parameter or wrap the call in a non-extension preview function.",
+        )
     }
 
     @Test
@@ -413,7 +426,10 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("@ComposePreview functions must not declare type parameters"))
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'genericPreview' must not declare type parameters. Extract a concrete preview function with fixed types.",
+        )
     }
 
     @Test
@@ -436,7 +452,10 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("@ComposePreview functions must not be suspend"))
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'suspendPreview' must not be suspend. Remove the suspend modifier and call the code synchronously from the preview.",
+        )
     }
 
     @Test
@@ -457,10 +476,9 @@ class ComposeumProcessorTest {
             ),
         )
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@ComposePreview group 'NotAGroup' must implement PreviewGroup",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'myPreview' declares group 'NotAGroup', which must implement PreviewGroup. Change the group argument to a PreviewGroup object.",
         )
     }
 
@@ -484,10 +502,9 @@ class ComposeumProcessorTest {
             ),
         )
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@PreviewParam parameter 'text' must have a default value in the function signature",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'myPreview' parameter 'text' annotated with @PreviewParam must declare a default value in the function signature. Add '= ...' to parameter 'text'.",
         )
     }
 
@@ -514,10 +531,9 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@PreviewParam parameter 'tags' must not be vararg. Composeum does not support vararg preview parameters.",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'myPreview' parameter 'tags' annotated with @PreviewParam must not be vararg because Composeum does not support vararg preview parameters. Replace the vararg parameter with a concrete collection or fixed parameter list.",
         )
     }
 
@@ -544,10 +560,9 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@PreviewParam parameter 'count' has invalid default 'abc' for type 'kotlin.Int'.",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'myPreview' parameter 'count' annotated with @PreviewParam has invalid default 'abc' for type 'kotlin.Int'. Change the default string to a valid kotlin.Int value or remove the annotation default.",
         )
     }
 
@@ -576,10 +591,9 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@PreviewParam parameter 'variant' has invalid default 'Missing' for type 'ButtonVariant'.",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'myPreview' parameter 'variant' annotated with @PreviewParam has invalid default 'Missing' for type 'ButtonVariant'. Change the default string to a valid ButtonVariant value or remove the annotation default.",
         )
     }
 
@@ -610,10 +624,9 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@PreviewParam parameter 'state' has invalid default 'Unknown' for type 'UiState'.",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'myPreview' parameter 'state' annotated with @PreviewParam has invalid default 'Unknown' for type 'UiState'. Change the default string to a valid UiState value or remove the annotation default.",
         )
     }
 
@@ -641,10 +654,9 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@PreviewParam parameter 'config' does not support string defaults for data class type 'Config'.",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'myPreview' parameter 'config' annotated with @PreviewParam does not support string defaults for data class type 'Config'. Remove the annotation default and rely on the function signature default value instead.",
         )
     }
 
@@ -670,12 +682,17 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("@ComposePreview functions must not be extension functions"))
-        assertTrue(result.messages.contains("@ComposePreview group 'NotAGroup' must implement PreviewGroup"))
-        assertTrue(
-            result.messages.contains(
-                "@PreviewParam parameter 'text' must have a default value in the function signature",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'brokenPreview' must not be an extension function. Move the receiver into a regular parameter or wrap the call in a non-extension preview function.",
+        )
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'brokenPreview' declares group 'NotAGroup', which must implement PreviewGroup. Change the group argument to a PreviewGroup object.",
+        )
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'brokenPreview' parameter 'text' annotated with @PreviewParam must declare a default value in the function signature. Add '= ...' to parameter 'text'.",
         )
     }
 
@@ -706,7 +723,10 @@ class ComposeumProcessorTest {
             ),
         )
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
-        assertTrue(result.messages.contains("@PreviewParam parameter 'custom' uses custom type 'MyCustomType'"))
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'myPreview' parameter 'custom' annotated with @PreviewParam uses custom type 'MyCustomType'. Register previewConfig { customTypeField<MyCustomType>(initialValue = ...) { ... } } to provide an initial value and a custom widget.",
+        )
         assertTrue(result.messages.contains("customTypeField<MyCustomType>"))
     }
 
@@ -825,10 +845,9 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@PreviewParam parameter 'custom' uses options but has unsupported type 'MyCustomType'",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'myPreview' parameter 'custom' annotated with @PreviewParam uses dropdown options with unsupported type 'MyCustomType'. Use String or enum for dropdown options, or remove the options argument.",
         )
     }
 
@@ -856,10 +875,9 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@PreviewParam parameter 'count' uses options but has unsupported type 'kotlin.Int'",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'myPreview' parameter 'count' annotated with @PreviewParam uses dropdown options with unsupported type 'kotlin.Int'. Use String or enum for dropdown options, or remove the options argument.",
         )
     }
 
@@ -886,10 +904,9 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@PreviewParam parameter 'text' has duplicate dropdown options. Each option must be unique.",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'myPreview' parameter 'text' annotated with @PreviewParam has duplicate dropdown options. Remove duplicate values so each option is unique.",
         )
     }
 
@@ -916,10 +933,9 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@PreviewParam parameter 'text' default 'c' is not present in options [a, b].",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'myPreview' parameter 'text' annotated with @PreviewParam uses default 'c' that is not present in options [a, b]. Add 'c' to the options list or change the default.",
         )
     }
 
@@ -952,10 +968,9 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@PreviewParam parameter 'variant' has enum options [Missing] that are not valid constants of 'ButtonVariant'.",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'myPreview' parameter 'variant' annotated with @PreviewParam has enum options [Missing] that are not valid constants of 'ButtonVariant'. Use only declared enum constant names in the options list.",
         )
     }
 
@@ -1400,7 +1415,10 @@ class ComposeumProcessorTest {
                 """,
             ),
         )
-        assertTrue("Should error on @Composable @ViewPreview", result.messages.contains("@ViewPreview functions must not be @Composable"))
+        assertHasExactMessage(
+            result,
+            "@ViewPreview function 'badViewPreview' must not be annotated with @Composable. Remove @Composable from 'badViewPreview' or replace @ViewPreview with @ComposePreview.",
+        )
     }
 
     @Test
@@ -1423,7 +1441,10 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("@ViewPreview functions must not be extension functions"))
+        assertHasExactMessage(
+            result,
+            "@ViewPreview function 'badViewPreview' must not be an extension function. Move the receiver into a regular parameter or wrap the call in a non-extension preview function.",
+        )
     }
 
     @Test
@@ -1446,7 +1467,10 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("@ViewPreview functions must not declare type parameters"))
+        assertHasExactMessage(
+            result,
+            "@ViewPreview function 'badViewPreview' must not declare type parameters. Extract a concrete preview function with fixed types.",
+        )
     }
 
     @Test
@@ -1469,7 +1493,10 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("@ViewPreview functions must not be suspend"))
+        assertHasExactMessage(
+            result,
+            "@ViewPreview function 'badViewPreview' must not be suspend. Remove the suspend modifier and call the code synchronously from the preview.",
+        )
     }
 
     @Test
@@ -1489,7 +1516,10 @@ class ComposeumProcessorTest {
                 """,
             ),
         )
-        assertTrue("Should error on non-View return type", result.messages.contains("must return android.view.View"))
+        assertHasExactMessage(
+            result,
+            "@ViewPreview function 'badViewPreview' must return android.view.View or a subtype. Change the return type to android.view.View or move this preview to @ComposePreview.",
+        )
     }
 
     @Test
@@ -1511,10 +1541,9 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@ViewPreview group 'com.example.NotAGroup' must implement PreviewGroup",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ViewPreview function 'badViewPreview' declares group 'com.example.NotAGroup', which must implement PreviewGroup. Change the group argument to a PreviewGroup object.",
         )
     }
 
@@ -1542,10 +1571,9 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@ViewPreview does not support @PreviewParam. Remove @PreviewParam from parameter 'context'.",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ViewPreview function 'badViewPreview' parameter 'context' must not use @PreviewParam. Remove @PreviewParam from parameter 'context'.",
         )
     }
 
@@ -1765,7 +1793,10 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("@Preview functions must not be extension functions"))
+        assertHasExactMessage(
+            result,
+            "@Preview function 'badPreview' must not be an extension function. Move the receiver into a regular parameter or wrap the call in a non-extension preview function.",
+        )
     }
 
     @Test
@@ -1786,7 +1817,10 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("@Preview functions must not declare type parameters"))
+        assertHasExactMessage(
+            result,
+            "@Preview function 'badPreview' must not declare type parameters. Extract a concrete preview function with fixed types.",
+        )
     }
 
     @Test
@@ -1807,7 +1841,10 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("@Preview functions must not be suspend"))
+        assertHasExactMessage(
+            result,
+            "@Preview function 'badPreview' must not be suspend. Remove the suspend modifier and call the code synchronously from the preview.",
+        )
     }
 
     @Test
@@ -1904,7 +1941,10 @@ class ComposeumProcessorTest {
             ),
         )
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(result.messages.contains("@Preview can only be applied to @Composable functions"))
+        assertHasExactMessage(
+            result,
+            "@Preview function 'notComposable' must be annotated with @Composable. Add @Composable to 'notComposable' or remove @Preview.",
+        )
     }
 
     @Test
@@ -2266,10 +2306,9 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@PreviewParam parameter 'config' contains unsupported nested field 'tags' of type 'kotlin.collections.List'.",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'myPreview' parameter 'config' annotated with @PreviewParam contains unsupported nested field 'tags' of type 'kotlin.collections.List'. Flatten 'tags' into supported scalar fields or register a customTypeField for 'config'.",
         )
     }
 
@@ -2327,10 +2366,9 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@PreviewParam parameter 'state' subtype 'Loaded' contains unsupported nested field 'payload' of type 'Payload'.",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'myPreview' parameter 'state' annotated with @PreviewParam subtype 'Loaded' contains unsupported nested field 'payload' of type 'Payload'. Flatten 'payload' into supported scalar fields or register a customTypeField for 'state'.",
         )
     }
 
@@ -2383,10 +2421,9 @@ class ComposeumProcessorTest {
         )
 
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertTrue(
-            result.messages.contains(
-                "@PreviewParam parameter 'items' uses unsupported list element type 'Item'",
-            ),
+        assertHasExactMessage(
+            result,
+            "@ComposePreview function 'myPreview' parameter 'items' annotated with @PreviewParam uses unsupported list element type 'Item'. Use List<String>, List<Boolean>, List<Int>, List<Long>, List<Float>, List<Double>, or List<Enum>.",
         )
     }
 

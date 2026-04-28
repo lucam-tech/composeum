@@ -45,7 +45,14 @@ internal object Validator {
         var valid = true
 
         if (!isComposable(function)) {
-            logger.error("@ComposePreview can only be applied to @Composable functions", function)
+            logger.error(
+                composePreviewMessage(
+                    function,
+                    "must be annotated with @Composable",
+                    "Add @Composable to '${functionName(function)}' or remove @ComposePreview.",
+                ),
+                function,
+            )
             valid = false
         }
 
@@ -53,7 +60,11 @@ internal object Validator {
 
         if (!groupImplementsPreviewGroup(function, resolver)) {
             logger.error(
-                "@ComposePreview group '${groupTypeName(function, COMPOSE_PREVIEW_FQN)}' must implement PreviewGroup",
+                composePreviewMessage(
+                    function,
+                    "declares group '${groupTypeName(function, COMPOSE_PREVIEW_FQN)}', which must implement PreviewGroup",
+                    "Change the group argument to a PreviewGroup object.",
+                ),
                 function,
             )
             valid = false
@@ -78,7 +89,14 @@ internal object Validator {
         var valid = true
 
         if (!isComposable(function)) {
-            logger.error("@Preview can only be applied to @Composable functions", function)
+            logger.error(
+                androidPreviewMessage(
+                    function,
+                    "must be annotated with @Composable",
+                    "Add @Composable to '${functionName(function)}' or remove @Preview.",
+                ),
+                function,
+            )
             valid = false
         }
 
@@ -101,7 +119,14 @@ internal object Validator {
         var valid = true
 
         if (isComposable(function)) {
-            logger.error("@ViewPreview functions must not be @Composable", function)
+            logger.error(
+                viewPreviewMessage(
+                    function,
+                    "must not be annotated with @Composable",
+                    "Remove @Composable from '${functionName(function)}' or replace @ViewPreview with @ComposePreview.",
+                ),
+                function,
+            )
             valid = false
         }
 
@@ -109,7 +134,11 @@ internal object Validator {
 
         if (!returnsView(function, resolver)) {
             logger.error(
-                "@ViewPreview function must return android.view.View or a subtype",
+                viewPreviewMessage(
+                    function,
+                    "must return android.view.View or a subtype",
+                    "Change the return type to android.view.View or move this preview to @ComposePreview.",
+                ),
                 function,
             )
             valid = false
@@ -118,13 +147,22 @@ internal object Validator {
         val params = function.parameters.toList()
         if (params.size > 1) {
             logger.error(
-                "@ViewPreview function may have at most one parameter (android.content.Context)",
+                viewPreviewMessage(
+                    function,
+                    "may declare at most one parameter of type android.content.Context",
+                    "Remove extra parameters or keep a single Context parameter.",
+                ),
                 function,
             )
             valid = false
         } else if (params.size == 1 && !isContextType(params[0].type.resolve())) {
             logger.error(
-                "@ViewPreview single parameter must be of type android.content.Context",
+                viewPreviewParamMessage(
+                    function,
+                    parameterName(params[0]),
+                    "must be of type android.content.Context",
+                    "Change parameter '${parameterName(params[0])}' to android.content.Context or remove it.",
+                ),
                 params[0],
             )
             valid = false
@@ -137,7 +175,12 @@ internal object Validator {
             if (hasPreviewParam) {
                 val paramName = param.name?.asString() ?: "unknown"
                 logger.error(
-                    "@ViewPreview does not support @PreviewParam. Remove @PreviewParam from parameter '$paramName'.",
+                    viewPreviewParamMessage(
+                        function,
+                        paramName,
+                        "must not use @PreviewParam",
+                        "Remove @PreviewParam from parameter '$paramName'.",
+                    ),
                     param,
                 )
                 valid = false
@@ -146,7 +189,11 @@ internal object Validator {
 
         if (!groupImplementsPreviewGroup(function, resolver, VIEW_PREVIEW_FQN)) {
             logger.error(
-                "@ViewPreview group '${groupTypeName(function, VIEW_PREVIEW_FQN)}' must implement PreviewGroup",
+                viewPreviewMessage(
+                    function,
+                    "declares group '${groupTypeName(function, VIEW_PREVIEW_FQN)}', which must implement PreviewGroup",
+                    "Change the group argument to a PreviewGroup object.",
+                ),
                 function,
             )
             valid = false
@@ -178,17 +225,41 @@ internal object Validator {
         var valid = true
 
         if (function.extensionReceiver != null) {
-            logger.error("$annotationName functions must not be extension functions", function)
+            logger.error(
+                functionMessage(
+                    annotationName,
+                    function,
+                    "must not be an extension function",
+                    "Move the receiver into a regular parameter or wrap the call in a non-extension preview function.",
+                ),
+                function,
+            )
             valid = false
         }
 
         if (function.typeParameters.isNotEmpty()) {
-            logger.error("$annotationName functions must not declare type parameters", function)
+            logger.error(
+                functionMessage(
+                    annotationName,
+                    function,
+                    "must not declare type parameters",
+                    "Extract a concrete preview function with fixed types.",
+                ),
+                function,
+            )
             valid = false
         }
 
         if (Modifier.SUSPEND in function.modifiers) {
-            logger.error("$annotationName functions must not be suspend", function)
+            logger.error(
+                functionMessage(
+                    annotationName,
+                    function,
+                    "must not be suspend",
+                    "Remove the suspend modifier and call the code synchronously from the preview.",
+                ),
+                function,
+            )
             valid = false
         }
 
@@ -207,24 +278,34 @@ internal object Validator {
             } ?: continue
 
             if (!param.hasDefault) {
-                val name = param.name?.asString() ?: "unknown"
+                val name = parameterName(param)
                 logger.error(
-                    "@PreviewParam parameter '$name' must have a default value in the function signature",
+                    previewParamMessage(
+                        function,
+                        name,
+                        "must declare a default value in the function signature",
+                        "Add '= ...' to parameter '$name'.",
+                    ),
                     param,
                 )
                 valid = false
             }
 
             if (param.isVararg) {
-                val name = param.name?.asString() ?: "unknown"
+                val name = parameterName(param)
                 logger.error(
-                    "@PreviewParam parameter '$name' must not be vararg. Composeum does not support vararg preview parameters.",
+                    previewParamMessage(
+                        function,
+                        name,
+                        "must not be vararg because Composeum does not support vararg preview parameters",
+                        "Replace the vararg parameter with a concrete collection or fixed parameter list.",
+                    ),
                     param,
                 )
                 valid = false
             }
 
-            if (!validatePreviewParamDefault(param, logger)) valid = false
+            if (!validatePreviewParamDefault(function, param, logger)) valid = false
 
             if (strictTypes) {
                 @Suppress("UNCHECKED_CAST")
@@ -240,16 +321,20 @@ internal object Validator {
 
                 if (options.isNotEmpty() && !isEnum && fqn != "kotlin.String") {
                     val typeName = fqn ?: paramType.toString()
-                    val paramName = param.name?.asString() ?: "unknown"
+                    val paramName = parameterName(param)
                     logger.error(
-                        "@PreviewParam parameter '$paramName' uses options but has unsupported type '$typeName'. " +
-                            "Dropdown options are only supported for String and enum parameters.",
+                        previewParamMessage(
+                            function,
+                            paramName,
+                            "uses dropdown options with unsupported type '$typeName'",
+                            "Use String or enum for dropdown options, or remove the options argument.",
+                        ),
                         param,
                     )
                     valid = false
                 }
 
-                if (options.isNotEmpty() && !validatePreviewParamOptions(param, options, logger)) {
+                if (options.isNotEmpty() && !validatePreviewParamOptions(function, param, options, logger)) {
                     valid = false
                 }
 
@@ -258,17 +343,20 @@ internal object Validator {
                     val elementTypeName = elementType?.declaration?.qualifiedName?.asString()
                         ?: elementType?.toString()
                         ?: "unknown"
-                    val paramName = param.name?.asString() ?: "unknown"
+                    val paramName = parameterName(param)
                     logger.error(
-                        "@PreviewParam parameter '$paramName' uses unsupported list element type '$elementTypeName'. " +
-                            "Composeum only supports List<String>, List<Boolean>, List<Int>, List<Long>, " +
-                            "List<Float>, List<Double>, and List<Enum>.",
+                        previewParamMessage(
+                            function,
+                            paramName,
+                            "uses unsupported list element type '$elementTypeName'",
+                            "Use List<String>, List<Boolean>, List<Int>, List<Long>, List<Float>, List<Double>, or List<Enum>.",
+                        ),
                         param,
                     )
                     valid = false
                 }
 
-                if (isUnsupportedNestedComplexType(declaration as? KSClassDeclaration, logger, param)) {
+                if (isUnsupportedNestedComplexType(function, declaration as? KSClassDeclaration, logger, param)) {
                     valid = false
                 }
 
@@ -282,14 +370,17 @@ internal object Validator {
                         if (!isList && !isDataClass && !isSealed) {
                             val typeName = fqn ?: paramType.toString()
                             val simpleTypeName = typeName.substringAfterLast('.')
-                            val paramName = param.name?.asString() ?: "unknown"
+                            val paramName = parameterName(param)
                             // Custom (non-primitive) types are handled at runtime via
                             // PreviewConfig.customTypeFields. Emit a warning so the developer
                             // knows they must register a CustomParamField for this type.
                             logger.warn(
-                                "@PreviewParam parameter '$paramName' uses custom type '$typeName'. " +
-                                    "Register previewConfig { customTypeField<$simpleTypeName>(initialValue = ...) { ... } } " +
-                                    "to provide an initial value and a custom widget.",
+                                previewParamMessage(
+                                    function,
+                                    paramName,
+                                    "uses custom type '$typeName'",
+                                    "Register previewConfig { customTypeField<$simpleTypeName>(initialValue = ...) { ... } } to provide an initial value and a custom widget.",
+                                ),
                                 param,
                             )
                         }
@@ -301,6 +392,7 @@ internal object Validator {
     }
 
     private fun validatePreviewParamDefault(
+        function: KSFunctionDeclaration,
         param: com.google.devtools.ksp.symbol.KSValueParameter,
         logger: KSPLogger,
     ): Boolean {
@@ -325,10 +417,14 @@ internal object Validator {
         if (isNullable && defaultValue == "null") return true
 
         if (classDecl != null && Modifier.DATA in classDecl.modifiers) {
-            val paramName = param.name?.asString() ?: "unknown"
+            val paramName = parameterName(param)
             logger.error(
-                "@PreviewParam parameter '$paramName' does not support string defaults for data class type '$typeName'. " +
-                    "Use the function signature default value instead.",
+                previewParamMessage(
+                    function,
+                    paramName,
+                    "does not support string defaults for data class type '$typeName'",
+                    "Remove the annotation default and rely on the function signature default value instead.",
+                ),
                 param,
             )
             return false
@@ -354,9 +450,14 @@ internal object Validator {
         }
 
         if (!isValid) {
-            val paramName = param.name?.asString() ?: "unknown"
+            val paramName = parameterName(param)
             logger.error(
-                "@PreviewParam parameter '$paramName' has invalid default '$defaultValue' for type '$typeName'.",
+                previewParamMessage(
+                    function,
+                    paramName,
+                    "has invalid default '$defaultValue' for type '$typeName'",
+                    "Change the default string to a valid $typeName value or remove the annotation default.",
+                ),
                 param,
             )
         }
@@ -397,17 +498,23 @@ internal object Validator {
     }
 
     private fun validatePreviewParamOptions(
+        function: KSFunctionDeclaration,
         param: com.google.devtools.ksp.symbol.KSValueParameter,
         options: List<*>,
         logger: KSPLogger,
     ): Boolean {
         val optionValues = options.filterIsInstance<String>()
-        val paramName = param.name?.asString() ?: "unknown"
+        val paramName = parameterName(param)
         var valid = true
 
         if (optionValues.any { it.isBlank() }) {
             logger.error(
-                "@PreviewParam parameter '$paramName' has blank dropdown options. Options must be non-empty strings.",
+                previewParamMessage(
+                    function,
+                    paramName,
+                    "has blank dropdown options",
+                    "Replace blank options with non-empty strings.",
+                ),
                 param,
             )
             valid = false
@@ -415,7 +522,12 @@ internal object Validator {
 
         if (optionValues.size != optionValues.toSet().size) {
             logger.error(
-                "@PreviewParam parameter '$paramName' has duplicate dropdown options. Each option must be unique.",
+                previewParamMessage(
+                    function,
+                    paramName,
+                    "has duplicate dropdown options",
+                    "Remove duplicate values so each option is unique.",
+                ),
                 param,
             )
             valid = false
@@ -431,7 +543,12 @@ internal object Validator {
             ?: ""
         if (defaultValue.isNotEmpty() && defaultValue !in optionValues) {
             logger.error(
-                "@PreviewParam parameter '$paramName' default '$defaultValue' is not present in options $optionValues.",
+                previewParamMessage(
+                    function,
+                    paramName,
+                    "uses default '$defaultValue' that is not present in options $optionValues",
+                    "Add '$defaultValue' to the options list or change the default.",
+                ),
                 param,
             )
             valid = false
@@ -448,7 +565,12 @@ internal object Validator {
             val invalidOptions = optionValues.filterNot { it in enumValues }
             if (invalidOptions.isNotEmpty()) {
                 logger.error(
-                    "@PreviewParam parameter '$paramName' has enum options $invalidOptions that are not valid constants of '${declaration.simpleName.asString()}'.",
+                    previewParamMessage(
+                        function,
+                        paramName,
+                        "has enum options $invalidOptions that are not valid constants of '${declaration.simpleName.asString()}'",
+                        "Use only declared enum constant names in the options list.",
+                    ),
                     param,
                 )
                 valid = false
@@ -480,11 +602,12 @@ internal object Validator {
     }
 
     private fun isUnsupportedNestedComplexType(
+        function: KSFunctionDeclaration,
         classDecl: KSClassDeclaration?,
         logger: KSPLogger,
         param: com.google.devtools.ksp.symbol.KSValueParameter,
     ): Boolean {
-        val paramName = param.name?.asString() ?: "unknown"
+        val paramName = parameterName(param)
         if (classDecl != null && Modifier.DATA in classDecl.modifiers) {
             return classDecl.primaryConstructor?.parameters?.any { nestedParam ->
                 val nestedType = nestedParam.type.resolve()
@@ -492,8 +615,12 @@ internal object Validator {
                 val nestedName = nestedParam.name?.asString() ?: "unknown"
                 val nestedTypeName = nestedType.declaration.qualifiedName?.asString() ?: nestedType.toString()
                 logger.error(
-                    "@PreviewParam parameter '$paramName' contains unsupported nested field '$nestedName' of type '$nestedTypeName'. " +
-                        "Nested data class, sealed class, and List fields are not supported inside expanded data class previews.",
+                    previewParamMessage(
+                        function,
+                        paramName,
+                        "contains unsupported nested field '$nestedName' of type '$nestedTypeName'",
+                        "Flatten '$nestedName' into supported scalar fields or register a customTypeField for '$paramName'.",
+                    ),
                     param,
                 )
                 true
@@ -508,8 +635,12 @@ internal object Validator {
                     val nestedName = nestedParam.name?.asString() ?: "unknown"
                     val nestedTypeName = nestedType.declaration.qualifiedName?.asString() ?: nestedType.toString()
                     logger.error(
-                        "@PreviewParam parameter '$paramName' subtype '${subtype.simpleName.asString()}' contains unsupported nested field " +
-                            "'$nestedName' of type '$nestedTypeName'. Nested data class, sealed class, and List fields are not supported inside expanded sealed previews.",
+                        previewParamMessage(
+                            function,
+                            paramName,
+                            "subtype '${subtype.simpleName.asString()}' contains unsupported nested field '$nestedName' of type '$nestedTypeName'",
+                            "Flatten '$nestedName' into supported scalar fields or register a customTypeField for '$paramName'.",
+                        ),
                         param,
                     )
                     true
@@ -564,4 +695,51 @@ internal object Validator {
         return groupType.declaration.qualifiedName?.asString()
             ?: groupType.toString()
     }
+
+    private fun functionName(function: KSFunctionDeclaration): String =
+        function.simpleName.asString()
+
+    private fun parameterName(param: com.google.devtools.ksp.symbol.KSValueParameter): String =
+        param.name?.asString() ?: "unknown"
+
+    private fun functionMessage(
+        annotationName: String,
+        function: KSFunctionDeclaration,
+        problem: String,
+        fix: String,
+    ): String = "$annotationName function '${functionName(function)}' $problem. $fix"
+
+    private fun previewParamMessage(
+        function: KSFunctionDeclaration,
+        paramName: String,
+        problem: String,
+        fix: String,
+    ): String =
+        "@ComposePreview function '${functionName(function)}' parameter '$paramName' annotated with @PreviewParam $problem. $fix"
+
+    private fun viewPreviewParamMessage(
+        function: KSFunctionDeclaration,
+        paramName: String,
+        problem: String,
+        fix: String,
+    ): String =
+        "@ViewPreview function '${functionName(function)}' parameter '$paramName' $problem. $fix"
+
+    private fun composePreviewMessage(
+        function: KSFunctionDeclaration,
+        problem: String,
+        fix: String,
+    ): String = functionMessage("@ComposePreview", function, problem, fix)
+
+    private fun androidPreviewMessage(
+        function: KSFunctionDeclaration,
+        problem: String,
+        fix: String,
+    ): String = functionMessage("@Preview", function, problem, fix)
+
+    private fun viewPreviewMessage(
+        function: KSFunctionDeclaration,
+        problem: String,
+        fix: String,
+    ): String = functionMessage("@ViewPreview", function, problem, fix)
 }
