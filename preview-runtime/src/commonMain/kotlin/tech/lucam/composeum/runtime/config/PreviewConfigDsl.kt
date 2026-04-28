@@ -35,6 +35,9 @@ class PreviewConfigBuilder {
      */
     var isDarkMode: Boolean? = null
 
+    /** Theme id selected before any user override from the settings sheet. */
+    var defaultThemeId: String = ThemeOptionDefaults.Classic.id
+
     /** BCP 47 locale tag (e.g. "en-US", "fr"), or null to inherit the device locale. */
     var locale: String? = null
 
@@ -81,6 +84,7 @@ class PreviewConfigBuilder {
      * Use `"system"` as the tag for the device-default entry.
      */
     var localeOptions: List<LocaleOption>? = null
+    var themeOptions: List<ThemeOption> = emptyList()
 
     private var browserWrapper: BrowserWrapper? = null
     private var groupWrapper: GroupWrapper? = null
@@ -88,6 +92,7 @@ class PreviewConfigBuilder {
     private val groupOverrides = mutableMapOf<KClass<out PreviewGroup>, GroupConfig>()
     private val topBarActionsList = mutableListOf<TopBarAction>()
     private val customTypeFieldsMap = mutableMapOf<String, CustomParamField>()
+    private val themeOptionsList = mutableListOf<ThemeOption>()
 
     /** Sets the composable that wraps the entire browser. */
     fun browserWrapper(block: BrowserWrapper) {
@@ -161,11 +166,17 @@ class PreviewConfigBuilder {
         topBarActionsList.add(TopBarAction(contentDescription, icon, onClick))
     }
 
+    /** Appends a custom theme option to the settings picker. */
+    fun themeOption(option: ThemeOption) {
+        themeOptionsList.add(option)
+    }
+
     /** Builds the immutable [PreviewConfig]. */
     fun build(): PreviewConfig = PreviewConfig(
         fontScale = fontScale,
         uiScale = uiScale,
         isDarkMode = isDarkMode,
+        defaultThemeId = defaultThemeId,
         locale = locale,
         showDescriptions = showDescriptions,
         showTags = showTags,
@@ -181,6 +192,7 @@ class PreviewConfigBuilder {
         previewWrapper = previewWrapper,
         groupOverrides = groupOverrides,
         localeOptions = localeOptions,
+        themeOptions = themeOptions + themeOptionsList,
         customTypeFields = customTypeFieldsMap.toMap(),
     )
 }

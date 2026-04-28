@@ -42,6 +42,8 @@ import tech.lucam.composeum.runtime.config.BuiltInSettingId
 import tech.lucam.composeum.runtime.config.LocaleOption
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.SettingItem
+import tech.lucam.composeum.runtime.config.ThemeOption
+import tech.lucam.composeum.runtime.config.resolvedThemeOptions
 import tech.lucam.composeum.runtime.store.RuntimeSettings
 import tech.lucam.composeum.runtime.store.SettingsStorage
 import tech.lucam.composeum.runtime.store.ThemeOverride
@@ -138,7 +140,7 @@ private fun BuiltInSetting(
     scope: CoroutineScope,
 ) {
     when (id) {
-        BuiltInSettingId.THEME -> ThemeSetting(runtimeSettings, storage, scope)
+        BuiltInSettingId.THEME -> ThemeSetting(config, runtimeSettings, storage, scope)
         BuiltInSettingId.FONT_SCALE -> FontScaleSetting(config, runtimeSettings, storage, scope)
         BuiltInSettingId.UI_SCALE -> UiScaleSetting(config, runtimeSettings, storage, scope)
         BuiltInSettingId.THUMBNAIL_COLUMNS -> ThumbnailColumnsSetting(config, runtimeSettings, storage, scope)
@@ -155,11 +157,16 @@ private fun BuiltInSetting(
 
 @Composable
 private fun ThemeSetting(
+    config: PreviewConfig,
     runtimeSettings: RuntimeSettings,
     storage: SettingsStorage,
     scope: CoroutineScope,
 ) {
-    SettingLabel("Theme")
+    val themeOptions = config.resolvedThemeOptions()
+    var menuExpanded by remember { mutableStateOf(false) }
+    val selectedTheme = resolveSelectedTheme(config, runtimeSettings, themeOptions)
+
+    SettingLabel("Theme mode")
     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
         ThemeOverride.entries.forEachIndexed { index, option ->
             SegmentedButton(
@@ -174,6 +181,42 @@ private fun ThemeSetting(
                         ThemeOverride.LIGHT -> "Light"
                         ThemeOverride.DARK -> "Dark"
                         ThemeOverride.SYSTEM -> "System"
+                    },
+                )
+            }
+        }
+    }
+
+    SettingLabel("Theme palette")
+    ExposedDropdownMenuBox(
+        expanded = menuExpanded,
+        onExpandedChange = { menuExpanded = it },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        OutlinedTextField(
+            value = selectedTheme.displayName,
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(menuExpanded) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                .semantics { contentDescription = "Theme dropdown" },
+        )
+        ExposedDropdownMenu(
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false },
+        ) {
+            themeOptions.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.displayName) },
+                    onClick = {
+                        scope.launch {
+                            storage.update {
+                                copy(themeId = option.id)
+                            }
+                        }
+                        menuExpanded = false
                     },
                 )
             }
@@ -411,4 +454,13 @@ private fun Float.format1dp(): String {
     val whole = toInt()
     val dec = kotlin.math.abs(((this - whole) * 10).toInt())
     return "$whole.$dec"
+}
+
+private fun resolveSelectedTheme(
+    config: PreviewConfig,
+    runtimeSettings: RuntimeSettings,
+    options: List<ThemeOption>,
+): ThemeOption {
+    val selectedThemeId = runtimeSettings.themeId ?: config.defaultThemeId
+    return options.firstOrNull { it.id == selectedThemeId } ?: options.first()
 }

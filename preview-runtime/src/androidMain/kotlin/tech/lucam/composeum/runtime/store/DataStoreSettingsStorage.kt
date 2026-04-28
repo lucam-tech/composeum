@@ -26,6 +26,7 @@ class DataStoreSettingsStorage(private val dataStore: DataStore<Preferences>) : 
     override suspend fun reset() {
         dataStore.edit { prefs ->
             prefs -= SettingsKeys.THEME_OVERRIDE
+            prefs -= SettingsKeys.THEME_ID
             prefs -= SettingsKeys.FONT_SCALE
             prefs -= SettingsKeys.UI_SCALE
             prefs -= SettingsKeys.THUMBNAIL_COLUMNS
@@ -39,6 +40,7 @@ class DataStoreSettingsStorage(private val dataStore: DataStore<Preferences>) : 
         themeOverride = this[SettingsKeys.THEME_OVERRIDE]
             ?.let { runCatching { ThemeOverride.valueOf(it) }.getOrNull() }
             ?: ThemeOverride.SYSTEM,
+        themeId = this[SettingsKeys.THEME_ID],
         fontScale = this[SettingsKeys.FONT_SCALE],
         uiScale = this[SettingsKeys.UI_SCALE],
         thumbnailColumns = this[SettingsKeys.THUMBNAIL_COLUMNS],
@@ -49,6 +51,8 @@ class DataStoreSettingsStorage(private val dataStore: DataStore<Preferences>) : 
 
     private fun MutablePreferences.writeSettings(s: RuntimeSettings) {
         this[SettingsKeys.THEME_OVERRIDE] = s.themeOverride.name
+        if (s.themeId != null) this[SettingsKeys.THEME_ID] = s.themeId
+        else this -= SettingsKeys.THEME_ID
         if (s.fontScale != null) this[SettingsKeys.FONT_SCALE] = s.fontScale
         else this -= SettingsKeys.FONT_SCALE
         if (s.uiScale != null) this[SettingsKeys.UI_SCALE] = s.uiScale

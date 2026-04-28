@@ -14,9 +14,12 @@ data class PreviewConfig(
     /**
      * Overrides the system dark-mode when non-null. `null` (default) honours the system setting.
      * Only consulted when [PreviewConfig.browserWrapper] is null; custom wrappers receive the
-     * resolved value via [tech.lucam.composeum.runtime.ui.LocalIsDarkTheme].
+     * resolved value via [tech.lucam.composeum.runtime.ui.LocalIsDarkTheme] and the selected
+     * palette via [tech.lucam.composeum.runtime.ui.LocalPreviewTheme].
      */
     val isDarkMode: Boolean? = null,
+    /** Theme id selected before any user override from the settings sheet. */
+    val defaultThemeId: String = ThemeOptionDefaults.Classic.id,
     /** BCP 47 locale tag (e.g. "en-US", "fr"), or null to inherit the device locale. */
     val locale: String? = null,
     /** Whether group descriptions are shown in the group list by default. */
@@ -62,6 +65,11 @@ data class PreviewConfig(
      * Pass `null` (default) to use the built-in list (System + en, de, fr, es, ja, ar).
      */
     val localeOptions: List<LocaleOption>? = null,
+    /**
+     * Additional themes shown in the settings sheet.
+     * Built-ins from [ThemeOptionDefaults] are always registered first; duplicate ids replace them.
+     */
+    val themeOptions: List<ThemeOption> = emptyList(),
     /**
      * Custom param-panel widgets for types the library does not natively support.
      *

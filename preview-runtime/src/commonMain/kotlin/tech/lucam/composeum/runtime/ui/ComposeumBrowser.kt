@@ -36,6 +36,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import tech.lucam.composeum.runtime.PreviewRegistry
 import tech.lucam.composeum.runtime.config.PreviewConfig
+import tech.lucam.composeum.runtime.config.ThemeOption
+import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
 import tech.lucam.composeum.runtime.store.SettingsStorage
 import tech.lucam.composeum.runtime.store.SettingsViewModel
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewConfig
@@ -61,6 +63,9 @@ import tech.lucam.composeum.runtime.ui.screen.PreviewListScreen
  * ```
  */
 val LocalIsDarkTheme = compositionLocalOf { false }
+
+/** Composition local exposing the resolved theme palette to [BrowserWrapper] lambdas. */
+val LocalPreviewTheme = compositionLocalOf<ThemeOption> { ThemeOptionDefaults.Classic }
 
 /**
  * The root composable for the preview browser.
@@ -244,12 +249,25 @@ fun ComposeumBrowser(
         }
     }
 
-    CompositionLocalProvider(LocalIsDarkTheme provides resolvedSettings.isDark) {
+    CompositionLocalProvider(
+        LocalIsDarkTheme provides resolvedSettings.isDark,
+        LocalPreviewTheme provides resolvedSettings.theme,
+    ) {
         if (config.browserWrapper != null) {
             config.browserWrapper(browserContent)
         } else {
             MaterialTheme(
-                colorScheme = if (resolvedSettings.isDark) darkColorScheme() else lightColorScheme(),
+                colorScheme = if (resolvedSettings.isDark) {
+                    darkColorScheme(
+                        primary = resolvedSettings.theme.primary,
+                        secondary = resolvedSettings.theme.secondary,
+                    )
+                } else {
+                    lightColorScheme(
+                        primary = resolvedSettings.theme.primary,
+                        secondary = resolvedSettings.theme.secondary,
+                    )
+                },
             ) {
                 browserContent()
             }

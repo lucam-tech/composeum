@@ -28,6 +28,7 @@ class DataStoreSettingsStorageTest {
         val storage = buildStorage()
         val settings = storage.settings.first()
         assertEquals(ThemeOverride.SYSTEM, settings.themeOverride)
+        assertNull(settings.themeId)
         assertNull(settings.fontScale)
         assertNull(settings.uiScale)
         assertNull(settings.thumbnailColumns)
@@ -41,6 +42,13 @@ class DataStoreSettingsStorageTest {
         val storage = buildStorage()
         storage.update { copy(themeOverride = ThemeOverride.DARK) }
         assertEquals(ThemeOverride.DARK, storage.settings.first().themeOverride)
+    }
+
+    @Test
+    fun `update persists themeId`() = runTest {
+        val storage = buildStorage()
+        storage.update { copy(themeId = "ocean") }
+        assertEquals("ocean", storage.settings.first().themeId)
     }
 
     @Test
@@ -91,6 +99,7 @@ class DataStoreSettingsStorageTest {
         storage.update {
             copy(
                 themeOverride = ThemeOverride.LIGHT,
+                themeId = "sunset",
                 fontScale = 2.0f,
                 uiScale = 2.0f,
                 thumbnailColumns = 4,
@@ -102,6 +111,7 @@ class DataStoreSettingsStorageTest {
         storage.reset()
         val settings = storage.settings.first()
         assertEquals(ThemeOverride.SYSTEM, settings.themeOverride)
+        assertNull(settings.themeId)
         assertNull(settings.fontScale)
         assertNull(settings.uiScale)
         assertNull(settings.thumbnailColumns)

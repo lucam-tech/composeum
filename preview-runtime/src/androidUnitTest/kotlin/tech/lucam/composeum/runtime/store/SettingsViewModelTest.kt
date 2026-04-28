@@ -1,7 +1,10 @@
 package tech.lucam.composeum.runtime.store
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.compose.ui.graphics.Color
 import tech.lucam.composeum.runtime.config.PreviewConfig
+import tech.lucam.composeum.runtime.config.ThemeOption
+import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -35,6 +38,7 @@ class SettingsViewModelTest {
         assertEquals(3, resolved.thumbnailColumns)
         assertFalse(resolved.showDescriptions)
         assertFalse(resolved.showTags)
+        assertEquals(ThemeOptionDefaults.Classic, resolved.theme)
     }
 
     @Test
@@ -93,6 +97,24 @@ class SettingsViewModelTest {
         val config = PreviewConfig(locale = "ja-JP")
         val resolved = RuntimeSettings().resolve(config)
         assertEquals("ja-JP", resolved.locale)
+    }
+
+    @Test
+    fun `runtime themeId overrides config default theme`() {
+        val customTheme = ThemeOption("brand", "Brand", Color(0xFF102030), Color(0xFF405060))
+        val config = PreviewConfig(
+            defaultThemeId = ThemeOptionDefaults.Ocean.id,
+            themeOptions = listOf(customTheme),
+        )
+        val resolved = RuntimeSettings(themeId = "brand").resolve(config)
+        assertEquals(customTheme, resolved.theme)
+    }
+
+    @Test
+    fun `config default theme is used when runtime themeId is null`() {
+        val config = PreviewConfig(defaultThemeId = ThemeOptionDefaults.Forest.id)
+        val resolved = RuntimeSettings().resolve(config)
+        assertEquals(ThemeOptionDefaults.Forest, resolved.theme)
     }
 
     // --- StateFlow wiring test ---

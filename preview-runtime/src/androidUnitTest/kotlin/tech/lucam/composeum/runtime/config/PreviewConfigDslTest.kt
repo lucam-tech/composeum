@@ -1,5 +1,6 @@
 package tech.lucam.composeum.runtime.config
 
+import androidx.compose.ui.graphics.Color
 import tech.lucam.composeum.annotation.PreviewGroup
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -16,6 +17,7 @@ class PreviewConfigDslTest {
         assertEquals(1.0f, config.fontScale)
         assertEquals(1.0f, config.uiScale)
         assertNull(config.isDarkMode)
+        assertEquals(ThemeOptionDefaults.Classic.id, config.defaultThemeId)
         assertNull(config.locale)
         assertEquals(true, config.showDescriptions)
         assertEquals(true, config.showTags)
@@ -51,6 +53,12 @@ class PreviewConfigDslTest {
     fun `locale is set correctly`() {
         val config = previewConfig { locale = "de-DE" }
         assertEquals("de-DE", config.locale)
+    }
+
+    @Test
+    fun `defaultThemeId is set correctly`() {
+        val config = previewConfig { defaultThemeId = ThemeOptionDefaults.Ocean.id }
+        assertEquals(ThemeOptionDefaults.Ocean.id, config.defaultThemeId)
     }
 
     @Test
@@ -95,6 +103,20 @@ class PreviewConfigDslTest {
     fun `previewWrapper is set when provided`() {
         val config = previewConfig { previewWrapper { _, content -> content() } }
         assertNotNull(config.previewWrapper)
+    }
+
+    @Test
+    fun `themeOptions can be assigned directly`() {
+        val customTheme = ThemeOption("brand", "Brand", Color(0xFF112233), Color(0xFF445566))
+        val config = previewConfig { themeOptions = listOf(customTheme) }
+        assertEquals(listOf(customTheme), config.themeOptions)
+    }
+
+    @Test
+    fun `themeOption appends custom theme`() {
+        val customTheme = ThemeOption("brand", "Brand", Color(0xFF112233), Color(0xFF445566))
+        val config = previewConfig { themeOption(customTheme) }
+        assertEquals(listOf(customTheme), config.themeOptions)
     }
 
     // --- Group overrides ---

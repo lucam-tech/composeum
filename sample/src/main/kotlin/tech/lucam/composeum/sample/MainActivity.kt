@@ -22,6 +22,7 @@ import tech.lucam.composeum.runtime.config.GroupExpansionMode
 import tech.lucam.composeum.runtime.config.SettingItem
 import tech.lucam.composeum.runtime.config.previewConfig
 import tech.lucam.composeum.runtime.ui.LocalIsDarkTheme
+import tech.lucam.composeum.runtime.ui.LocalPreviewTheme
 import tech.lucam.composeum.runtime.ui.ComposeumBrowserActivity
 import tech.lucam.composeum.sample.AlertSeverity
 import tech.lucam.composeum.sample.generated.GeneratedPreviewRegistry
@@ -121,7 +122,8 @@ class MainActivity : ComposeumBrowserActivity() {
         // so that all previews render inside the correct MaterialTheme.
         browserWrapper { content ->
             val isDark = LocalIsDarkTheme.current
-            SampleTheme(darkTheme = isDark) { content() }
+            val theme = LocalPreviewTheme.current
+            SampleTheme(darkTheme = isDark, theme = theme) { content() }
         }
 
         // ── Global previewWrapper ─────────────────────────────────────────────

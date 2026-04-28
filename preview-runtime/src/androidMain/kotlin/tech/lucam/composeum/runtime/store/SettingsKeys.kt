@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 
 internal object SettingsKeys {
     val THEME_OVERRIDE = stringPreferencesKey("theme_override")
+    val THEME_ID = stringPreferencesKey("theme_id")
     val FONT_SCALE = floatPreferencesKey("font_scale")
     val UI_SCALE = floatPreferencesKey("ui_scale")
     val THUMBNAIL_COLUMNS = intPreferencesKey("thumbnail_columns")

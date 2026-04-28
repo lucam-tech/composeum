@@ -1,6 +1,8 @@
 package tech.lucam.composeum.runtime.store
 
 import tech.lucam.composeum.runtime.config.PreviewConfig
+import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
+import tech.lucam.composeum.runtime.config.resolvedThemeOptions
 import kotlinx.serialization.Serializable
 
 /** User-selectable theme override stored in DataStore. */
@@ -15,6 +17,8 @@ enum class ThemeOverride { LIGHT, DARK, SYSTEM }
 data class RuntimeSettings(
     /** Active theme override; defaults to [ThemeOverride.SYSTEM]. */
     val themeOverride: ThemeOverride = ThemeOverride.SYSTEM,
+    /** Selected theme id, or null to fall back to [PreviewConfig.defaultThemeId]. */
+    val themeId: String? = null,
     /** User-set font scale, or null to fall back to [PreviewConfig.fontScale]. */
     val fontScale: Float? = null,
     /** User-set UI (density) scale, or null to fall back to [PreviewConfig.uiScale]. */
@@ -40,6 +44,8 @@ data class RuntimeSettings(
 data class ResolvedSettings(
     /** Whether dark mode is active. */
     val isDark: Boolean,
+    /** Active browser theme colors. */
+    val theme: tech.lucam.composeum.runtime.config.ThemeOption,
     /** Active font scale multiplier. */
     val fontScale: Float,
     /** Active UI (density) scale multiplier. */
@@ -57,6 +63,7 @@ data class ResolvedSettings(
         /** Neutral defaults used as the [LocalResolvedSettings] fallback value. */
         val DEFAULT = ResolvedSettings(
             isDark = false,
+            theme = ThemeOptionDefaults.Classic,
             fontScale = 1f,
             uiScale = 1f,
             thumbnailColumns = 2,
@@ -79,6 +86,9 @@ data class ResolvedSettings(
  *                     Only used when [themeOverride] is [ThemeOverride.SYSTEM].
  */
 internal fun RuntimeSettings.resolve(config: PreviewConfig, systemIsDark: Boolean = false): ResolvedSettings {
+    val themeOptions = config.resolvedThemeOptions()
+    val selectedThemeId = themeId ?: config.defaultThemeId
+    val selectedTheme = themeOptions.firstOrNull { it.id == selectedThemeId } ?: themeOptions.first()
     val isDark = when (themeOverride) {
         ThemeOverride.LIGHT -> false
         ThemeOverride.DARK -> true
@@ -86,6 +96,7 @@ internal fun RuntimeSettings.resolve(config: PreviewConfig, systemIsDark: Boolea
     }
     return ResolvedSettings(
         isDark = isDark,
+        theme = selectedTheme,
         fontScale = fontScale ?: config.fontScale,
         uiScale = uiScale ?: config.uiScale,
         thumbnailColumns = thumbnailColumns ?: config.thumbnailColumns,
