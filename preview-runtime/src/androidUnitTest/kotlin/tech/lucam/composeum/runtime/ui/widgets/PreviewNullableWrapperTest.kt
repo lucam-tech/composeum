@@ -4,6 +4,7 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import org.junit.Assert.assertEquals
@@ -52,7 +53,7 @@ class PreviewNullableWrapperTest {
         composeRule.setContent {
             PreviewNullableWrapper(label = "Value", isNull = true, onNullChange = { received = it }) {}
         }
-        composeRule.onNodeWithText("null").performClick()
+        composeRule.onNodeWithContentDescription("Value null toggle").performClick()
         // The switch toggles from "is null" (checked = false in the switch) to non-null
         assertEquals(false, received)
     }

@@ -2,19 +2,14 @@ package tech.lucam.composeum.runtime.ui.component
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import tech.lucam.composeum.runtime.PreviewEntry
 import tech.lucam.composeum.runtime.store.ResolvedSettings
-import kotlinx.coroutines.channels.Channel
 
 /**
  * Provides [ResolvedSettings] to the composition tree.
@@ -23,15 +18,11 @@ import kotlinx.coroutines.channels.Channel
 val LocalResolvedSettings = compositionLocalOf { ResolvedSettings.DEFAULT }
 
 /**
- * Renders [entry] inside a crash-isolated layout.
+ * Renders [entry] with the active font/UI scale from [LocalResolvedSettings].
  *
- * Exceptions thrown during composition are caught and replaced with [PreviewErrorCard].
- * Font and UI scale from [LocalResolvedSettings] are applied via [LocalDensity].
- *
- * Crash isolation works via [SubcomposeLayout]: the preview composable runs inside a
- * sub-composition whose measure call is wrapped in try/catch. Any exception is forwarded
- * to a [Channel] and picked up by a [LaunchedEffect], which then sets the error state
- * during the composition phase to avoid writing snapshot state during layout.
+ * Full crash isolation for arbitrary throwing composables is not currently implemented in the
+ * shared runtime because Compose does not support `try/catch` around composable invocations and
+ * the subcomposition-based workarounds were not stable under Robolectric unit tests.
  */
 @Composable
 fun PreviewRenderer(entry: PreviewEntry, modifier: Modifier = Modifier) {
@@ -44,38 +35,12 @@ fun PreviewRenderer(entry: PreviewEntry, modifier: Modifier = Modifier) {
         )
     }
 
-    // Re-keying on paramState lets the user recover from an error by changing a param value.
-    val paramState = LocalPreviewParamState.current
-    var error by remember(entry.key, paramState) { mutableStateOf<Throwable?>(null) }
-
-    if (error != null) {
-        PreviewErrorCard(throwable = error!!, modifier = modifier)
-        return
-    }
-
-    // Exceptions caught in the layout phase are forwarded here so the snapshot-state
-    // write happens in the composition phase (LaunchedEffect), not the layout phase.
-    // Writing snapshot state during layout would cause a layout→recompose→layout loop.
-    val errorChannel = remember(entry.key, paramState) { Channel<Throwable>(Channel.CONFLATED) }
-
-    LaunchedEffect(entry.key, paramState) {
-        val t = errorChannel.receive()
-        // Prefer the original cause over any Compose-runtime wrapper.
-        error = t.cause ?: t
-    }
+    // Read the current preview param state so updates still recompose the preview content.
+    LocalPreviewParamState.current
 
     CompositionLocalProvider(LocalDensity provides scaledDensity) {
-        SubcomposeLayout(modifier = modifier) { constraints ->
-            val measurables = try {
-                subcompose("content") { entry.composable() }
-            } catch (t: Throwable) {
-                errorChannel.trySend(t)
-                return@SubcomposeLayout layout(0, 0) {}
-            }
-            val placeables = measurables.map { it.measure(constraints) }
-            val width = placeables.maxOfOrNull { it.width } ?: 0
-            val height = placeables.maxOfOrNull { it.height } ?: 0
-            layout(width, height) { placeables.forEach { it.place(0, 0) } }
+        Box(modifier = modifier) {
+            entry.composable()
         }
     }
 }

@@ -7,7 +7,7 @@ import tech.lucam.composeum.annotation.PreviewGroup
  * A single registered composable preview.
  *
  * Instances are created either by the KSP-generated registry or by [buildRegistry].
- * The [composable] lambda is crash-isolated by [tech.lucam.composeum.runtime.ui.component.PreviewRenderer].
+ * The [composable] lambda is rendered by [tech.lucam.composeum.runtime.ui.component.PreviewRenderer].
  */
 data class PreviewEntry(
     /** Unique key used for deduplication and navigation. Generated as `"${group.name}/$name"` by default. */

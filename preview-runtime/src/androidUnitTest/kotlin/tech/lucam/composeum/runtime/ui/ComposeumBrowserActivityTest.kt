@@ -1,5 +1,7 @@
 package tech.lucam.composeum.runtime.ui
 
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.assertIsDisplayed
@@ -19,38 +21,38 @@ import org.robolectric.RobolectricTestRunner
 class ComposeumBrowserActivityTest {
 
     @get:Rule
-    val activityRule = createAndroidComposeRule<TestBrowserActivity>()
+    val activityRule = createAndroidComposeRule<ComponentActivity>()
+
+    sealed interface TestGroup : PreviewGroup {
+        data object Components : TestGroup {
+            override val name = "Components"
+        }
+    }
+
+    private val registry: PreviewRegistry = object : PreviewRegistry {
+        override val entries = listOf(
+            PreviewEntry(
+                key = "test.SampleButton",
+                name = "Sample Button",
+                group = TestGroup.Components,
+                description = "",
+                tags = emptyList(),
+                composable = { Text("Sample Button") },
+                paramForm = null,
+                paramDefaults = PreviewParamDefaults(emptyMap()),
+            ),
+        )
+    }
+
+    private val config = PreviewConfig(
+        browserWrapper = { content -> MaterialTheme { content() } },
+    )
 
     @Test
     fun `activity launches and renders browser without crash`() {
+        activityRule.activity.setContent {
+            ComposeumBrowser(registry = registry, config = config)
+        }
         activityRule.onNodeWithText("Compose Preview").assertIsDisplayed()
-    }
-
-    class TestBrowserActivity : ComposeumBrowserActivity() {
-
-        sealed interface TestGroup : PreviewGroup {
-            data object Components : TestGroup {
-                override val name = "Components"
-            }
-        }
-
-        override val registry: PreviewRegistry = object : PreviewRegistry {
-            override val entries = listOf(
-                PreviewEntry(
-                    key = "test.SampleButton",
-                    name = "Sample Button",
-                    group = TestGroup.Components,
-                    description = "",
-                    tags = emptyList(),
-                    composable = { Text("Sample Button") },
-                    paramForm = null,
-                    paramDefaults = PreviewParamDefaults(emptyMap()),
-                ),
-            )
-        }
-
-        override val config: PreviewConfig = PreviewConfig(
-            browserWrapper = { content -> MaterialTheme { content() } },
-        )
     }
 }

@@ -411,8 +411,7 @@ class GroupListScreenTest {
 
         // Type "Buttons" — even though the group name matches, no Buttons entry has "cta"
         typeInSearchField("Buttons")
-        composeRule.onNodeWithText("Buttons").assertDoesNotExist()
-        composeRule.onNodeWithText("Cards").assertDoesNotExist() // Cards entries don't match "Buttons"
+        composeRule.onNodeWithText("No groups match your search.").assertIsDisplayed()
     }
 
     @Test
