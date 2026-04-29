@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.the
+
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
@@ -30,7 +32,8 @@ nmcpAggregation {
         publishingType.set("USER_MANAGED")
     }
     // Discovers all subprojects that apply com.gradleup.nmcp (i.e. publish-library).
-    // :sample is excluded because it uses the android-application plugin, not publish-library.
+    // sample is excluded because it uses the android-application plugin, not publish-library.
+    @Suppress("DEPRECATION")
     publishAllProjectsProbablyBreakingProjectIsolation()
 }
 
@@ -44,8 +47,8 @@ subprojects {
 
 // Use system Node.js and Yarn — the sandbox has no internet access to download them.
 plugins.withType<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin> {
-    the<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension>().download = false
+    the<org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsEnvSpec>().download.set(false)
 }
 plugins.withType<org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin> {
-    the<org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootExtension>().download = false
+    the<org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootEnvSpec>().download.set(false)
 }

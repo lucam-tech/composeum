@@ -26,16 +26,3 @@ dependencies {
     testImplementation(libs.compile.testing.ksp)
 }
 
-nmcp {
-    centralPortal {
-        username.set(
-            providers.gradleProperty("mavenCentralUsername")
-                .orElse(providers.environmentVariable("MAVEN_CENTRAL_USERNAME"))
-        )
-        password.set(
-            providers.gradleProperty("mavenCentralPassword")
-                .orElse(providers.environmentVariable("MAVEN_CENTRAL_PASSWORD"))
-        )
-        publishingType.set("USER_MANAGED")
-    }
-}

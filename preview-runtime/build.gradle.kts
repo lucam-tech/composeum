@@ -1,3 +1,5 @@
+@file:OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.library)
@@ -12,8 +14,8 @@ description = "Compose Preview — runtime browser UI and registry model"
 kotlin {
     androidTarget {
         publishLibraryVariants("release")
-        compilations.all {
-            kotlinOptions { jvmTarget = "17" }
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
     }
     wasmJs { browser() }
@@ -21,6 +23,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":preview-annotation"))
+            implementation(project.dependencies.platform(libs.compose.bom))
             implementation(libs.compose.multiplatform.runtime)
             implementation(libs.compose.multiplatform.ui)
             implementation(libs.compose.multiplatform.material3)
@@ -50,7 +53,7 @@ kotlin {
 
 android {
     namespace = "tech.lucam.composeum.runtime"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 26
@@ -74,19 +77,6 @@ android {
     }
 }
 
-nmcp {
-    centralPortal {
-        username.set(
-            providers.gradleProperty("mavenCentralUsername")
-                .orElse(providers.environmentVariable("MAVEN_CENTRAL_USERNAME"))
-        )
-        password.set(
-            providers.gradleProperty("mavenCentralPassword")
-                .orElse(providers.environmentVariable("MAVEN_CENTRAL_PASSWORD"))
-        )
-        publishingType.set("USER_MANAGED")
-    }
-}
 
 // extractAnnotations downloads lint-gradle at execution time.
 // For offline sandboxes, replace the task actions so the typedef file is written without

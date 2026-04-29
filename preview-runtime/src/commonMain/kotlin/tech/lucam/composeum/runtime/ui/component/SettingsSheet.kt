@@ -155,6 +155,7 @@ private fun BuiltInSetting(
 
 // ── Individual built-in settings ──────────────────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ThemeSetting(
     config: PreviewConfig,
