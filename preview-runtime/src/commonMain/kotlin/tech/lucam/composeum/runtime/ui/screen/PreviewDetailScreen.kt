@@ -21,8 +21,12 @@ import tech.lucam.composeum.runtime.withCustomTypeDefaults
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewConfig
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewParamState
+import tech.lucam.composeum.runtime.ui.component.LocalPreviewRenderContext
 import tech.lucam.composeum.runtime.ui.component.ParamPanel
+import tech.lucam.composeum.runtime.ui.component.PreviewRenderContext
 import tech.lucam.composeum.runtime.ui.component.PreviewRenderer
+
+private val DETAIL_CONTEXT = PreviewRenderContext(isThumbnail = false)
 
 /**
  * Displays a single preview entry full-width with its param panel below.
@@ -78,7 +82,10 @@ fun PreviewDetailScreen(
             modifier = Modifier.weight(1f).fillMaxWidth(),
             contentAlignment = Alignment.Center,
         ) {
-            CompositionLocalProvider(LocalPreviewParamState provides paramState) {
+            CompositionLocalProvider(
+                LocalPreviewParamState provides paramState,
+                LocalPreviewRenderContext provides DETAIL_CONTEXT,
+            ) {
                 if (effectivePreviewWrapper != null) {
                     effectivePreviewWrapper(entry) {
                         PreviewRenderer(entry = entry, modifier = Modifier.wrapContentSize())

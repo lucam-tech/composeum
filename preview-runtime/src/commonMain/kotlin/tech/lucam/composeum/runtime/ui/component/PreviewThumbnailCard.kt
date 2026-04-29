@@ -43,6 +43,8 @@ import tech.lucam.composeum.runtime.config.PreviewWrapper
 /** Reference render width used when scaling the preview to thumbnail size. */
 private const val LOGICAL_WIDTH_PX_HINT = 1080f
 
+private val THUMBNAIL_CONTEXT = PreviewRenderContext(isThumbnail = true)
+
 /**
  * Renders a single [PreviewEntry] as a scaled-down live thumbnail card.
  *
@@ -89,7 +91,10 @@ fun PreviewThumbnailCard(
             shape = MaterialTheme.shapes.medium,
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         ) {
-            CompositionLocalProvider(LocalPreviewParamState provides thumbnailState) {
+            CompositionLocalProvider(
+                LocalPreviewParamState provides thumbnailState,
+                LocalPreviewRenderContext provides THUMBNAIL_CONTEXT,
+            ) {
                 ScaledPreviewContent(entry = entry, previewWrapper = previewWrapper)
             }
         }
