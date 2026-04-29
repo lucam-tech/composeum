@@ -1,15 +1,22 @@
 package tech.lucam.composeum.runtime.ui.component
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,7 +42,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import tech.lucam.composeum.runtime.config.BuiltInSettingId
@@ -155,7 +164,6 @@ private fun BuiltInSetting(
 
 // ── Individual built-in settings ──────────────────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ThemeSetting(
     config: PreviewConfig,
@@ -164,7 +172,6 @@ private fun ThemeSetting(
     scope: CoroutineScope,
 ) {
     val themeOptions = config.resolvedThemeOptions()
-    var menuExpanded by remember { mutableStateOf(false) }
     val selectedTheme = resolveSelectedTheme(config, runtimeSettings, themeOptions)
 
     SettingLabel("Theme mode")
@@ -189,37 +196,30 @@ private fun ThemeSetting(
     }
 
     SettingLabel("Theme palette")
-    ExposedDropdownMenuBox(
-        expanded = menuExpanded,
-        onExpandedChange = { menuExpanded = it },
+    Column(
         modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        OutlinedTextField(
-            value = selectedTheme.displayName,
-            onValueChange = {},
-            readOnly = true,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(menuExpanded) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                .semantics { contentDescription = "Theme dropdown" },
-        )
-        ExposedDropdownMenu(
-            expanded = menuExpanded,
-            onDismissRequest = { menuExpanded = false },
-        ) {
-            themeOptions.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option.displayName) },
-                    onClick = {
-                        scope.launch {
-                            storage.update {
-                                copy(themeId = option.id)
+        themeOptions.chunked(2).forEach { rowOptions ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                rowOptions.forEach { option ->
+                    ThemePaletteOption(
+                        option = option,
+                        selected = selectedTheme.id == option.id,
+                        onClick = {
+                            scope.launch {
+                                storage.update { copy(themeId = option.id) }
                             }
-                        }
-                        menuExpanded = false
-                    },
-                )
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                repeat(2 - rowOptions.size) {
+                    Spacer(Modifier.weight(1f))
+                }
             }
         }
     }
@@ -449,6 +449,68 @@ private fun SettingRow(label: String, control: @Composable () -> Unit) {
         )
         control()
     }
+}
+
+@Composable
+private fun ThemePaletteOption(
+    option: ThemeOption,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(18.dp)
+    val borderColor = if (selected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.outlineVariant
+    }
+    val containerColor = if (selected) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+    }
+
+    Column(
+        modifier = modifier
+            .clip(shape)
+            .background(containerColor)
+            .border(width = 2.dp, color = borderColor, shape = shape)
+            .clickable(onClick = onClick)
+            .semantics {
+                contentDescription = "Theme palette ${option.displayName}"
+                this.selected = selected
+            }
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PaletteSwatch(color = option.primary, label = "${option.displayName} primary")
+            PaletteSwatch(color = option.secondary, label = "${option.displayName} secondary")
+        }
+        Text(
+            text = option.displayName,
+            style = MaterialTheme.typography.titleSmall,
+        )
+    }
+}
+
+@Composable
+private fun PaletteSwatch(
+    color: androidx.compose.ui.graphics.Color,
+    label: String,
+) {
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .clip(CircleShape)
+            .background(color)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                shape = CircleShape,
+            )
+            .semantics { contentDescription = label },
+    )
 }
 
 private fun Float.format1dp(): String {

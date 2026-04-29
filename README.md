@@ -59,12 +59,12 @@ No reflection is used. Every composable is discovered and registered at compile 
 Composeum publishes three artifacts:
 
 ```
-tech.lucam.composeum:preview-annotation:0.1.0
-tech.lucam.composeum:preview-runtime:0.1.0
-tech.lucam.composeum:preview-ksp:0.1.0
+tech.lucam.composeum:preview-annotation:0.2.0
+tech.lucam.composeum:preview-runtime:0.2.0
+tech.lucam.composeum:preview-ksp:0.2.0
 ```
 
-> Current version: `0.1.0`
+> Current version: `0.2.0`
 
 Recommended usage:
 
@@ -122,8 +122,8 @@ plugins {
 }
 
 dependencies {
-    implementation("tech.lucam.composeum:preview-annotation:0.1.0")
-    ksp("tech.lucam.composeum:preview-ksp:0.1.0")
+    implementation("tech.lucam.composeum:preview-annotation:0.2.0")
+    ksp("tech.lucam.composeum:preview-ksp:0.2.0")
 }
 ```
 
@@ -134,7 +134,7 @@ No KSP arguments are required for the default path. Composeum will generate
 
 ```kotlin
 dependencies {
-    implementation("tech.lucam.composeum:preview-runtime:0.1.0")
+    implementation("tech.lucam.composeum:preview-runtime:0.2.0")
 }
 ```
 
@@ -274,8 +274,8 @@ plugins {
 }
 
 dependencies {
-    implementation("tech.lucam.composeum:preview-annotation:0.1.0")
-    ksp("tech.lucam.composeum:preview-ksp:0.1.0")
+    implementation("tech.lucam.composeum:preview-annotation:0.2.0")
+    ksp("tech.lucam.composeum:preview-ksp:0.2.0")
 }
 
 ksp {
@@ -879,8 +879,8 @@ plugins {
 }
 
 dependencies {
-    implementation("tech.lucam.composeum:preview-annotation:0.1.0")
-    ksp("tech.lucam.composeum:preview-ksp:0.1.0")
+    implementation("tech.lucam.composeum:preview-annotation:0.2.0")
+    ksp("tech.lucam.composeum:preview-ksp:0.2.0")
 }
 
 ksp {
