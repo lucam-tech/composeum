@@ -285,6 +285,7 @@ private fun ResolvedSettings.copy(
     showTags: Boolean = this.showTags,
 ) = ResolvedSettings(
     isDark = this.isDark,
+    theme = this.theme,
     fontScale = this.fontScale,
     uiScale = this.uiScale,
     thumbnailColumns = thumbnailColumns,

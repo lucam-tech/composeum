@@ -1,5 +1,14 @@
 package tech.lucam.composeum.runtime
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import tech.lucam.composeum.annotation.PreviewGroup
 import tech.lucam.composeum.annotation.SimplePreviewTag
 import org.junit.Assert.assertEquals
@@ -234,5 +243,166 @@ class RegistryBuilderTest {
         val initialState = registry.entries[0].paramDefaults.toInitialState()
         assertEquals("Hi", initialState["title"])
         assertEquals(true, initialState["active"])
+    }
+
+    // --- New predefined param types ---
+
+    @Test
+    fun `alignment param default is stored in paramDefaults`() {
+        val registry = buildRegistry {
+            preview(
+                name = "T", group = group,
+                params = previewParams { alignment(key = "align", default = Alignment.TopStart) },
+            ) { _ -> }
+        }
+        assertEquals(Alignment.TopStart, registry.entries[0].paramDefaults.defaults["align"])
+    }
+
+    @Test
+    fun `alignmentHorizontal param default is stored in paramDefaults`() {
+        val registry = buildRegistry {
+            preview(
+                name = "T", group = group,
+                params = previewParams { alignmentHorizontal(key = "h", default = Alignment.End) },
+            ) { _ -> }
+        }
+        assertEquals(Alignment.End, registry.entries[0].paramDefaults.defaults["h"])
+    }
+
+    @Test
+    fun `alignmentVertical param default is stored in paramDefaults`() {
+        val registry = buildRegistry {
+            preview(
+                name = "T", group = group,
+                params = previewParams { alignmentVertical(key = "v", default = Alignment.Bottom) },
+            ) { _ -> }
+        }
+        assertEquals(Alignment.Bottom, registry.entries[0].paramDefaults.defaults["v"])
+    }
+
+    @Test
+    fun `arrangementHorizontal param default is stored in paramDefaults`() {
+        val registry = buildRegistry {
+            preview(
+                name = "T", group = group,
+                params = previewParams { arrangementHorizontal(key = "arr", default = Arrangement.End) },
+            ) { _ -> }
+        }
+        assertEquals(Arrangement.End, registry.entries[0].paramDefaults.defaults["arr"])
+    }
+
+    @Test
+    fun `arrangementVertical param default is stored in paramDefaults`() {
+        val registry = buildRegistry {
+            preview(
+                name = "T", group = group,
+                params = previewParams { arrangementVertical(key = "arr", default = Arrangement.Bottom) },
+            ) { _ -> }
+        }
+        assertEquals(Arrangement.Bottom, registry.entries[0].paramDefaults.defaults["arr"])
+    }
+
+    @Test
+    fun `contentSlot param default index is reflected in stored ContentSlotValue`() {
+        val options: List<Pair<String, @Composable () -> Unit>> = listOf("None" to {}, "Icon" to {})
+        val registry = buildRegistry {
+            preview(
+                name = "T", group = group,
+                params = previewParams { contentSlot(key = "slot", options = options, defaultIndex = 1) },
+            ) { _ -> }
+        }
+        val stored = registry.entries[0].paramDefaults.defaults["slot"] as? ContentSlotValue
+        assertNotNull(stored)
+        assertEquals(1, stored!!.selectedIndex)
+        assertEquals("Icon", stored.selectedName)
+    }
+
+    @Test
+    fun `contentSlot requires non-empty options`() {
+        val empty: List<Pair<String, @Composable () -> Unit>> = emptyList()
+        try {
+            previewParams { contentSlot(key = "slot", options = empty) }
+            assert(false) { "Expected IllegalArgumentException" }
+        } catch (e: IllegalArgumentException) {
+            assertTrue(e.message!!.contains("slot"))
+        }
+    }
+
+    @Test
+    fun `fontWeight param default is stored in paramDefaults`() {
+        val registry = buildRegistry {
+            preview(
+                name = "T", group = group,
+                params = previewParams { fontWeight(key = "fw", default = FontWeight.Bold) },
+            ) { _ -> }
+        }
+        assertEquals(FontWeight.Bold, registry.entries[0].paramDefaults.defaults["fw"])
+    }
+
+    @Test
+    fun `textAlign param default is stored in paramDefaults`() {
+        val registry = buildRegistry {
+            preview(
+                name = "T", group = group,
+                params = previewParams { textAlign(key = "ta", default = TextAlign.Center) },
+            ) { _ -> }
+        }
+        assertEquals(TextAlign.Center, registry.entries[0].paramDefaults.defaults["ta"])
+    }
+
+    @Test
+    fun `shape param default is stored as Dp in paramDefaults`() {
+        val registry = buildRegistry {
+            preview(
+                name = "T", group = group,
+                params = previewParams { shape(key = "r", default = 12.dp) },
+            ) { _ -> }
+        }
+        assertEquals(12.dp, registry.entries[0].paramDefaults.defaults["r"])
+    }
+
+    @Test
+    fun `contentScale param default is stored in paramDefaults`() {
+        val registry = buildRegistry {
+            preview(
+                name = "T", group = group,
+                params = previewParams { contentScale(key = "cs", default = ContentScale.Crop) },
+            ) { _ -> }
+        }
+        assertEquals(ContentScale.Crop, registry.entries[0].paramDefaults.defaults["cs"])
+    }
+
+    @Test
+    fun `layoutDirection param default is stored in paramDefaults`() {
+        val registry = buildRegistry {
+            preview(
+                name = "T", group = group,
+                params = previewParams { layoutDirection(key = "ld", default = LayoutDirection.Rtl) },
+            ) { _ -> }
+        }
+        assertEquals(LayoutDirection.Rtl, registry.entries[0].paramDefaults.defaults["ld"])
+    }
+
+    @Test
+    fun `paddingValues param default is stored in paramDefaults`() {
+        val default = PreviewPaddingValues(top = 8.dp, bottom = 16.dp, start = 4.dp, end = 4.dp)
+        val registry = buildRegistry {
+            preview(
+                name = "T", group = group,
+                params = previewParams { paddingValues(key = "pad", default = default) },
+            ) { _ -> }
+        }
+        assertEquals(default, registry.entries[0].paramDefaults.defaults["pad"])
+    }
+
+    @Test
+    fun `fontFamily param default is stored in paramDefaults`() {
+        val registry = buildRegistry {
+            preview(
+                name = "T", group = group,
+                params = previewParams { fontFamily(key = "ff", default = FontFamily.Serif) },
+            ) { _ -> }
+        }
+        assertEquals(FontFamily.Serif, registry.entries[0].paramDefaults.defaults["ff"])
     }
 }

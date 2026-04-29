@@ -44,7 +44,6 @@ import tech.lucam.composeum.runtime.PreviewRegistry
 import tech.lucam.composeum.runtime.config.PreviewWrapper
 import tech.lucam.composeum.runtime.config.GroupExpansionMode
 import tech.lucam.composeum.runtime.config.PreviewConfig
-import tech.lucam.composeum.runtime.config.PreviewWrapper
 import tech.lucam.composeum.runtime.ui.component.LocalResolvedSettings
 import tech.lucam.composeum.runtime.ui.component.PreviewThumbnailCard
 

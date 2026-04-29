@@ -1,8 +1,15 @@
 package tech.lucam.composeum.runtime
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -14,12 +21,16 @@ import tech.lucam.composeum.runtime.config.PreviewConfigBuilder
 import tech.lucam.composeum.runtime.config.PreviewOverrideBuilder
 import tech.lucam.composeum.runtime.config.mergedWith
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewParamState
+import tech.lucam.composeum.runtime.ui.widgets.PreviewAlignmentField
 import tech.lucam.composeum.runtime.ui.widgets.PreviewBooleanField
 import tech.lucam.composeum.runtime.ui.widgets.PreviewColorField
+import tech.lucam.composeum.runtime.ui.widgets.PreviewContentSlotField
 import tech.lucam.composeum.runtime.ui.widgets.PreviewDpField
 import tech.lucam.composeum.runtime.ui.widgets.PreviewDropdownField
 import tech.lucam.composeum.runtime.ui.widgets.PreviewFloatField
 import tech.lucam.composeum.runtime.ui.widgets.PreviewIntField
+import tech.lucam.composeum.runtime.ui.widgets.PreviewOptionChipsField
+import tech.lucam.composeum.runtime.ui.widgets.PreviewPaddingValuesField
 import tech.lucam.composeum.runtime.ui.widgets.PreviewStringField
 import tech.lucam.composeum.runtime.ui.widgets.PreviewTextUnitField
 
@@ -188,8 +199,9 @@ class RegistryBuilder {
         val localConfig = configBuilder.build()
         val mergedConfig = includedConfigs.fold(PreviewConfig()) { acc, next -> acc.mergedWith(next) }
             .mergedWith(localConfig)
+        val builtEntries = entries.toList().distinctBy { it.key }
         return object : PreviewRegistry {
-            override val entries: List<PreviewEntry> = entries.toList().distinctBy { it.key }
+            override val entries: List<PreviewEntry> = builtEntries
             override val config: PreviewConfig = mergedConfig
         }
     }
@@ -432,6 +444,349 @@ class PreviewParamsDsl {
         defs += ParamDef(key, default) { state, onState ->
             val value: String = state[key] ?: default
             PreviewDropdownField(
+                label = label,
+                value = value,
+                options = options,
+                description = description,
+                onValue = { onState(state.put(key, it)) },
+            )
+        }
+    }
+
+    /** Registers a 2D [Alignment] parameter rendered as a 3×3 grid picker. */
+    fun alignment(
+        key: String,
+        default: Alignment = Alignment.Center,
+        label: String = key,
+        description: String = "",
+    ) {
+        defs += ParamDef(key, default) { state, onState ->
+            val value: Alignment = state[key] ?: default
+            PreviewAlignmentField(
+                label = label,
+                value = value,
+                description = description,
+                onValue = { onState(state.put(key, it)) },
+            )
+        }
+    }
+
+    /** Registers an [Alignment.Horizontal] parameter rendered as an option chip row. */
+    fun alignmentHorizontal(
+        key: String,
+        default: Alignment.Horizontal = Alignment.Start,
+        label: String = key,
+        description: String = "",
+    ) {
+        val options = listOf(
+            "Start" to Alignment.Start,
+            "Center" to Alignment.CenterHorizontally,
+            "End" to Alignment.End,
+        )
+        defs += ParamDef(key, default) { state, onState ->
+            val value: Alignment.Horizontal = state[key] ?: default
+            PreviewOptionChipsField(
+                label = label,
+                value = value,
+                options = options,
+                description = description,
+                onValue = { onState(state.put(key, it)) },
+            )
+        }
+    }
+
+    /** Registers an [Alignment.Vertical] parameter rendered as an option chip row. */
+    fun alignmentVertical(
+        key: String,
+        default: Alignment.Vertical = Alignment.Top,
+        label: String = key,
+        description: String = "",
+    ) {
+        val options = listOf(
+            "Top" to Alignment.Top,
+            "Center" to Alignment.CenterVertically,
+            "Bottom" to Alignment.Bottom,
+        )
+        defs += ParamDef(key, default) { state, onState ->
+            val value: Alignment.Vertical = state[key] ?: default
+            PreviewOptionChipsField(
+                label = label,
+                value = value,
+                options = options,
+                description = description,
+                onValue = { onState(state.put(key, it)) },
+            )
+        }
+    }
+
+    /** Registers an [Arrangement.Horizontal] parameter rendered as an option chip row. */
+    fun arrangementHorizontal(
+        key: String,
+        default: Arrangement.Horizontal = Arrangement.Start,
+        label: String = key,
+        description: String = "",
+    ) {
+        val options = listOf(
+            "Start" to Arrangement.Start,
+            "Center" to Arrangement.Center,
+            "End" to Arrangement.End,
+            "Space Between" to Arrangement.SpaceBetween,
+            "Space Around" to Arrangement.SpaceAround,
+            "Space Evenly" to Arrangement.SpaceEvenly,
+        )
+        defs += ParamDef(key, default) { state, onState ->
+            val value: Arrangement.Horizontal = state[key] ?: default
+            PreviewOptionChipsField(
+                label = label,
+                value = value,
+                options = options,
+                description = description,
+                onValue = { onState(state.put(key, it)) },
+            )
+        }
+    }
+
+    /** Registers an [Arrangement.Vertical] parameter rendered as an option chip row. */
+    fun arrangementVertical(
+        key: String,
+        default: Arrangement.Vertical = Arrangement.Top,
+        label: String = key,
+        description: String = "",
+    ) {
+        val options = listOf(
+            "Top" to Arrangement.Top,
+            "Center" to Arrangement.Center,
+            "Bottom" to Arrangement.Bottom,
+            "Space Between" to Arrangement.SpaceBetween,
+            "Space Around" to Arrangement.SpaceAround,
+            "Space Evenly" to Arrangement.SpaceEvenly,
+        )
+        defs += ParamDef(key, default) { state, onState ->
+            val value: Arrangement.Vertical = state[key] ?: default
+            PreviewOptionChipsField(
+                label = label,
+                value = value,
+                options = options,
+                description = description,
+                onValue = { onState(state.put(key, it)) },
+            )
+        }
+    }
+
+    /**
+     * Registers a content slot parameter.
+     *
+     * [options] is a list of (display name, composable) pairs. The selected composable
+     * is retrieved via [ContentSlotValue.content] on the value stored in [PreviewParamState].
+     *
+     * Content slot values are in-memory only and are never persisted across sessions.
+     *
+     * @param defaultIndex Index into [options] used as the initial selection; defaults to 0.
+     */
+    fun contentSlot(
+        key: String,
+        options: List<Pair<String, @Composable () -> Unit>>,
+        defaultIndex: Int = 0,
+        label: String = key,
+        description: String = "",
+    ) {
+        require(options.isNotEmpty()) { "contentSlot '$key' must have at least one option" }
+        val safeDefault = defaultIndex.coerceIn(options.indices)
+        val default = ContentSlotValue(options, safeDefault)
+        defs += ParamDef(key, default) { state, onState ->
+            val value: ContentSlotValue = state[key] ?: default
+            PreviewContentSlotField(
+                label = label,
+                optionNames = value.optionNames,
+                selectedIndex = value.selectedIndex,
+                description = description,
+                onIndex = { onState(state.put(key, ContentSlotValue(options, it))) },
+            )
+        }
+    }
+
+    /** Registers a [FontWeight] parameter rendered as an option chip row. */
+    fun fontWeight(
+        key: String,
+        default: FontWeight = FontWeight.Normal,
+        label: String = key,
+        description: String = "",
+    ) {
+        val options = listOf(
+            "Thin" to FontWeight.Thin,
+            "ExtraLight" to FontWeight.ExtraLight,
+            "Light" to FontWeight.Light,
+            "Normal" to FontWeight.Normal,
+            "Medium" to FontWeight.Medium,
+            "SemiBold" to FontWeight.SemiBold,
+            "Bold" to FontWeight.Bold,
+            "ExtraBold" to FontWeight.ExtraBold,
+            "Black" to FontWeight.Black,
+        )
+        defs += ParamDef(key, default) { state, onState ->
+            val value: FontWeight = state[key] ?: default
+            PreviewOptionChipsField(
+                label = label,
+                value = value,
+                options = options,
+                description = description,
+                onValue = { onState(state.put(key, it)) },
+            )
+        }
+    }
+
+    /** Registers a [TextAlign] parameter rendered as an option chip row. */
+    fun textAlign(
+        key: String,
+        default: TextAlign = TextAlign.Start,
+        label: String = key,
+        description: String = "",
+    ) {
+        val options = listOf(
+            "Start" to TextAlign.Start,
+            "Center" to TextAlign.Center,
+            "End" to TextAlign.End,
+            "Justify" to TextAlign.Justify,
+        )
+        defs += ParamDef(key, default) { state, onState ->
+            val value: TextAlign = state[key] ?: default
+            PreviewOptionChipsField(
+                label = label,
+                value = value,
+                options = options,
+                description = description,
+                onValue = { onState(state.put(key, it)) },
+            )
+        }
+    }
+
+    /**
+     * Registers a corner-radius slider parameter for shape previewing.
+     *
+     * The state value under [key] is a [Dp] corner radius. Wrap it in
+     * [RoundedCornerShape] to obtain a [Shape]:
+     * ```
+     * val radius: Dp = state["shape"] ?: 8.dp
+     * Card(shape = RoundedCornerShape(radius)) { … }
+     * ```
+     *
+     * @param default Corner radius used as the initial value; defaults to 8.dp.
+     * @param range   Inclusive slider range in raw float dp; defaults to 0..64.
+     */
+    fun shape(
+        key: String,
+        default: Dp = 8.dp,
+        label: String = key,
+        range: ClosedFloatingPointRange<Float> = 0f..64f,
+        description: String = "",
+    ) {
+        defs += ParamDef(key, default) { state, onState ->
+            val value: Dp = state[key] ?: default
+            PreviewDpField(
+                label = label,
+                value = value,
+                range = range,
+                description = description,
+                onValue = { onState(state.put(key, it)) },
+            )
+        }
+    }
+
+    /** Registers a [ContentScale] parameter rendered as an option chip row. */
+    fun contentScale(
+        key: String,
+        default: ContentScale = ContentScale.Fit,
+        label: String = key,
+        description: String = "",
+    ) {
+        val options = listOf(
+            "Fit" to ContentScale.Fit,
+            "Crop" to ContentScale.Crop,
+            "Fill Bounds" to ContentScale.FillBounds,
+            "Fill Width" to ContentScale.FillWidth,
+            "Fill Height" to ContentScale.FillHeight,
+            "Inside" to ContentScale.Inside,
+            "None" to ContentScale.None,
+        )
+        defs += ParamDef(key, default) { state, onState ->
+            val value: ContentScale = state[key] ?: default
+            PreviewOptionChipsField(
+                label = label,
+                value = value,
+                options = options,
+                description = description,
+                onValue = { onState(state.put(key, it)) },
+            )
+        }
+    }
+
+    /** Registers a [LayoutDirection] parameter rendered as an option chip row (Ltr / Rtl). */
+    fun layoutDirection(
+        key: String,
+        default: LayoutDirection = LayoutDirection.Ltr,
+        label: String = key,
+        description: String = "",
+    ) {
+        val options = listOf(
+            "LTR" to LayoutDirection.Ltr,
+            "RTL" to LayoutDirection.Rtl,
+        )
+        defs += ParamDef(key, default) { state, onState ->
+            val value: LayoutDirection = state[key] ?: default
+            PreviewOptionChipsField(
+                label = label,
+                value = value,
+                options = options,
+                description = description,
+                onValue = { onState(state.put(key, it)) },
+            )
+        }
+    }
+
+    /**
+     * Registers a [PreviewPaddingValues] parameter rendered as four [Dp] sliders.
+     *
+     * Retrieve the value via `state["key"] as PreviewPaddingValues` and call
+     * [PreviewPaddingValues.toPaddingValues] to use it in a composable.
+     *
+     * @param range Inclusive slider range in raw float dp for each side; defaults to 0..128.
+     */
+    fun paddingValues(
+        key: String,
+        default: PreviewPaddingValues = PreviewPaddingValues(),
+        label: String = key,
+        range: ClosedFloatingPointRange<Float> = 0f..128f,
+        description: String = "",
+    ) {
+        defs += ParamDef(key, default) { state, onState ->
+            val value: PreviewPaddingValues = state[key] ?: default
+            PreviewPaddingValuesField(
+                label = label,
+                value = value,
+                range = range,
+                description = description,
+                onValue = { onState(state.put(key, it)) },
+            )
+        }
+    }
+
+    /** Registers a [FontFamily] parameter rendered as an option chip row. */
+    fun fontFamily(
+        key: String,
+        default: FontFamily = FontFamily.Default,
+        label: String = key,
+        description: String = "",
+    ) {
+        val options = listOf(
+            "Default" to FontFamily.Default,
+            "Serif" to FontFamily.Serif,
+            "Sans-Serif" to FontFamily.SansSerif,
+            "Monospace" to FontFamily.Monospace,
+            "Cursive" to FontFamily.Cursive,
+        )
+        defs += ParamDef(key, default) { state, onState ->
+            val value: FontFamily = state[key] ?: default
+            PreviewOptionChipsField(
                 label = label,
                 value = value,
                 options = options,
