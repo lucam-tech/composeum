@@ -90,6 +90,7 @@ class PreviewConfigBuilder {
     private var groupWrapper: GroupWrapper? = null
     private var previewWrapper: PreviewWrapper? = null
     private val groupOverrides = mutableMapOf<KClass<out PreviewGroup>, GroupConfig>()
+    private val previewOverrides = mutableMapOf<String, PreviewOverride>()
     private val topBarActionsList = mutableListOf<TopBarAction>()
     private val customTypeFieldsMap = mutableMapOf<String, CustomParamField>()
     private val themeOptionsList = mutableListOf<ThemeOption>()
@@ -112,6 +113,14 @@ class PreviewConfigBuilder {
     /** Configures per-group overrides. */
     fun groups(block: GroupOverrideBuilder.() -> Unit) {
         GroupOverrideBuilder(groupOverrides).apply(block)
+    }
+
+    /** Registers a per-preview override by registry key. */
+    fun preview(key: String, block: PreviewOverrideBuilder.() -> Unit) {
+        val override = PreviewOverrideBuilder().apply(block).build()
+        if (override != PreviewOverride()) {
+            previewOverrides[key] = override
+        }
     }
 
     /**
@@ -191,6 +200,7 @@ class PreviewConfigBuilder {
         groupWrapper = groupWrapper,
         previewWrapper = previewWrapper,
         groupOverrides = groupOverrides,
+        previewOverrides = previewOverrides,
         localeOptions = localeOptions,
         themeOptions = themeOptions + themeOptionsList,
         customTypeFields = customTypeFieldsMap.toMap(),
@@ -202,7 +212,7 @@ class GroupOverrideBuilder(
     private val overrides: MutableMap<KClass<out PreviewGroup>, GroupConfig>,
 ) {
     /** Registers a [GroupConfig] override for the given group class. */
-    fun <G : PreviewGroup> group(groupClass: KClass<G>, block: GroupConfigBuilder.() -> Unit) {
+    fun group(groupClass: KClass<out PreviewGroup>, block: GroupConfigBuilder.() -> Unit) {
         overrides[groupClass] = GroupConfigBuilder().apply(block).build()
     }
 
@@ -239,5 +249,21 @@ class GroupConfigBuilder {
         expansionMode = expansionMode,
         groupWrapper = groupWrapper,
         previewWrapper = previewWrapper,
+    )
+}
+
+/** Builder for [PreviewOverride]. Use inside [PreviewConfigBuilder.preview]. */
+class PreviewOverrideBuilder {
+    var showParamPanel: Boolean? = null
+
+    private var previewWrapper: PreviewWrapper? = null
+
+    fun previewWrapper(block: PreviewWrapper) {
+        previewWrapper = block
+    }
+
+    fun build(): PreviewOverride = PreviewOverride(
+        previewWrapper = previewWrapper,
+        showParamPanel = showParamPanel,
     )
 }

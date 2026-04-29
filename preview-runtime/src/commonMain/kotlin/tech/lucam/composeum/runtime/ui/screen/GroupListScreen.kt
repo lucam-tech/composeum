@@ -41,6 +41,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import tech.lucam.composeum.runtime.PreviewEntry
 import tech.lucam.composeum.runtime.PreviewRegistry
+import tech.lucam.composeum.runtime.config.PreviewWrapper
 import tech.lucam.composeum.runtime.config.GroupExpansionMode
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.PreviewWrapper
@@ -84,7 +85,7 @@ fun GroupListScreen(
 
     // All unique tags from the registry, sorted alphabetically.
     val allTags = remember(registry.entries) {
-        registry.entries.flatMap { it.tags }.distinct().sorted()
+        registry.entries.flatMap { entry -> entry.tags.map { it.title } }.distinct().sorted()
     }
     var selectedTags by remember { mutableStateOf(emptySet<String>()) }
 
@@ -312,11 +313,10 @@ private fun LazyListScope.entryGridItem(
         val groupClass = entries.firstOrNull()?.group?.let { it::class }
         val groupConfig = groupClass?.let { config.groupOverrides[it] }
         val columns = (groupConfig?.thumbnailColumns ?: settings.thumbnailColumns).coerceAtLeast(1)
-        val previewWrapper = groupConfig?.previewWrapper ?: config.previewWrapper
         EntryGrid(
             entries = entries,
             columns = columns,
-            previewWrapper = previewWrapper,
+            previewWrapperFor = { entry -> resolvePreviewWrapper(entry, config) },
             showTags = settings.showTags,
             depth = depth,
             onEntrySelected = onEntrySelected,
@@ -328,7 +328,7 @@ private fun LazyListScope.entryGridItem(
 private fun EntryGrid(
     entries: List<PreviewEntry>,
     columns: Int,
-    previewWrapper: PreviewWrapper?,
+    previewWrapperFor: (PreviewEntry) -> PreviewWrapper?,
     showTags: Boolean,
     depth: Int,
     onEntrySelected: (String) -> Unit,
@@ -347,7 +347,7 @@ private fun EntryGrid(
                 rowEntries.forEach { entry ->
                     PreviewThumbnailCard(
                         entry = entry,
-                        previewWrapper = previewWrapper,
+                        previewWrapper = previewWrapperFor(entry),
                         showTags = showTags,
                         onClick = { onEntrySelected(entry.key) },
                         modifier = Modifier.weight(1f),
@@ -360,6 +360,15 @@ private fun EntryGrid(
             }
         }
     }
+}
+
+private fun resolvePreviewWrapper(
+    entry: PreviewEntry,
+    config: PreviewConfig,
+): PreviewWrapper? {
+    val previewOverride = config.previewOverrides[entry.key]
+    val groupConfig = config.groupOverrides[entry.group::class]
+    return previewOverride?.previewWrapper ?: groupConfig?.previewWrapper ?: config.previewWrapper
 }
 
 // ── Item composables ──────────────────────────────────────────────────────────
@@ -466,11 +475,11 @@ private fun filterNodes(
     if (q.isEmpty() && selectedTags.isEmpty()) return nodes
 
     fun PreviewEntry.passes(): Boolean {
-        if (selectedTags.isNotEmpty() && tags.none { it in selectedTags }) return false
+        if (selectedTags.isNotEmpty() && tags.none { it.title in selectedTags }) return false
         if (q.isNotEmpty()) {
             return name.lowercase().contains(q) ||
                 description.lowercase().contains(q) ||
-                tags.any { it.lowercase().contains(q) }
+                tags.any { it.title.lowercase().contains(q) }
         }
         return true
     }

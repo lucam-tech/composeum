@@ -120,7 +120,7 @@ internal object RegistryGenerator {
                 add("tags = listOf(")
                 model.tags.forEachIndexed { i, tag ->
                     if (i > 0) add(", ")
-                    add("%S", tag)
+                    add("%L", tag)
                 }
                 add("),\n")
             }

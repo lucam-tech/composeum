@@ -56,8 +56,6 @@ fun PreviewListScreen(
 
     val thumbnailColumns = groupConfig?.thumbnailColumns ?: settings.thumbnailColumns
     val effectiveGroupWrapper = groupConfig?.groupWrapper ?: config.groupWrapper
-    val effectivePreviewWrapper: PreviewWrapper? = groupConfig?.previewWrapper ?: config.previewWrapper
-
     val gridContent: @Composable () -> Unit = {
         if (entries.isEmpty()) {
             Box(
@@ -82,7 +80,7 @@ fun PreviewListScreen(
                 items(entries, key = { it.key }) { entry ->
                     PreviewThumbnailCard(
                         entry = entry,
-                        previewWrapper = effectivePreviewWrapper,
+                        previewWrapper = resolvePreviewWrapper(entry, config),
                         showTags = settings.showTags,
                         onClick = { onEntrySelected(entry.key) },
                     )
@@ -98,4 +96,13 @@ fun PreviewListScreen(
             gridContent()
         }
     }
+}
+
+private fun resolvePreviewWrapper(
+    entry: tech.lucam.composeum.runtime.PreviewEntry,
+    config: PreviewConfig,
+): PreviewWrapper? {
+    val previewOverride = config.previewOverrides[entry.key]
+    val groupConfig = config.groupOverrides[entry.group::class]
+    return previewOverride?.previewWrapper ?: groupConfig?.previewWrapper ?: config.previewWrapper
 }

@@ -7,6 +7,12 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.annotation.PreviewTag
+import tech.lucam.composeum.runtime.config.GroupConfigBuilder
+import tech.lucam.composeum.runtime.config.PreviewConfig
+import tech.lucam.composeum.runtime.config.PreviewConfigBuilder
+import tech.lucam.composeum.runtime.config.PreviewOverrideBuilder
+import tech.lucam.composeum.runtime.config.mergedWith
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewParamState
 import tech.lucam.composeum.runtime.ui.widgets.PreviewBooleanField
 import tech.lucam.composeum.runtime.ui.widgets.PreviewColorField
@@ -24,27 +30,11 @@ annotation class PreviewRegistryDsl
 /**
  * Builds a [PreviewRegistry] using the DSL.
  *
- * Example:
- * ```kotlin
- * val myRegistry = buildRegistry {
- *     preview(name = "Greeting", group = MyGroup.Components) {
- *         Text("Hello, World!")
- *     }
- *
- *     preview(
- *         name = "Button",
- *         group = MyGroup.Components,
- *         params = previewParams {
- *             string(key = "label", default = "Click me", label = "Button Label")
- *             boolean(key = "enabled", default = true, label = "Enabled")
- *         },
- *     ) { state ->
- *         Button(enabled = state["enabled"] ?: true, onClick = {}) {
- *             Text(state["label"] ?: "Click me")
- *         }
- *     }
- * }
- * ```
+ * Supports:
+ * - flat preview registration
+ * - nested `group { ... }` blocks that set the default group
+ * - including other [PreviewRegistry] instances
+ * - inline registry-local [PreviewConfig] and group/preview overrides
  */
 fun buildRegistry(block: RegistryBuilder.() -> Unit): PreviewRegistry =
     RegistryBuilder().apply(block).build()
@@ -58,79 +48,223 @@ fun buildRegistry(block: RegistryBuilder.() -> Unit): PreviewRegistry =
 fun previewParams(block: PreviewParamsDsl.() -> Unit): PreviewParamsDsl =
     PreviewParamsDsl().apply(block)
 
-/** Builder used inside [buildRegistry]. Call [preview] one or more times to register entries. */
+/** Builder used inside [buildRegistry]. */
 @PreviewRegistryDsl
 class RegistryBuilder {
 
-    private val _entries = mutableListOf<PreviewEntry>()
+    private val entries = mutableListOf<PreviewEntry>()
+    private val includedConfigs = mutableListOf<PreviewConfig>()
+    private val configBuilder = PreviewConfigBuilder()
+
+    /** Applies registry-local browser configuration. */
+    fun config(block: PreviewConfigBuilder.() -> Unit) {
+        configBuilder.apply(block)
+    }
+
+    /** Configures per-group overrides for this registry. */
+    fun groups(block: tech.lucam.composeum.runtime.config.GroupOverrideBuilder.() -> Unit) {
+        configBuilder.groups(block)
+    }
+
+    /** Registers a per-preview override by preview key. */
+    fun previewOverride(key: String, block: PreviewOverrideBuilder.() -> Unit) {
+        configBuilder.preview(key, block)
+    }
+
+    /** Includes another registry's entries and configuration. */
+    fun include(registry: PreviewRegistry) {
+        entries += registry.entries
+        includedConfigs += registry.config
+    }
+
+    /** Alias for [include]. */
+    fun registry(registry: PreviewRegistry) {
+        include(registry)
+    }
+
+    /** Opens a nested scope where [group] becomes the default for contained previews. */
+    fun group(
+        group: PreviewGroup,
+        configure: GroupConfigBuilder.() -> Unit = {},
+        block: GroupScope.() -> Unit,
+    ) {
+        val builder = GroupConfigBuilder().apply(configure).build()
+        if (builder != tech.lucam.composeum.runtime.config.GroupConfig()) {
+            configBuilder.groups {
+                group(group::class) { 
+                    thumbnailColumns = builder.thumbnailColumns
+                    expansionMode = builder.expansionMode
+                    builder.groupWrapper?.let { groupWrapper(it) }
+                    builder.previewWrapper?.let { previewWrapper(it) }
+                }
+            }
+        }
+        GroupScope(this, group).apply(block)
+    }
 
     /**
      * Registers a simple preview with no interactive parameters.
      *
-     * @param name Display name shown in the browser list.
-     * @param group Group this preview belongs to.
-     * @param description Optional subtitle shown on the detail screen.
-     * @param tags Searchable tags.
-     * @param key Unique deduplication key. Defaults to `"${group.name}/$name"`.
-     * @param composable The composable to render.
+     * Flat form retained for backward compatibility.
      */
     fun preview(
         name: String,
         group: PreviewGroup,
         description: String = "",
-        tags: List<String> = emptyList(),
-        key: String = "${group.name}/$name",
+        tags: List<PreviewTag> = emptyList(),
+        key: String = defaultKey(group, name),
+        configure: PreviewOverrideBuilder.() -> Unit = {},
         composable: @Composable () -> Unit,
     ) {
-        _entries += PreviewEntry(
-            key = key,
-            name = name,
+        registerPreview(
             group = group,
+            name = name,
             description = description,
             tags = tags,
-            composable = composable,
+            key = key,
             paramForm = null,
             paramDefaults = PreviewParamDefaults(emptyMap()),
+            configure = configure,
+            composable = composable,
         )
     }
 
     /**
      * Registers a parameterized preview whose render lambda receives the live [PreviewParamState].
      *
-     * @param name Display name shown in the browser list.
-     * @param group Group this preview belongs to.
-     * @param params Param definitions built with [previewParams].
-     * @param description Optional subtitle shown on the detail screen.
-     * @param tags Searchable tags.
-     * @param key Unique deduplication key. Defaults to `"${group.name}/$name"`.
-     * @param composable Render lambda receiving the current [PreviewParamState].
+     * Flat form retained for backward compatibility.
      */
     fun preview(
         name: String,
         group: PreviewGroup,
         params: PreviewParamsDsl,
         description: String = "",
-        tags: List<String> = emptyList(),
-        key: String = "${group.name}/$name",
+        tags: List<PreviewTag> = emptyList(),
+        key: String = defaultKey(group, name),
+        configure: PreviewOverrideBuilder.() -> Unit = {},
         composable: @Composable (PreviewParamState) -> Unit,
     ) {
-        _entries += PreviewEntry(
+        registerPreview(
+            group = group,
+            name = name,
+            description = description,
+            tags = tags,
+            key = key,
+            paramForm = params.buildParamForm(),
+            paramDefaults = params.buildDefaults(),
+            configure = configure,
+            composable = {
+                val state = LocalPreviewParamState.current
+                composable(state)
+            },
+        )
+    }
+
+    internal fun registerPreview(
+        group: PreviewGroup,
+        name: String,
+        description: String,
+        tags: List<PreviewTag>,
+        key: String,
+        paramForm: (@Composable (PreviewParamState, (PreviewParamState) -> Unit) -> Unit)?,
+        paramDefaults: PreviewParamDefaults,
+        configure: PreviewOverrideBuilder.() -> Unit,
+        composable: @Composable () -> Unit,
+    ) {
+        entries += PreviewEntry(
             key = key,
             name = name,
             group = group,
             description = description,
             tags = tags,
-            composable = {
-                val state = LocalPreviewParamState.current
-                composable(state)
-            },
-            paramForm = params.buildParamForm(),
-            paramDefaults = params.buildDefaults(),
+            composable = composable,
+            paramForm = paramForm,
+            paramDefaults = paramDefaults,
+        )
+        configBuilder.preview(key, configure)
+    }
+
+    internal fun build(): PreviewRegistry {
+        val localConfig = configBuilder.build()
+        val mergedConfig = includedConfigs.fold(PreviewConfig()) { acc, next -> acc.mergedWith(next) }
+            .mergedWith(localConfig)
+        return object : PreviewRegistry {
+            override val entries: List<PreviewEntry> = entries.toList().distinctBy { it.key }
+            override val config: PreviewConfig = mergedConfig
+        }
+    }
+
+    internal fun defaultKey(group: PreviewGroup, name: String): String = "${group.name}/$name"
+}
+
+/** Nested DSL scope with a default [PreviewGroup]. */
+@PreviewRegistryDsl
+class GroupScope internal constructor(
+    private val parent: RegistryBuilder,
+    private val defaultGroup: PreviewGroup,
+) {
+    fun config(block: PreviewConfigBuilder.() -> Unit) {
+        parent.config(block)
+    }
+
+    fun previewOverride(key: String, block: PreviewOverrideBuilder.() -> Unit) {
+        parent.previewOverride(key, block)
+    }
+
+    fun include(registry: PreviewRegistry) {
+        parent.include(registry)
+    }
+
+    fun registry(registry: PreviewRegistry) {
+        parent.include(registry)
+    }
+
+    fun group(
+        group: PreviewGroup,
+        configure: GroupConfigBuilder.() -> Unit = {},
+        block: GroupScope.() -> Unit,
+    ) {
+        parent.group(group, configure, block)
+    }
+
+    fun preview(
+        name: String,
+        description: String = "",
+        tags: List<PreviewTag> = emptyList(),
+        key: String = "${defaultGroup.name}/$name",
+        configure: PreviewOverrideBuilder.() -> Unit = {},
+        composable: @Composable () -> Unit,
+    ) {
+        parent.preview(
+            name = name,
+            group = defaultGroup,
+            description = description,
+            tags = tags,
+            key = key,
+            configure = configure,
+            composable = composable,
         )
     }
 
-    internal fun build(): PreviewRegistry = object : PreviewRegistry {
-        override val entries: List<PreviewEntry> = _entries.toList()
+    fun preview(
+        name: String,
+        params: PreviewParamsDsl,
+        description: String = "",
+        tags: List<PreviewTag> = emptyList(),
+        key: String = "${defaultGroup.name}/$name",
+        configure: PreviewOverrideBuilder.() -> Unit = {},
+        composable: @Composable (PreviewParamState) -> Unit,
+    ) {
+        parent.preview(
+            name = name,
+            group = defaultGroup,
+            params = params,
+            description = description,
+            tags = tags,
+            key = key,
+            configure = configure,
+            composable = composable,
+        )
     }
 }
 

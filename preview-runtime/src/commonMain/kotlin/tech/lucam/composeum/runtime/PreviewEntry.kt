@@ -2,6 +2,7 @@ package tech.lucam.composeum.runtime
 
 import androidx.compose.runtime.Composable
 import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.annotation.PreviewTag
 
 /**
  * A single registered composable preview.
@@ -19,7 +20,7 @@ data class PreviewEntry(
     /** Optional subtitle shown on the detail screen. */
     val description: String,
     /** Searchable tags shown as chips on thumbnail cards. */
-    val tags: List<String>,
+    val tags: List<PreviewTag>,
     /** The composable to render. May read [tech.lucam.composeum.runtime.ui.component.LocalPreviewParamState]. */
     val composable: @Composable () -> Unit,
     /**

@@ -1,5 +1,6 @@
 package tech.lucam.composeum.sample
 
+import tech.lucam.composeum.annotation.SimplePreviewTag
 import tech.lucam.composeum.runtime.PreviewRegistry
 import tech.lucam.composeum.runtime.buildRegistry
 import tech.lucam.composeum.runtime.previewParams
@@ -30,7 +31,7 @@ internal val SamplePreviewRegistry: PreviewRegistry = buildRegistry {
             )
         },
         description = "A button with one string-backed preview parameter.",
-        tags = listOf("button", "cta"),
+        tags = listOf(SimplePreviewTag("button"), SimplePreviewTag("cta")),
         key = "tech.lucam.composeum.sample.previews.PrimaryButtonPreview",
     ) { state ->
         PrimaryButtonPreview(
@@ -79,7 +80,7 @@ internal val SamplePreviewRegistry: PreviewRegistry = buildRegistry {
             )
         },
         description = "A slightly richer component preview with two basic parameters.",
-        tags = listOf("card", "profile"),
+        tags = listOf(SimplePreviewTag("card"), SimplePreviewTag("profile")),
         key = "tech.lucam.composeum.sample.previews.ProfileCardPreview",
     ) { state ->
         ProfileCardPreview(

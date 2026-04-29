@@ -62,9 +62,12 @@ fun PreviewDetailScreen(
         return
     }
 
-    val hasParams = entry.paramForm != null
-
     val activeConfig = LocalPreviewConfig.current
+    val previewOverride = activeConfig.previewOverrides[entry.key]
+    val groupConfig = activeConfig.groupOverrides[entry.group::class]
+    val effectivePreviewWrapper = previewOverride?.previewWrapper ?: groupConfig?.previewWrapper ?: activeConfig.previewWrapper
+    val showParamPanel = previewOverride?.showParamPanel ?: activeConfig.showParamPanel
+    val hasParams = entry.paramForm != null && showParamPanel
 
     var paramState by remember(entryKey) {
         mutableStateOf(entry.paramDefaults.toInitialState().withCustomTypeDefaults(entry, activeConfig))
@@ -76,7 +79,13 @@ fun PreviewDetailScreen(
             contentAlignment = Alignment.Center,
         ) {
             CompositionLocalProvider(LocalPreviewParamState provides paramState) {
-                PreviewRenderer(entry = entry, modifier = Modifier.wrapContentSize())
+                if (effectivePreviewWrapper != null) {
+                    effectivePreviewWrapper(entry) {
+                        PreviewRenderer(entry = entry, modifier = Modifier.wrapContentSize())
+                    }
+                } else {
+                    PreviewRenderer(entry = entry, modifier = Modifier.wrapContentSize())
+                }
             }
         }
 

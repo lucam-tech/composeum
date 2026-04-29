@@ -132,6 +132,14 @@ class ComposeumProcessorTest {
         )
         """,
     )
+    private val previewTagStub = SourceFile.kotlin(
+        "PreviewTag.kt",
+        """
+        package tech.lucam.composeum.annotation
+        interface PreviewTag { val title: String }
+        data class SimplePreviewTag(override val title: String) : PreviewTag
+        """,
+    )
     // Loose group type (KClass<*>) so we can pass non-PreviewGroup classes for rule-2 test.
     private val composePreviewStub = SourceFile.kotlin(
         "ComposePreview.kt",
@@ -141,7 +149,7 @@ class ComposeumProcessorTest {
             val name: String = "",
             val group: kotlin.reflect.KClass<*> = PreviewGroup::class,
             val description: String = "",
-            val tags: Array<String> = [],
+            val tags: Array<kotlin.reflect.KClass<*>> = [],
         )
         """,
     )
@@ -153,7 +161,7 @@ class ComposeumProcessorTest {
             val name: String,
             val group: kotlin.reflect.KClass<*>,
             val description: String = "",
-            val tags: Array<String> = [],
+            val tags: Array<kotlin.reflect.KClass<*>> = [],
         )
         """,
     )
@@ -359,7 +367,7 @@ class ComposeumProcessorTest {
         val registry = findGeneratedFile(compilation, "GeneratedPreviewRegistry")!!.readText()
         val form = findGeneratedFile(compilation, "myPreviewParamForm")!!.readText()
         assertTrue(registry.contains("description = \"Primary button in its default state.\""))
-        assertTrue(registry.contains("tags = listOf(\"button\", \"cta\", \"controls\")"))
+        assertTrue(registry.contains("tags = listOf(tech.lucam.composeum.annotation.SimplePreviewTag(\"button\"), tech.lucam.composeum.annotation.SimplePreviewTag(\"cta\"), tech.lucam.composeum.annotation.SimplePreviewTag(\"controls\"))"))
         assertTrue(form.contains("description = \"Text shown on the button.\""))
     }
 
@@ -374,6 +382,7 @@ class ComposeumProcessorTest {
                 import tech.lucam.composeum.annotation.*
 
                 object MyGroup : PreviewGroup { override val name = "Group" }
+                object ExplicitTag : PreviewTag { override val title = "explicit" }
 
                 /**
                  * KDoc summary.
@@ -385,7 +394,7 @@ class ComposeumProcessorTest {
                     name = "Test",
                     group = MyGroup::class,
                     description = "Explicit description",
-                    tags = ["explicit"]
+                    tags = [ExplicitTag::class]
                 )
                 @Composable
                 fun myPreview(
@@ -400,7 +409,7 @@ class ComposeumProcessorTest {
         val registry = findGeneratedFile(compilation, "GeneratedPreviewRegistry")!!.readText()
         val form = findGeneratedFile(compilation, "myPreviewParamForm")!!.readText()
         assertTrue(registry.contains("description = \"Explicit description\""))
-        assertTrue(registry.contains("tags = listOf(\"explicit\")"))
+        assertTrue(registry.contains("tags = listOf(com.example.ExplicitTag)"))
         assertFalse(registry.contains("ignored"))
         assertTrue(form.contains("description = \"Explicit param description\""))
         assertFalse(form.contains("KDoc param description."))
@@ -790,6 +799,7 @@ class ComposeumProcessorTest {
                 colorStub,
                 dpAndTextUnitStub,
                 previewGroupStub,
+                previewTagStub,
                 previewParamStub,
                 composePreviewStub,
                 runtimeStubs,
@@ -814,6 +824,7 @@ class ComposeumProcessorTest {
                 colorStub,
                 dpAndTextUnitStub,
                 previewGroupStub,
+                previewTagStub,
                 previewParamStub,
                 composePreviewStub,
                 runtimeStubs,
@@ -832,6 +843,7 @@ class ComposeumProcessorTest {
                 composableStub,
                 colorStub,
                 previewGroupStub,
+                previewTagStub,
                 previewParamStub,
                 composePreviewStub,
                 viewPreviewStub,
@@ -1642,6 +1654,7 @@ class ComposeumProcessorTest {
             this.sources = listOf(
                 composableStub,
                 previewGroupStub,
+                previewTagStub,
                 previewParamStub,
                 composePreviewStub,
                 viewPreviewStub,
@@ -1657,6 +1670,7 @@ class ComposeumProcessorTest {
                 composableStub,
                 colorStub,
                 previewGroupStub,
+                previewTagStub,
                 previewParamStub,
                 composePreviewStub,
                 viewPreviewStub,
@@ -1682,6 +1696,7 @@ class ComposeumProcessorTest {
             this.sources = listOf(
                 composableStub,
                 previewGroupStub,
+                previewTagStub,
                 previewParamStub,
                 composePreviewStub,
                 androidPreviewStub,
@@ -1700,6 +1715,7 @@ class ComposeumProcessorTest {
                 composableStub,
                 colorStub,
                 previewGroupStub,
+                previewTagStub,
                 previewParamStub,
                 composePreviewStub,
                 androidPreviewStub,
@@ -1719,6 +1735,7 @@ class ComposeumProcessorTest {
             this.sources = listOf(
                 composableStub,
                 previewGroupStub,
+                previewTagStub,
                 previewParamStub,
                 composePreviewStub,
                 androidPreviewStub,
@@ -2508,7 +2525,7 @@ class ComposeumProcessorTest {
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
         val registry = findGeneratedFile(compilation, "GeneratedPreviewRegistry")!!.readText()
         assertTrue(registry.contains("description = \"Legacy XML card preview.\""))
-        assertTrue(registry.contains("tags = listOf(\"xml\", \"legacy\")"))
+        assertTrue(registry.contains("tags = listOf(tech.lucam.composeum.annotation.SimplePreviewTag(\"xml\"), tech.lucam.composeum.annotation.SimplePreviewTag(\"legacy\"))"))
     }
 
     @Test
@@ -2537,6 +2554,6 @@ class ComposeumProcessorTest {
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
         val registry = findGeneratedFile(compilation, "GeneratedPreviewRegistry")!!.readText()
         assertTrue(registry.contains("description = \"Android Studio preview fallback summary.\""))
-        assertTrue(registry.contains("tags = listOf(\"studio\")"))
+        assertTrue(registry.contains("tags = listOf(tech.lucam.composeum.annotation.SimplePreviewTag(\"studio\"))"))
     }
 }

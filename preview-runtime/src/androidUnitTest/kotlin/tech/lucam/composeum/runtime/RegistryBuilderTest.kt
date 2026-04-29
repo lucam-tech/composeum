@@ -1,6 +1,7 @@
 package tech.lucam.composeum.runtime
 
 import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.annotation.SimplePreviewTag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -76,12 +77,12 @@ class RegistryBuilderTest {
                 name = "Tagged",
                 group = group,
                 description = "A desc",
-                tags = listOf("a", "b"),
+                tags = listOf(SimplePreviewTag("a"), SimplePreviewTag("b")),
             ) {}
         }
         val entry = registry.entries[0]
         assertEquals("A desc", entry.description)
-        assertEquals(listOf("a", "b"), entry.tags)
+        assertEquals(listOf("a", "b"), entry.tags.map { it.title })
     }
 
     @Test

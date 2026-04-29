@@ -15,7 +15,7 @@ internal data class PreviewModel(
     val groupImport: String,
     /** Optional description from @ComposePreview.description. */
     val description: String,
-    /** Tags from @ComposePreview.tags. */
+    /** Tag constructor/object expressions for the generated registry. */
     val tags: List<String>,
     /** Simple function name used to emit the composable lambda and form reference. */
     val functionSimpleName: String,

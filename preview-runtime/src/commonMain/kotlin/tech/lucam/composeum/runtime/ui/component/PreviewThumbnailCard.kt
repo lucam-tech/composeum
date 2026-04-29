@@ -110,7 +110,7 @@ fun PreviewThumbnailCard(
                 items(entry.tags) { tag ->
                     SuggestionChip(
                         onClick = {},
-                        label = { Text(tag, style = MaterialTheme.typography.labelSmall) },
+                        label = { Text(tag.title, style = MaterialTheme.typography.labelSmall) },
                     )
                 }
             }

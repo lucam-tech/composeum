@@ -58,6 +58,7 @@ data class PreviewConfig(
     val groupWrapper: GroupWrapper? = null,
     val previewWrapper: PreviewWrapper? = null,
     val groupOverrides: Map<KClass<out PreviewGroup>, GroupConfig> = emptyMap(),
+    val previewOverrides: Map<String, PreviewOverride> = emptyMap(),
     /**
      * Locale options shown in the settings sheet locale picker.
      * Each [LocaleOption] has a BCP 47 [LocaleOption.tag] and a human-readable [LocaleOption.displayName].
@@ -94,3 +95,31 @@ data class PreviewConfig(
      */
     val customTypeFields: Map<String, CustomParamField> = emptyMap(),
 )
+
+internal fun PreviewConfig.mergedWith(override: PreviewConfig): PreviewConfig {
+    val defaults = PreviewConfig()
+    return PreviewConfig(
+        fontScale = if (override.fontScale != defaults.fontScale) override.fontScale else fontScale,
+        uiScale = if (override.uiScale != defaults.uiScale) override.uiScale else uiScale,
+        isDarkMode = if (override.isDarkMode != defaults.isDarkMode) override.isDarkMode else isDarkMode,
+        defaultThemeId = if (override.defaultThemeId != defaults.defaultThemeId) override.defaultThemeId else defaultThemeId,
+        locale = if (override.locale != defaults.locale) override.locale else locale,
+        showDescriptions = if (override.showDescriptions != defaults.showDescriptions) override.showDescriptions else showDescriptions,
+        showTags = if (override.showTags != defaults.showTags) override.showTags else showTags,
+        showParamPanel = if (override.showParamPanel != defaults.showParamPanel) override.showParamPanel else showParamPanel,
+        thumbnailColumns = if (override.thumbnailColumns != defaults.thumbnailColumns) override.thumbnailColumns else thumbnailColumns,
+        groupExpansionMode = if (override.groupExpansionMode != defaults.groupExpansionMode) override.groupExpansionMode else groupExpansionMode,
+        settingsItems = override.settingsItems ?: settingsItems,
+        topBarActions = topBarActions + override.topBarActions,
+        sourceBaseUrl = override.sourceBaseUrl ?: sourceBaseUrl,
+        sourceStripPrefix = override.sourceStripPrefix ?: sourceStripPrefix,
+        browserWrapper = override.browserWrapper ?: browserWrapper,
+        groupWrapper = override.groupWrapper ?: groupWrapper,
+        previewWrapper = override.previewWrapper ?: previewWrapper,
+        groupOverrides = groupOverrides + override.groupOverrides,
+        previewOverrides = previewOverrides + override.previewOverrides,
+        localeOptions = override.localeOptions ?: localeOptions,
+        themeOptions = themeOptions + override.themeOptions,
+        customTypeFields = customTypeFields + override.customTypeFields,
+    )
+}

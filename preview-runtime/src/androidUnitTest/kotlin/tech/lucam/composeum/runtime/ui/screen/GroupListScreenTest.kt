@@ -10,6 +10,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.annotation.PreviewTag
+import tech.lucam.composeum.annotation.SimplePreviewTag
 import tech.lucam.composeum.runtime.PreviewEntry
 import tech.lucam.composeum.runtime.PreviewParamDefaults
 import tech.lucam.composeum.runtime.PreviewRegistry
@@ -50,11 +52,13 @@ class GroupListScreenTest {
         override val name: String = ""
     }
 
+    private fun tags(vararg values: String): List<PreviewTag> = values.map(::SimplePreviewTag)
+
     private fun entry(
         name: String,
         group: PreviewGroup,
         description: String = "",
-        tags: List<String> = emptyList(),
+        tags: List<PreviewTag> = emptyList(),
     ) = PreviewEntry(
         key = "test.$name",
         name = name,
@@ -202,7 +206,7 @@ class GroupListScreenTest {
             MaterialTheme {
                 GroupListScreen(
                     registry = registryOf(
-                        entry("PrimaryButton", TestGroup.Buttons, tags = listOf("cta", "interactive")),
+                        entry("PrimaryButton", TestGroup.Buttons, tags = tags("cta", "interactive")),
                         entry("DefaultCard", TestGroup.Cards),
                     ),
                     onGroupSelected = {},
@@ -319,7 +323,7 @@ class GroupListScreenTest {
             MaterialTheme {
                 GroupListScreen(
                     registry = registryOf(
-                        entry("ButtonA", TestGroup.Buttons, tags = listOf("cta", "interactive")),
+                        entry("ButtonA", TestGroup.Buttons, tags = tags("cta", "interactive")),
                     ),
                     onGroupSelected = {},
                 )
@@ -351,7 +355,7 @@ class GroupListScreenTest {
             MaterialTheme {
                 GroupListScreen(
                     registry = registryOf(
-                        entry("ButtonA", TestGroup.Buttons, tags = listOf("cta")),
+                        entry("ButtonA", TestGroup.Buttons, tags = tags("cta")),
                         entry("Card1", TestGroup.Cards),
                     ),
                     onGroupSelected = {},
@@ -371,7 +375,7 @@ class GroupListScreenTest {
             MaterialTheme {
                 GroupListScreen(
                     registry = registryOf(
-                        entry("ButtonA", TestGroup.Buttons, tags = listOf("cta")),
+                        entry("ButtonA", TestGroup.Buttons, tags = tags("cta")),
                         entry("Card1", TestGroup.Cards),
                     ),
                     onGroupSelected = {},
@@ -392,9 +396,9 @@ class GroupListScreenTest {
             MaterialTheme {
                 GroupListScreen(
                     registry = registryOf(
-                        entry("PrimaryButton", TestGroup.Buttons, tags = listOf("cta")),
-                        entry("SecondaryButton", TestGroup.Buttons, tags = listOf("interactive")),
-                        entry("Card1", TestGroup.Cards, tags = listOf("cta")),
+                        entry("PrimaryButton", TestGroup.Buttons, tags = tags("cta")),
+                        entry("SecondaryButton", TestGroup.Buttons, tags = tags("interactive")),
+                        entry("Card1", TestGroup.Cards, tags = tags("cta")),
                     ),
                     onGroupSelected = {},
                 )
@@ -420,8 +424,8 @@ class GroupListScreenTest {
             MaterialTheme {
                 GroupListScreen(
                     registry = registryOf(
-                        entry("Alpha", TestGroup.Buttons, tags = listOf("interactive")),
-                        entry("Beta", TestGroup.Cards, tags = listOf("cta")),
+                        entry("Alpha", TestGroup.Buttons, tags = tags("interactive")),
+                        entry("Beta", TestGroup.Cards, tags = tags("cta")),
                     ),
                     onGroupSelected = {},
                 )
@@ -442,8 +446,8 @@ class GroupListScreenTest {
             MaterialTheme {
                 GroupListScreen(
                     registry = registryOf(
-                        entry("ButtonA", TestGroup.Buttons, tags = listOf("cta")),
-                        entry("ButtonB", TestGroup.Buttons, tags = listOf("cta", "interactive")),
+                        entry("ButtonA", TestGroup.Buttons, tags = tags("cta")),
+                        entry("ButtonB", TestGroup.Buttons, tags = tags("cta", "interactive")),
                     ),
                     onGroupSelected = {},
                 )

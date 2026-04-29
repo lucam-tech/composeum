@@ -8,6 +8,8 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.annotation.PreviewTag
+import tech.lucam.composeum.annotation.SimplePreviewTag
 import tech.lucam.composeum.runtime.PreviewEntry
 import tech.lucam.composeum.runtime.PreviewParamDefaults
 import tech.lucam.composeum.runtime.PreviewRegistry
@@ -41,10 +43,12 @@ class PreviewListScreenTest {
         }
     }
 
+    private fun tags(vararg values: String): List<PreviewTag> = values.map(::SimplePreviewTag)
+
     private fun entry(
         name: String,
         group: PreviewGroup = TestGroup.Components,
-        tags: List<String> = emptyList(),
+        tags: List<PreviewTag> = emptyList(),
     ) = PreviewEntry(
         key = "test.${group::class.simpleName}.$name",
         name = name,
@@ -217,7 +221,7 @@ class PreviewListScreenTest {
                 CompositionLocalProvider(LocalResolvedSettings provides settingsWithTags) {
                     PreviewListScreen(
                         groupKey = componentsKey,
-                        registry = registryOf(entry("Button", tags = listOf("cta", "primary"))),
+                        registry = registryOf(entry("Button", tags = tags("cta", "primary"))),
                         config = defaultConfig,
                         onEntrySelected = {},
                     )
@@ -238,7 +242,7 @@ class PreviewListScreenTest {
                 CompositionLocalProvider(LocalResolvedSettings provides settingsNoTags) {
                     PreviewListScreen(
                         groupKey = componentsKey,
-                        registry = registryOf(entry("Button", tags = listOf("cta"))),
+                        registry = registryOf(entry("Button", tags = tags("cta"))),
                         config = defaultConfig,
                         onEntrySelected = {},
                     )

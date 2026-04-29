@@ -1,5 +1,8 @@
 package tech.lucam.composeum.runtime
 
+import tech.lucam.composeum.runtime.config.PreviewConfig
+import tech.lucam.composeum.runtime.config.mergedWith
+
 /**
  * Merges multiple [PreviewRegistry] instances into one.
  * Entries with duplicate [PreviewEntry.key] values are deduplicated — first occurrence wins.
@@ -20,4 +23,9 @@ class CompositePreviewRegistry(
         registries
             .flatMap { it.entries }
             .distinctBy { it.key }
+
+    override val config: PreviewConfig =
+        registries
+            .map { it.config }
+            .fold(PreviewConfig()) { acc, next -> acc.mergedWith(next) }
 }

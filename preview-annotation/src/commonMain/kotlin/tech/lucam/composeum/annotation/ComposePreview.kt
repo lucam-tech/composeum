@@ -17,5 +17,5 @@ annotation class ComposePreview(
     val name: String = "",
     val group: KClass<out PreviewGroup> = PreviewGroup::class,
     val description: String = "",
-    val tags: Array<String> = [],
+    val tags: Array<KClass<out PreviewTag>> = [],
 )

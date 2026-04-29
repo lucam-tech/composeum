@@ -14,6 +14,7 @@ private const val VIEW_PREVIEW_FQN = "tech.lucam.composeum.annotation.ViewPrevie
 private const val ANDROID_PREVIEW_FQN = "androidx.compose.ui.tooling.preview.Preview"
 private const val PREVIEW_PARAM_FQN = "tech.lucam.composeum.annotation.PreviewParam"
 private const val PREVIEW_GROUP_FQN = "tech.lucam.composeum.annotation.PreviewGroup"
+private const val SIMPLE_PREVIEW_TAG_FQN = "tech.lucam.composeum.annotation.SimplePreviewTag"
 private const val CONTEXT_FQN = "android.content.Context"
 private const val GENERATED_TOP_LEVEL_GROUP = "GeneratedComposePreviewTopLevelGroup"
 
@@ -30,9 +31,8 @@ internal object ModelBuilder {
 
         val name = (args["name"] as? String ?: "").ifEmpty { function.simpleName.asString() }
         val description = (args["description"] as? String ?: "").ifEmpty { kdoc?.summary.orEmpty() }
-        @Suppress("UNCHECKED_CAST")
-        val tags = ((args["tags"] as? List<*>)?.filterIsInstance<String>() ?: emptyList())
-            .ifEmpty { kdoc?.tags.orEmpty() }
+        val tags = ((args["tags"] as? List<*>)?.mapNotNull { (it as? KSType)?.let(::resolveTagExpression) } ?: emptyList())
+            .ifEmpty { kdoc?.tags.orEmpty().map(::simpleTagExpression) }
         val groupType = args["group"] as? KSType
 
         val hasExplicitGroup = groupType?.declaration?.qualifiedName?.asString() != PREVIEW_GROUP_FQN
@@ -85,7 +85,7 @@ internal object ModelBuilder {
             groupExpression = syntheticObjName,
             groupImport = "",
             description = kdoc?.summary.orEmpty(),
-            tags = kdoc?.tags.orEmpty(),
+            tags = kdoc?.tags.orEmpty().map(::simpleTagExpression),
             functionSimpleName = function.simpleName.asString(),
             functionPackage = function.packageName.asString(),
             params = params,
@@ -108,9 +108,8 @@ internal object ModelBuilder {
 
         val name = args["name"] as? String ?: ""
         val description = (args["description"] as? String ?: "").ifEmpty { kdoc?.summary.orEmpty() }
-        @Suppress("UNCHECKED_CAST")
-        val tags = ((args["tags"] as? List<*>)?.filterIsInstance<String>() ?: emptyList())
-            .ifEmpty { kdoc?.tags.orEmpty() }
+        val tags = ((args["tags"] as? List<*>)?.mapNotNull { (it as? KSType)?.let(::resolveTagExpression) } ?: emptyList())
+            .ifEmpty { kdoc?.tags.orEmpty().map(::simpleTagExpression) }
         val groupType = args["group"] as? KSType
 
         val (groupExpression, groupImport) = resolveGroupExpression(groupType)
@@ -305,4 +304,20 @@ internal object ModelBuilder {
         val topLevelImport = if (packageName.isEmpty()) parts[0] else "$packageName.${parts[0]}"
         return expression to topLevelImport
     }
+
+    private fun resolveTagExpression(tagType: KSType?): String {
+        val (expression, topLevelImport) = resolveGroupExpression(tagType)
+        return when {
+            expression.isEmpty() -> ""
+            topLevelImport.isEmpty() -> expression
+            expression == topLevelImport.substringAfterLast('.') -> topLevelImport
+            else -> {
+                val packageName = topLevelImport.substringBeforeLast('.', "")
+                if (packageName.isEmpty()) expression else "$packageName.$expression"
+            }
+        }
+    }
+
+    private fun simpleTagExpression(title: String): String =
+        "$SIMPLE_PREVIEW_TAG_FQN(\"${title.replace("\\", "\\\\").replace("\"", "\\\"")}\")"
 }

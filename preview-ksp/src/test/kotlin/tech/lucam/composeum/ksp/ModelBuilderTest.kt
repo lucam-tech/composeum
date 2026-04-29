@@ -60,6 +60,14 @@ class ModelBuilderTest {
         interface PreviewGroup { val name: String; val description: String get() = "" }
         """,
     )
+    private val previewTagStub = SourceFile.kotlin(
+        "PreviewTag.kt",
+        """
+        package tech.lucam.composeum.annotation
+        interface PreviewTag { val title: String }
+        data class SimplePreviewTag(override val title: String) : PreviewTag
+        """,
+    )
     private val previewParamStub = SourceFile.kotlin(
         "PreviewParam.kt",
         """
@@ -80,7 +88,7 @@ class ModelBuilderTest {
             val name: String = "",
             val group: kotlin.reflect.KClass<*> = PreviewGroup::class,
             val description: String = "",
-            val tags: Array<String> = [],
+            val tags: Array<kotlin.reflect.KClass<*>> = [],
         )
         """,
     )
@@ -90,6 +98,7 @@ class ModelBuilderTest {
             this.sources = listOf(
                 composableStub,
                 previewGroupStub,
+                previewTagStub,
                 previewParamStub,
                 composePreviewStub,
             ) + sources.toList()

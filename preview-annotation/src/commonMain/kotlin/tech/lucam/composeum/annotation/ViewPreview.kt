@@ -31,5 +31,5 @@ annotation class ViewPreview(
     val name: String,
     val group: KClass<out PreviewGroup>,
     val description: String = "",
-    val tags: Array<String> = [],
+    val tags: Array<KClass<out PreviewTag>> = [],
 )

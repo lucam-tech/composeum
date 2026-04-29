@@ -209,12 +209,18 @@ sealed interface MyGroup : PreviewGroup {
 
 ```kotlin
 import tech.lucam.composeum.annotation.ComposePreview
+import tech.lucam.composeum.annotation.PreviewTag
+
+sealed interface MyTag : PreviewTag {
+    data object Button : MyTag { override val title = "button" }
+    data object Cta : MyTag { override val title = "cta" }
+}
 
 @ComposePreview(
     name = "Primary Button",
     group = MyGroup.Components::class,
     description = "Default button style",
-    tags = ["button", "cta"],
+    tags = [MyTag.Button::class, MyTag.Cta::class],
 )
 @Composable
 fun PrimaryButtonPreview() {
@@ -363,7 +369,7 @@ annotation class ComposePreview(
     val name: String = "",
     val group: KClass<out PreviewGroup> = PreviewGroup::class,
     val description: String = "",
-    val tags: Array<String> = [],
+    val tags: Array<KClass<out PreviewTag>> = [],
 )
 ```
 
@@ -611,6 +617,8 @@ variant: String = "Primary",
 You don't need KSP to use the runtime. Build a registry manually using the `buildRegistry` DSL — useful for design-system packages, Kotlin Multiplatform, or testing:
 
 ```kotlin
+import tech.lucam.composeum.annotation.SimplePreviewTag
+
 val MyDslRegistry: PreviewRegistry = buildRegistry {
 
     // Preview with no parameters
@@ -618,7 +626,7 @@ val MyDslRegistry: PreviewRegistry = buildRegistry {
         name = "DSL Greeting",
         group = AppGroup.Components,
         description = "Hello from the DSL",
-        tags = listOf("text"),
+        tags = listOf(SimplePreviewTag("text")),
     ) {
         Text("Hello, Composeum!")
     }

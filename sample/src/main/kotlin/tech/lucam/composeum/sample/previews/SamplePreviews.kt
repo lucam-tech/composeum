@@ -22,9 +22,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import tech.lucam.composeum.annotation.ComposePreview
 import tech.lucam.composeum.annotation.PreviewParam
+import tech.lucam.composeum.annotation.PreviewTag
 import tech.lucam.composeum.sample.SampleGroup
 
 enum class InboxFilter { All, Unread, Starred }
+
+sealed interface SampleTag : PreviewTag {
+    data object Button : SampleTag { override val title: String = "button" }
+    data object Cta : SampleTag { override val title: String = "cta" }
+    data object Card : SampleTag { override val title: String = "card" }
+    data object Profile : SampleTag { override val title: String = "profile" }
+}
 
 @ComposePreview(
     name = "Greeting Card",
@@ -46,7 +54,7 @@ fun GreetingPreview() {
     name = "Primary Button",
     group = SampleGroup.Components::class,
     description = "A button with one string-backed preview parameter.",
-    tags = ["button", "cta"],
+    tags = [SampleTag.Button::class, SampleTag.Cta::class],
 )
 @Composable
 fun PrimaryButtonPreview(
@@ -106,7 +114,7 @@ fun InboxSummaryPreview(
     name = "Profile Card",
     group = SampleGroup.Components::class,
     description = "A slightly richer component preview with two basic parameters.",
-    tags = ["card", "profile"],
+    tags = [SampleTag.Card::class, SampleTag.Profile::class],
 )
 @Composable
 fun ProfileCardPreview(

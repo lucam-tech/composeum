@@ -28,16 +28,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.savedstate.read
 import tech.lucam.composeum.runtime.PreviewRegistry
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.ThemeOption
 import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
+import tech.lucam.composeum.runtime.config.mergedWith
 import tech.lucam.composeum.runtime.store.SettingsStorage
 import tech.lucam.composeum.runtime.store.SettingsViewModel
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewConfig
@@ -87,6 +90,7 @@ fun ComposeumBrowser(
     storage: SettingsStorage,
     modifier: Modifier = Modifier,
 ) {
+    val effectiveConfig = remember(registry, config) { registry.config.mergedWith(config) }
     val scope = rememberCoroutineScope()
 
     // Bridge isSystemInDarkTheme() — a composable — into a flow so SettingsViewModel
@@ -94,8 +98,8 @@ fun ComposeumBrowser(
     val systemIsDark = isSystemInDarkTheme()
     val systemIsDarkFlow = remember { snapshotFlow { systemIsDark } }
 
-    val viewModel = remember(storage, config) {
-        SettingsViewModel(storage, config, scope, systemIsDarkFlow)
+    val viewModel = remember(storage, effectiveConfig) {
+        SettingsViewModel(storage, effectiveConfig, scope, systemIsDarkFlow)
     }
 
     val resolvedSettings by viewModel.resolvedSettings.collectAsState()
@@ -109,7 +113,7 @@ fun ComposeumBrowser(
     // Non-null only when the detail screen is active; used for title and the source link button.
     val currentDetailEntry = when (currentRoute) {
         PreviewRoute.PreviewDetail("").route -> {
-            val entryKey = currentBackStack?.arguments?.getString(PreviewRoute.PreviewDetail.ARG) ?: ""
+            val entryKey = navArgumentValue(currentBackStack, PreviewRoute.PreviewDetail.ARG)
             registry.entries.firstOrNull { it.key == entryKey }
         }
         else -> null
@@ -118,7 +122,7 @@ fun ComposeumBrowser(
     val title = when (currentRoute) {
         PreviewRoute.GroupList.route -> "Compose Preview"
         PreviewRoute.PreviewList("").route -> {
-            val groupKey = currentBackStack?.arguments?.getString(PreviewRoute.PreviewList.ARG) ?: ""
+            val groupKey = navArgumentValue(currentBackStack, PreviewRoute.PreviewList.ARG)
             registry.entries
                 .firstOrNull { (it.group::class.qualifiedName ?: it.group.name) == groupKey }
                 ?.group?.name ?: groupKey
@@ -135,7 +139,7 @@ fun ComposeumBrowser(
         CompositionLocalProvider(
             LocalResolvedSettings provides resolvedSettings,
             LocalSettingsStorage provides storage,
-            LocalPreviewConfig provides config,
+            LocalPreviewConfig provides effectiveConfig,
         ) {
             Scaffold(
                 modifier = modifier,
@@ -153,7 +157,7 @@ fun ComposeumBrowser(
                             }
                         },
                         actions = {
-                            config.topBarActions.forEach { action ->
+                            effectiveConfig.topBarActions.forEach { action ->
                                 IconButton(onClick = action.onClick) {
                                     action.icon()
                                 }
@@ -185,7 +189,7 @@ fun ComposeumBrowser(
                     composable(route = PreviewRoute.GroupList.route) {
                         GroupListScreen(
                             registry = registry,
-                            config = config,
+                            config = effectiveConfig,
                             onGroupSelected = { groupKey ->
                                 navController.navigate(PreviewRoute.PreviewList.routeFor(groupKey))
                             },
@@ -200,11 +204,11 @@ fun ComposeumBrowser(
                             navArgument(PreviewRoute.PreviewList.ARG) { type = NavType.StringType },
                         ),
                     ) { backStackEntry ->
-                        val groupKey = backStackEntry.arguments?.getString(PreviewRoute.PreviewList.ARG) ?: ""
+                        val groupKey = navArgumentValue(backStackEntry, PreviewRoute.PreviewList.ARG)
                         PreviewListScreen(
                             groupKey = groupKey,
                             registry = registry,
-                            config = config,
+                            config = effectiveConfig,
                             onEntrySelected = { entryKey ->
                                 navController.navigate(PreviewRoute.PreviewDetail.routeFor(entryKey))
                             },
@@ -216,11 +220,11 @@ fun ComposeumBrowser(
                             navArgument(PreviewRoute.PreviewDetail.ARG) { type = NavType.StringType },
                         ),
                     ) { backStackEntry ->
-                        val entryKey = backStackEntry.arguments?.getString(PreviewRoute.PreviewDetail.ARG) ?: ""
+                        val entryKey = navArgumentValue(backStackEntry, PreviewRoute.PreviewDetail.ARG)
                         PreviewDetailScreen(
                             entryKey = entryKey,
                             registry = registry,
-                            config = config,
+                            config = effectiveConfig,
                         )
                     }
                 }
@@ -231,7 +235,7 @@ fun ComposeumBrowser(
                     onDismissRequest = { showSettings = false },
                     sheetState = sheetState,
                 ) {
-                    SettingsSheet(config = config)
+                    SettingsSheet(config = effectiveConfig)
                 }
             }
 
@@ -240,8 +244,8 @@ fun ComposeumBrowser(
                 SourceLocationDialog(
                     sourceFile = sourceEntry.sourceFile,
                     sourceLine = sourceEntry.sourceLine,
-                    webUrl = config.sourceBaseUrl?.let {
-                        buildWebUrl(sourceEntry.sourceFile, sourceEntry.sourceLine, config)
+                    webUrl = effectiveConfig.sourceBaseUrl?.let {
+                        buildWebUrl(sourceEntry.sourceFile, sourceEntry.sourceLine, effectiveConfig)
                     },
                     onDismiss = { showSourceDialog = false },
                 )
@@ -253,8 +257,8 @@ fun ComposeumBrowser(
         LocalIsDarkTheme provides resolvedSettings.isDark,
         LocalPreviewTheme provides resolvedSettings.theme,
     ) {
-        if (config.browserWrapper != null) {
-            config.browserWrapper(browserContent)
+        if (effectiveConfig.browserWrapper != null) {
+            effectiveConfig.browserWrapper(browserContent)
         } else {
             MaterialTheme(
                 colorScheme = if (resolvedSettings.isDark) {
@@ -281,3 +285,8 @@ private fun buildWebUrl(sourceFile: String, sourceLine: Int, config: PreviewConf
         .trimStart('/')
     return "${config.sourceBaseUrl!!.trimEnd('/')}/$relativePath#L$sourceLine"
 }
+
+private fun navArgumentValue(
+    entry: NavBackStackEntry?,
+    key: String,
+): String = entry?.arguments?.read { getStringOrNull(key) } ?: ""
