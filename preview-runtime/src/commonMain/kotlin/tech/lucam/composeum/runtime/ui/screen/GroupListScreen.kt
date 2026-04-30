@@ -44,6 +44,8 @@ import tech.lucam.composeum.runtime.PreviewRegistry
 import tech.lucam.composeum.runtime.config.PreviewWrapper
 import tech.lucam.composeum.runtime.config.GroupExpansionMode
 import tech.lucam.composeum.runtime.config.PreviewConfig
+import tech.lucam.composeum.runtime.families
+import tech.lucam.composeum.runtime.familyKey
 import tech.lucam.composeum.runtime.ui.component.LocalResolvedSettings
 import tech.lucam.composeum.runtime.ui.component.PreviewThumbnailCard
 
@@ -77,7 +79,9 @@ fun GroupListScreen(
 ) {
     val settings = LocalResolvedSettings.current
     var query by remember { mutableStateOf("") }
-    val rootNodes = remember(registry.entries) { buildGroupTree(registry.entries) }
+    val rootNodes = remember(registry.entries) {
+        buildGroupTree(registry.families().map { it.defaultEntry })
+    }
     val (rootPreviewNodes, groupedRootNodes) = remember(rootNodes) {
         rootNodes.partition { it.isLeaf && it.name.isEmpty() && it.description.isEmpty() }
     }
@@ -348,7 +352,7 @@ private fun EntryGrid(
                         entry = entry,
                         previewWrapper = previewWrapperFor(entry),
                         showTags = showTags,
-                        onClick = { onEntrySelected(entry.key) },
+                        onClick = { onEntrySelected(entry.familyKey()) },
                         modifier = Modifier.weight(1f),
                     )
                 }

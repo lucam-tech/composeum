@@ -17,15 +17,15 @@ sealed class PreviewRoute(val route: String) {
         }
     }
 
-    /** Detail screen for one preview entry, addressed by [entryKey]. */
-    data class PreviewDetail(val entryKey: String) :
+    /** Detail screen for one preview family, addressed by [familyKey]. */
+    data class PreviewDetail(val familyKey: String) :
         PreviewRoute("preview_detail/{${PreviewDetail.ARG}}") {
         companion object {
-            /** Navigation argument name used to pass the selected preview key. */
-            const val ARG = "entryKey"
+            /** Navigation argument name used to pass the selected preview family key. */
+            const val ARG = "familyKey"
 
-            /** Builds a concrete navigation route for [entryKey]. */
-            fun routeFor(entryKey: String): String = "preview_detail/${entryKey.encodePathSegment()}"
+            /** Builds a concrete navigation route for [familyKey]. */
+            fun routeFor(familyKey: String): String = "preview_detail/${familyKey.encodePathSegment()}"
         }
     }
 }

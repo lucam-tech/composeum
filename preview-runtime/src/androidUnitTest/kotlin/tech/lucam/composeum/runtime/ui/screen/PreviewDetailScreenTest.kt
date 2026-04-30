@@ -2,12 +2,14 @@ package tech.lucam.composeum.runtime.ui.screen
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.annotation.PreviewVariantGroup
 import tech.lucam.composeum.runtime.PreviewEntry
 import tech.lucam.composeum.runtime.PreviewParamDefaults
 import tech.lucam.composeum.runtime.PreviewParamState
@@ -31,6 +33,8 @@ class PreviewDetailScreenTest {
     private object TestGroup : PreviewGroup {
         override val name = "Test"
     }
+
+    private object TestVariantGroup : PreviewVariantGroup
 
     private fun registryOf(vararg entries: PreviewEntry): PreviewRegistry =
         object : PreviewRegistry { override val entries = entries.toList() }
@@ -79,11 +83,11 @@ class PreviewDetailScreenTest {
     // --- Entry not found ---
 
     @Test
-    fun `shows not-found message when entry key is missing`() {
+    fun `shows not-found message when family key is missing`() {
         composeRule.setContent {
             MaterialTheme {
                 PreviewDetailScreen(
-                    entryKey = "does.not.exist",
+                    familyKey = "does.not.exist",
                     registry = registryOf(entryWithNoParams()),
                     config = defaultConfig,
                 )
@@ -102,7 +106,7 @@ class PreviewDetailScreenTest {
         composeRule.setContent {
             MaterialTheme {
                 PreviewDetailScreen(
-                    entryKey = entry.key,
+                    familyKey = entry.key,
                     registry = registryOf(entry),
                     config = defaultConfig,
                 )
@@ -121,7 +125,7 @@ class PreviewDetailScreenTest {
         composeRule.setContent {
             MaterialTheme {
                 PreviewDetailScreen(
-                    entryKey = entry.key,
+                    familyKey = entry.key,
                     registry = registryOf(entry),
                     config = defaultConfig,
                 )
@@ -138,7 +142,7 @@ class PreviewDetailScreenTest {
         composeRule.setContent {
             MaterialTheme {
                 PreviewDetailScreen(
-                    entryKey = entry.key,
+                    familyKey = entry.key,
                     registry = registryOf(entry),
                     config = defaultConfig,
                 )
@@ -157,7 +161,7 @@ class PreviewDetailScreenTest {
         composeRule.setContent {
             MaterialTheme {
                 PreviewDetailScreen(
-                    entryKey = entry.key,
+                    familyKey = entry.key,
                     registry = registryOf(entry),
                     config = defaultConfig,
                 )
@@ -175,7 +179,7 @@ class PreviewDetailScreenTest {
         composeRule.setContent {
             MaterialTheme {
                 PreviewDetailScreen(
-                    entryKey = entry.key,
+                    familyKey = entry.key,
                     registry = registryOf(entry),
                     config = defaultConfig,
                 )
@@ -194,7 +198,7 @@ class PreviewDetailScreenTest {
         composeRule.setContent {
             MaterialTheme {
                 PreviewDetailScreen(
-                    entryKey = entry.key,
+                    familyKey = entry.key,
                     registry = registryOf(entry),
                     config = defaultConfig,
                 )
@@ -215,7 +219,7 @@ class PreviewDetailScreenTest {
         composeRule.setContent {
             MaterialTheme {
                 PreviewDetailScreen(
-                    entryKey = entry.key,
+                    familyKey = entry.key,
                     registry = registryOf(entry),
                     config = defaultConfig,
                 )
@@ -240,7 +244,7 @@ class PreviewDetailScreenTest {
         composeRule.setContent {
             MaterialTheme {
                 PreviewDetailScreen(
-                    entryKey = entry.key,
+                    familyKey = entry.key,
                     registry = registryOf(entry),
                     config = defaultConfig,
                 )
@@ -250,5 +254,35 @@ class PreviewDetailScreenTest {
         composeRule.onNodeWithText("param-form-sentinel").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Collapse parameters").performClick()
         composeRule.onNodeWithText("param-form-sentinel").assertDoesNotExist()
+    }
+
+    @Test
+    fun `default variant is selected first and dropdown switches variants`() {
+        val base = entryWithNoParams("Base").copy(
+            key = "test.base",
+            variantGroup = TestVariantGroup,
+            isDefaultVariant = true,
+            composable = { Text("Base Content") },
+        )
+        val flavored = entryWithNoParams("Experimental").copy(
+            key = "test.experimental",
+            variantGroup = TestVariantGroup,
+            composable = { Text("Experimental Content") },
+        )
+
+        composeRule.setContent {
+            MaterialTheme {
+                PreviewDetailScreen(
+                    familyKey = TestVariantGroup::class.qualifiedName!!,
+                    registry = registryOf(flavored, base),
+                    config = defaultConfig,
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Base Content").assertIsDisplayed()
+        composeRule.onNodeWithText("Base").performClick()
+        composeRule.onNodeWithText("Experimental").performClick()
+        composeRule.onNodeWithText("Experimental Content").assertIsDisplayed()
     }
 }

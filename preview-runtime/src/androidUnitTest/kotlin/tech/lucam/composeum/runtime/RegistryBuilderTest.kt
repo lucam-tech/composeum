@@ -10,16 +10,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.annotation.PreviewVariantGroup
 import tech.lucam.composeum.annotation.SimplePreviewTag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 
 class RegistryBuilderTest {
 
     private val group = object : PreviewGroup { override val name = "TestGroup" }
+    private val variantGroup = object : PreviewVariantGroup {}
 
     // --- buildRegistry structure ---
 
@@ -92,6 +95,37 @@ class RegistryBuilderTest {
         val entry = registry.entries[0]
         assertEquals("A desc", entry.description)
         assertEquals(listOf("a", "b"), entry.tags.map { it.title })
+    }
+
+    @Test
+    fun `variant metadata is stored on entry`() {
+        val registry = buildRegistry {
+            preview(
+                name = "Base",
+                group = group,
+                variantGroup = variantGroup,
+                isDefaultVariant = true,
+            ) {}
+        }
+
+        val entry = registry.entries.single()
+        assertEquals(variantGroup, entry.variantGroup)
+        assertTrue(entry.isDefaultVariant)
+    }
+
+    @Test
+    fun `default variant requires variant group`() {
+        try {
+            buildRegistry {
+                preview(
+                    name = "Broken",
+                    group = group,
+                    isDefaultVariant = true,
+                ) {}
+            }
+            fail("Expected preview registration to reject isDefaultVariant without variantGroup.")
+        } catch (_: IllegalArgumentException) {
+        }
     }
 
     @Test

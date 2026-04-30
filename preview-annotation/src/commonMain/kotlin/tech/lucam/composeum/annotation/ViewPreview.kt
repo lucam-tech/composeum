@@ -22,6 +22,9 @@ import kotlin.reflect.KClass
  *
  * @param name        Human-readable display name shown in the browser.
  * @param group       A [PreviewGroup] object that determines where this preview appears in the tree.
+ * @param variantGroup Optional [PreviewVariantGroup] family used to collapse multiple preview
+ *                     flavors into a single catalog entry.
+ * @param isDefaultVariant Marks this preview as the base/default flavor within [variantGroup].
  * @param description Optional longer description displayed below the preview name.
  * @param tags        Optional searchable tags used to filter previews.
  */
@@ -30,6 +33,8 @@ import kotlin.reflect.KClass
 annotation class ViewPreview(
     val name: String,
     val group: KClass<out PreviewGroup>,
+    val variantGroup: KClass<out PreviewVariantGroup> = PreviewVariantGroup::class,
+    val isDefaultVariant: Boolean = false,
     val description: String = "",
     val tags: Array<KClass<out PreviewTag>> = [],
 )

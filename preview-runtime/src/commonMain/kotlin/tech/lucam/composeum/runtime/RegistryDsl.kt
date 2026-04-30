@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import tech.lucam.composeum.annotation.PreviewGroup
 import tech.lucam.composeum.annotation.PreviewTag
+import tech.lucam.composeum.annotation.PreviewVariantGroup
 import tech.lucam.composeum.runtime.config.GroupConfigBuilder
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.PreviewConfigBuilder
@@ -121,6 +122,8 @@ class RegistryBuilder {
     fun preview(
         name: String,
         group: PreviewGroup,
+        variantGroup: PreviewVariantGroup? = null,
+        isDefaultVariant: Boolean = false,
         description: String = "",
         tags: List<PreviewTag> = emptyList(),
         key: String = defaultKey(group, name),
@@ -130,6 +133,8 @@ class RegistryBuilder {
         registerPreview(
             group = group,
             name = name,
+            variantGroup = variantGroup,
+            isDefaultVariant = isDefaultVariant,
             description = description,
             tags = tags,
             key = key,
@@ -149,6 +154,8 @@ class RegistryBuilder {
         name: String,
         group: PreviewGroup,
         params: PreviewParamsDsl,
+        variantGroup: PreviewVariantGroup? = null,
+        isDefaultVariant: Boolean = false,
         description: String = "",
         tags: List<PreviewTag> = emptyList(),
         key: String = defaultKey(group, name),
@@ -158,6 +165,8 @@ class RegistryBuilder {
         registerPreview(
             group = group,
             name = name,
+            variantGroup = variantGroup,
+            isDefaultVariant = isDefaultVariant,
             description = description,
             tags = tags,
             key = key,
@@ -174,6 +183,8 @@ class RegistryBuilder {
     internal fun registerPreview(
         group: PreviewGroup,
         name: String,
+        variantGroup: PreviewVariantGroup?,
+        isDefaultVariant: Boolean,
         description: String,
         tags: List<PreviewTag>,
         key: String,
@@ -182,10 +193,15 @@ class RegistryBuilder {
         configure: PreviewOverrideBuilder.() -> Unit,
         composable: @Composable () -> Unit,
     ) {
+        require(variantGroup != null || !isDefaultVariant) {
+            "Preview '$key' sets isDefaultVariant=true but does not declare a variantGroup."
+        }
         entries += PreviewEntry(
             key = key,
             name = name,
             group = group,
+            variantGroup = variantGroup,
+            isDefaultVariant = isDefaultVariant,
             description = description,
             tags = tags,
             composable = composable,
@@ -241,6 +257,8 @@ class GroupScope internal constructor(
 
     fun preview(
         name: String,
+        variantGroup: PreviewVariantGroup? = null,
+        isDefaultVariant: Boolean = false,
         description: String = "",
         tags: List<PreviewTag> = emptyList(),
         key: String = "${defaultGroup.name}/$name",
@@ -250,6 +268,8 @@ class GroupScope internal constructor(
         parent.preview(
             name = name,
             group = defaultGroup,
+            variantGroup = variantGroup,
+            isDefaultVariant = isDefaultVariant,
             description = description,
             tags = tags,
             key = key,
@@ -261,6 +281,8 @@ class GroupScope internal constructor(
     fun preview(
         name: String,
         params: PreviewParamsDsl,
+        variantGroup: PreviewVariantGroup? = null,
+        isDefaultVariant: Boolean = false,
         description: String = "",
         tags: List<PreviewTag> = emptyList(),
         key: String = "${defaultGroup.name}/$name",
@@ -271,6 +293,8 @@ class GroupScope internal constructor(
             name = name,
             group = defaultGroup,
             params = params,
+            variantGroup = variantGroup,
+            isDefaultVariant = isDefaultVariant,
             description = description,
             tags = tags,
             key = key,

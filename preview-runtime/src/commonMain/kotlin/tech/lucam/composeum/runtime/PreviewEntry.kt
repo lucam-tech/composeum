@@ -3,6 +3,7 @@ package tech.lucam.composeum.runtime
 import androidx.compose.runtime.Composable
 import tech.lucam.composeum.annotation.PreviewGroup
 import tech.lucam.composeum.annotation.PreviewTag
+import tech.lucam.composeum.annotation.PreviewVariantGroup
 
 /**
  * A single registered composable preview.
@@ -17,6 +18,10 @@ data class PreviewEntry(
     val name: String,
     /** Group this preview belongs to, used to build the group tree. */
     val group: PreviewGroup,
+    /** Optional flavor family used to collapse several preview variants into one catalog item. */
+    val variantGroup: PreviewVariantGroup? = null,
+    /** Whether this entry should be used as the base/default flavor inside [variantGroup]. */
+    val isDefaultVariant: Boolean = false,
     /** Optional subtitle shown on the detail screen. */
     val description: String,
     /** Searchable tags shown as chips on thumbnail cards. */

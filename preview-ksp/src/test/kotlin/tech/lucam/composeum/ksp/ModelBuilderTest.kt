@@ -60,6 +60,13 @@ class ModelBuilderTest {
         interface PreviewGroup { val name: String; val description: String get() = "" }
         """,
     )
+    private val previewVariantGroupStub = SourceFile.kotlin(
+        "PreviewVariantGroup.kt",
+        """
+        package tech.lucam.composeum.annotation
+        interface PreviewVariantGroup
+        """,
+    )
     private val previewTagStub = SourceFile.kotlin(
         "PreviewTag.kt",
         """
@@ -87,6 +94,8 @@ class ModelBuilderTest {
         annotation class ComposePreview(
             val name: String = "",
             val group: kotlin.reflect.KClass<*> = PreviewGroup::class,
+            val variantGroup: kotlin.reflect.KClass<*> = PreviewVariantGroup::class,
+            val isDefaultVariant: Boolean = false,
             val description: String = "",
             val tags: Array<kotlin.reflect.KClass<*>> = [],
         )
@@ -98,6 +107,7 @@ class ModelBuilderTest {
             this.sources = listOf(
                 composableStub,
                 previewGroupStub,
+                previewVariantGroupStub,
                 previewTagStub,
                 previewParamStub,
                 composePreviewStub,

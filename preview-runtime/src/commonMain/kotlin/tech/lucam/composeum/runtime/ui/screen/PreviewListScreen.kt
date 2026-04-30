@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import tech.lucam.composeum.runtime.PreviewRegistry
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.PreviewWrapper
+import tech.lucam.composeum.runtime.families
 import tech.lucam.composeum.runtime.ui.component.LocalResolvedSettings
 import tech.lucam.composeum.runtime.ui.component.PreviewThumbnailCard
 
@@ -32,7 +33,7 @@ import tech.lucam.composeum.runtime.ui.component.PreviewThumbnailCard
  * @param groupKey        Qualified class name of the target group.
  * @param registry        Source of all preview entries.
  * @param config          Browser configuration (wrappers, overrides).
- * @param onEntrySelected Called with [tech.lucam.composeum.runtime.PreviewEntry.key] when a card is tapped.
+ * @param onEntrySelected Called with the selected preview-family key when a card is tapped.
  * @param modifier        Modifier applied to the root box.
  */
 @Composable
@@ -45,19 +46,20 @@ fun PreviewListScreen(
 ) {
     val settings = LocalResolvedSettings.current
 
-    val entries = remember(registry.entries, groupKey) {
-        registry.entries.filter { entry ->
+    val families = remember(registry.entries, groupKey) {
+        registry.families().filter { family ->
+            val entry = family.defaultEntry
             (entry.group::class.qualifiedName ?: entry.group::class.simpleName ?: "") == groupKey
         }
     }
 
-    val group = entries.firstOrNull()?.group
+    val group = families.firstOrNull()?.defaultEntry?.group
     val groupConfig = group?.let { config.groupOverrides[it::class] }
 
     val thumbnailColumns = groupConfig?.thumbnailColumns ?: settings.thumbnailColumns
     val effectiveGroupWrapper = groupConfig?.groupWrapper ?: config.groupWrapper
     val gridContent: @Composable () -> Unit = {
-        if (entries.isEmpty()) {
+        if (families.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -77,12 +79,13 @@ fun PreviewListScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxSize(),
             ) {
-                items(entries, key = { it.key }) { entry ->
+                items(families, key = { it.key }) { family ->
+                    val entry = family.defaultEntry
                     PreviewThumbnailCard(
                         entry = entry,
                         previewWrapper = resolvePreviewWrapper(entry, config),
                         showTags = settings.showTags,
-                        onClick = { onEntrySelected(entry.key) },
+                        onClick = { onEntrySelected(family.key) },
                     )
                 }
             }

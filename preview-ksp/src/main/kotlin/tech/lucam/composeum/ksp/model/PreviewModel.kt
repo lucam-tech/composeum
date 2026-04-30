@@ -13,6 +13,12 @@ internal data class PreviewModel(
     val groupExpression: String,
     /** Fully-qualified name of the top-level group class for import statements. */
     val groupImport: String,
+    /** Optional Kotlin expression for the variant-group object used to group preview flavors. */
+    val variantGroupExpression: String? = null,
+    /** Fully-qualified name of the top-level variant-group class for import statements. */
+    val variantGroupImport: String = "",
+    /** Whether this preview should be treated as the base/default flavor in its variant family. */
+    val isDefaultVariant: Boolean = false,
     /** Optional description from @ComposePreview.description. */
     val description: String,
     /** Tag constructor/object expressions for the generated registry. */

@@ -20,6 +20,7 @@ class ComposeumProcessorTest {
         package tech.lucam.composeum.runtime
         import androidx.compose.runtime.Composable
         import tech.lucam.composeum.annotation.PreviewGroup
+        import tech.lucam.composeum.annotation.PreviewVariantGroup
 
         data class PreviewParamState(val values: Map<String, Any> = emptyMap()) {
             fun put(key: String, value: Any): PreviewParamState = copy(values = values + (key to value))
@@ -31,6 +32,8 @@ class ComposeumProcessorTest {
             val key: String,
             val name: String,
             val group: PreviewGroup,
+            val variantGroup: PreviewVariantGroup? = null,
+            val isDefaultVariant: Boolean = false,
             val description: String,
             val tags: List<String>,
             val composable: @Composable () -> Unit,
@@ -120,6 +123,13 @@ class ComposeumProcessorTest {
         }
         """,
     )
+    private val previewVariantGroupStub = SourceFile.kotlin(
+        "PreviewVariantGroup.kt",
+        """
+        package tech.lucam.composeum.annotation
+        interface PreviewVariantGroup
+        """,
+    )
     private val previewParamStub = SourceFile.kotlin(
         "PreviewParam.kt",
         """
@@ -148,6 +158,8 @@ class ComposeumProcessorTest {
         annotation class ComposePreview(
             val name: String = "",
             val group: kotlin.reflect.KClass<*> = PreviewGroup::class,
+            val variantGroup: kotlin.reflect.KClass<*> = PreviewVariantGroup::class,
+            val isDefaultVariant: Boolean = false,
             val description: String = "",
             val tags: Array<kotlin.reflect.KClass<*>> = [],
         )
@@ -160,6 +172,8 @@ class ComposeumProcessorTest {
         annotation class ViewPreview(
             val name: String,
             val group: kotlin.reflect.KClass<*>,
+            val variantGroup: kotlin.reflect.KClass<*> = PreviewVariantGroup::class,
+            val isDefaultVariant: Boolean = false,
             val description: String = "",
             val tags: Array<kotlin.reflect.KClass<*>> = [],
         )
@@ -206,6 +220,7 @@ class ComposeumProcessorTest {
             this.sources = listOf(
                 composableStub,
                 previewGroupStub,
+                previewVariantGroupStub,
                 previewParamStub,
                 composePreviewStub,
             ) + sources.toList()
@@ -799,6 +814,7 @@ class ComposeumProcessorTest {
                 colorStub,
                 dpAndTextUnitStub,
                 previewGroupStub,
+                previewVariantGroupStub,
                 previewTagStub,
                 previewParamStub,
                 composePreviewStub,
@@ -824,6 +840,7 @@ class ComposeumProcessorTest {
                 colorStub,
                 dpAndTextUnitStub,
                 previewGroupStub,
+                previewVariantGroupStub,
                 previewTagStub,
                 previewParamStub,
                 composePreviewStub,
@@ -843,6 +860,7 @@ class ComposeumProcessorTest {
                 composableStub,
                 colorStub,
                 previewGroupStub,
+                previewVariantGroupStub,
                 previewTagStub,
                 previewParamStub,
                 composePreviewStub,
@@ -1654,6 +1672,7 @@ class ComposeumProcessorTest {
             this.sources = listOf(
                 composableStub,
                 previewGroupStub,
+                previewVariantGroupStub,
                 previewTagStub,
                 previewParamStub,
                 composePreviewStub,
@@ -1670,6 +1689,7 @@ class ComposeumProcessorTest {
                 composableStub,
                 colorStub,
                 previewGroupStub,
+                previewVariantGroupStub,
                 previewTagStub,
                 previewParamStub,
                 composePreviewStub,
@@ -1696,6 +1716,7 @@ class ComposeumProcessorTest {
             this.sources = listOf(
                 composableStub,
                 previewGroupStub,
+                previewVariantGroupStub,
                 previewTagStub,
                 previewParamStub,
                 composePreviewStub,
@@ -1715,6 +1736,7 @@ class ComposeumProcessorTest {
                 composableStub,
                 colorStub,
                 previewGroupStub,
+                previewVariantGroupStub,
                 previewTagStub,
                 previewParamStub,
                 composePreviewStub,
@@ -1735,6 +1757,7 @@ class ComposeumProcessorTest {
             this.sources = listOf(
                 composableStub,
                 previewGroupStub,
+                previewVariantGroupStub,
                 previewTagStub,
                 previewParamStub,
                 composePreviewStub,
@@ -2555,5 +2578,38 @@ class ComposeumProcessorTest {
         val registry = findGeneratedFile(compilation, "GeneratedPreviewRegistry")!!.readText()
         assertTrue(registry.contains("description = \"Android Studio preview fallback summary.\""))
         assertTrue(registry.contains("tags = listOf(tech.lucam.composeum.annotation.SimplePreviewTag(\"studio\"))"))
+    }
+
+    @Test
+    fun `ComposePreview variant group and default flavor are emitted`() {
+        val (result, compilation) = compileRetaining(
+            SourceFile.kotlin(
+                "Preview.kt",
+                """
+                package com.example
+                import androidx.compose.runtime.Composable
+                import tech.lucam.composeum.annotation.ComposePreview
+                import tech.lucam.composeum.annotation.PreviewGroup
+                import tech.lucam.composeum.annotation.PreviewVariantGroup
+
+                object MyGroup : PreviewGroup { override val name = "Group" }
+                object MyVariant : PreviewVariantGroup
+
+                @ComposePreview(
+                    name = "Base",
+                    group = MyGroup::class,
+                    variantGroup = MyVariant::class,
+                    isDefaultVariant = true,
+                )
+                @Composable
+                fun myPreview() {}
+                """,
+            ),
+        )
+
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        val registry = findGeneratedFile(compilation, "GeneratedPreviewRegistry")!!.readText()
+        assertTrue(registry.contains("variantGroup = MyVariant"))
+        assertTrue(registry.contains("isDefaultVariant = true"))
     }
 }

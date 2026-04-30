@@ -14,6 +14,7 @@ private const val VIEW_PREVIEW_FQN = "tech.lucam.composeum.annotation.ViewPrevie
 private const val ANDROID_PREVIEW_FQN = "androidx.compose.ui.tooling.preview.Preview"
 private const val PREVIEW_PARAM_FQN = "tech.lucam.composeum.annotation.PreviewParam"
 private const val PREVIEW_GROUP_FQN = "tech.lucam.composeum.annotation.PreviewGroup"
+private const val PREVIEW_VARIANT_GROUP_FQN = "tech.lucam.composeum.annotation.PreviewVariantGroup"
 private const val SIMPLE_PREVIEW_TAG_FQN = "tech.lucam.composeum.annotation.SimplePreviewTag"
 private const val CONTEXT_FQN = "android.content.Context"
 private const val GENERATED_TOP_LEVEL_GROUP = "GeneratedComposePreviewTopLevelGroup"
@@ -34,6 +35,8 @@ internal object ModelBuilder {
         val tags = ((args["tags"] as? List<*>)?.mapNotNull { (it as? KSType)?.let(::resolveTagExpression) } ?: emptyList())
             .ifEmpty { kdoc?.tags.orEmpty().map(::simpleTagExpression) }
         val groupType = args["group"] as? KSType
+        val variantGroupType = args["variantGroup"] as? KSType
+        val isDefaultVariant = args["isDefaultVariant"] as? Boolean ?: false
 
         val hasExplicitGroup = groupType?.declaration?.qualifiedName?.asString() != PREVIEW_GROUP_FQN
         val (groupExpression, groupImport, syntheticGroupDisplayName) = if (hasExplicitGroup) {
@@ -41,6 +44,13 @@ internal object ModelBuilder {
             Triple(expression, groupImport, null)
         } else {
             Triple(GENERATED_TOP_LEVEL_GROUP, "", "")
+        }
+        val hasExplicitVariantGroup =
+            variantGroupType?.declaration?.qualifiedName?.asString() != PREVIEW_VARIANT_GROUP_FQN
+        val (variantGroupExpression, variantGroupImport) = if (hasExplicitVariantGroup) {
+            resolveGroupExpression(variantGroupType)
+        } else {
+            null to ""
         }
 
         val params = collectPreviewParams(function, kdoc?.paramDescriptions.orEmpty())
@@ -50,6 +60,9 @@ internal object ModelBuilder {
             name = name,
             groupExpression = groupExpression,
             groupImport = groupImport,
+            variantGroupExpression = variantGroupExpression,
+            variantGroupImport = variantGroupImport,
+            isDefaultVariant = isDefaultVariant,
             description = description,
             tags = tags,
             functionSimpleName = function.simpleName.asString(),
@@ -111,8 +124,17 @@ internal object ModelBuilder {
         val tags = ((args["tags"] as? List<*>)?.mapNotNull { (it as? KSType)?.let(::resolveTagExpression) } ?: emptyList())
             .ifEmpty { kdoc?.tags.orEmpty().map(::simpleTagExpression) }
         val groupType = args["group"] as? KSType
+        val variantGroupType = args["variantGroup"] as? KSType
+        val isDefaultVariant = args["isDefaultVariant"] as? Boolean ?: false
 
         val (groupExpression, groupImport) = resolveGroupExpression(groupType)
+        val hasExplicitVariantGroup =
+            variantGroupType?.declaration?.qualifiedName?.asString() != PREVIEW_VARIANT_GROUP_FQN
+        val (variantGroupExpression, variantGroupImport) = if (hasExplicitVariantGroup) {
+            resolveGroupExpression(variantGroupType)
+        } else {
+            null to ""
+        }
 
         val hasContextParam = function.parameters.firstOrNull()
             ?.type?.resolve()?.declaration?.qualifiedName?.asString() == CONTEXT_FQN
@@ -122,6 +144,9 @@ internal object ModelBuilder {
             name = name,
             groupExpression = groupExpression,
             groupImport = groupImport,
+            variantGroupExpression = variantGroupExpression,
+            variantGroupImport = variantGroupImport,
+            isDefaultVariant = isDefaultVariant,
             description = description,
             tags = tags,
             functionSimpleName = function.simpleName.asString(),

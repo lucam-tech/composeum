@@ -3,11 +3,13 @@ package tech.lucam.composeum.runtime.ui.screen
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.annotation.PreviewVariantGroup
 import tech.lucam.composeum.annotation.PreviewTag
 import tech.lucam.composeum.annotation.SimplePreviewTag
 import tech.lucam.composeum.runtime.PreviewEntry
@@ -42,6 +44,8 @@ class PreviewListScreenTest {
             override val name = "Screens"
         }
     }
+
+    private object VariantFamily : PreviewVariantGroup
 
     private fun tags(vararg values: String): List<PreviewTag> = values.map(::SimplePreviewTag)
 
@@ -90,6 +94,33 @@ class PreviewListScreenTest {
         composeRule.onNodeWithText("PrimaryButton").assertIsDisplayed()
         composeRule.onNodeWithText("SecondaryButton").assertIsDisplayed()
         composeRule.onNodeWithText("UnrelatedScreen").assertDoesNotExist()
+    }
+
+    @Test
+    fun `variant entries are collapsed into a single card`() {
+        composeRule.setContent {
+            MaterialTheme {
+                PreviewListScreen(
+                    groupKey = componentsKey,
+                    registry = registryOf(
+                        entry("Base").copy(
+                            key = "base",
+                            variantGroup = VariantFamily,
+                            isDefaultVariant = true,
+                        ),
+                        entry("Experimental").copy(
+                            key = "experimental",
+                            variantGroup = VariantFamily,
+                        ),
+                    ),
+                    config = defaultConfig,
+                    onEntrySelected = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Base").assertIsDisplayed()
+        composeRule.onNodeWithText("Experimental").assertDoesNotExist()
     }
 
     @Test

@@ -37,6 +37,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.savedstate.read
 import tech.lucam.composeum.runtime.PreviewRegistry
+import tech.lucam.composeum.runtime.familyKey
+import tech.lucam.composeum.runtime.families
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.ThemeOption
 import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
@@ -107,14 +109,18 @@ fun ComposeumBrowser(
     val navController = rememberNavController()
     val currentBackStack by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStack?.destination?.route
+    var activeDetailEntryKey by remember { mutableStateOf<String?>(null) }
 
     val isRoot = currentRoute == null || currentRoute == PreviewRoute.GroupList.route
 
     // Non-null only when the detail screen is active; used for title and the source link button.
     val currentDetailEntry = when (currentRoute) {
         PreviewRoute.PreviewDetail("").route -> {
-            val entryKey = navArgumentValue(currentBackStack, PreviewRoute.PreviewDetail.ARG)
-            registry.entries.firstOrNull { it.key == entryKey }
+            val familyKey = navArgumentValue(currentBackStack, PreviewRoute.PreviewDetail.ARG)
+            val activeEntry = activeDetailEntryKey?.let { entryKey ->
+                registry.entries.firstOrNull { it.key == entryKey && it.familyKey() == familyKey }
+            }
+            activeEntry ?: registry.families().find { it.key == familyKey }?.defaultEntry
         }
         else -> null
     }
@@ -193,8 +199,9 @@ fun ComposeumBrowser(
                             onGroupSelected = { groupKey ->
                                 navController.navigate(PreviewRoute.PreviewList.routeFor(groupKey))
                             },
-                            onEntrySelected = { entryKey ->
-                                navController.navigate(PreviewRoute.PreviewDetail.routeFor(entryKey))
+                            onEntrySelected = { familyKey ->
+                                activeDetailEntryKey = null
+                                navController.navigate(PreviewRoute.PreviewDetail.routeFor(familyKey))
                             },
                         )
                     }
@@ -209,8 +216,9 @@ fun ComposeumBrowser(
                             groupKey = groupKey,
                             registry = registry,
                             config = effectiveConfig,
-                            onEntrySelected = { entryKey ->
-                                navController.navigate(PreviewRoute.PreviewDetail.routeFor(entryKey))
+                            onEntrySelected = { familyKey ->
+                                activeDetailEntryKey = null
+                                navController.navigate(PreviewRoute.PreviewDetail.routeFor(familyKey))
                             },
                         )
                     }
@@ -220,11 +228,12 @@ fun ComposeumBrowser(
                             navArgument(PreviewRoute.PreviewDetail.ARG) { type = NavType.StringType },
                         ),
                     ) { backStackEntry ->
-                        val entryKey = navArgumentValue(backStackEntry, PreviewRoute.PreviewDetail.ARG)
+                        val familyKey = navArgumentValue(backStackEntry, PreviewRoute.PreviewDetail.ARG)
                         PreviewDetailScreen(
-                            entryKey = entryKey,
+                            familyKey = familyKey,
                             registry = registry,
                             config = effectiveConfig,
+                            onActiveEntryChanged = { activeDetailEntryKey = it?.key },
                         )
                     }
                 }

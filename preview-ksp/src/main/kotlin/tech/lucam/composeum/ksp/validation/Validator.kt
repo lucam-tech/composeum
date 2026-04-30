@@ -14,6 +14,7 @@ private const val VIEW_PREVIEW_FQN = "tech.lucam.composeum.annotation.ViewPrevie
 private const val ANDROID_PREVIEW_FQN = "androidx.compose.ui.tooling.preview.Preview"
 private const val PREVIEW_PARAM_FQN = "tech.lucam.composeum.annotation.PreviewParam"
 private const val PREVIEW_GROUP_FQN = "tech.lucam.composeum.annotation.PreviewGroup"
+private const val PREVIEW_VARIANT_GROUP_FQN = "tech.lucam.composeum.annotation.PreviewVariantGroup"
 private const val VIEW_FQN = "android.view.View"
 private const val CONTEXT_FQN = "android.content.Context"
 
@@ -64,6 +65,30 @@ internal object Validator {
                     function,
                     "declares group '${groupTypeName(function, COMPOSE_PREVIEW_FQN)}', which must implement PreviewGroup",
                     "Change the group argument to a PreviewGroup object.",
+                ),
+                function,
+            )
+            valid = false
+        }
+
+        if (!variantGroupImplementsPreviewVariantGroup(function, resolver)) {
+            logger.error(
+                composePreviewMessage(
+                    function,
+                    "declares variantGroup '${variantGroupTypeName(function, COMPOSE_PREVIEW_FQN)}', which must implement PreviewVariantGroup",
+                    "Change the variantGroup argument to a PreviewVariantGroup object.",
+                ),
+                function,
+            )
+            valid = false
+        }
+
+        if (usesDefaultVariantWithoutVariantGroup(function, COMPOSE_PREVIEW_FQN)) {
+            logger.error(
+                composePreviewMessage(
+                    function,
+                    "sets isDefaultVariant=true without declaring variantGroup",
+                    "Add a variantGroup argument or remove isDefaultVariant=true.",
                 ),
                 function,
             )
@@ -193,6 +218,30 @@ internal object Validator {
                     function,
                     "declares group '${groupTypeName(function, VIEW_PREVIEW_FQN)}', which must implement PreviewGroup",
                     "Change the group argument to a PreviewGroup object.",
+                ),
+                function,
+            )
+            valid = false
+        }
+
+        if (!variantGroupImplementsPreviewVariantGroup(function, resolver, VIEW_PREVIEW_FQN)) {
+            logger.error(
+                viewPreviewMessage(
+                    function,
+                    "declares variantGroup '${variantGroupTypeName(function, VIEW_PREVIEW_FQN)}', which must implement PreviewVariantGroup",
+                    "Change the variantGroup argument to a PreviewVariantGroup object.",
+                ),
+                function,
+            )
+            valid = false
+        }
+
+        if (usesDefaultVariantWithoutVariantGroup(function, VIEW_PREVIEW_FQN)) {
+            logger.error(
+                viewPreviewMessage(
+                    function,
+                    "sets isDefaultVariant=true without declaring variantGroup",
+                    "Add a variantGroup argument or remove isDefaultVariant=true.",
                 ),
                 function,
             )
@@ -694,6 +743,66 @@ internal object Validator {
 
         return groupType.declaration.qualifiedName?.asString()
             ?: groupType.toString()
+    }
+
+    private fun variantGroupImplementsPreviewVariantGroup(
+        function: KSFunctionDeclaration,
+        resolver: Resolver,
+        annotationFqn: String = COMPOSE_PREVIEW_FQN,
+    ): Boolean {
+        val ann = function.annotations.firstOrNull { a ->
+            a.annotationType.resolve().declaration.qualifiedName?.asString() == annotationFqn
+        } ?: return true
+
+        val variantGroupType = ann.arguments
+            .firstOrNull { it.name?.asString() == "variantGroup" }
+            ?.value as? KSType ?: return false
+
+        val defaultTypeName = variantGroupType.declaration.qualifiedName?.asString()
+        if (defaultTypeName == PREVIEW_VARIANT_GROUP_FQN) return true
+
+        val previewVariantGroupType = resolver
+            .getClassDeclarationByName(resolver.getKSNameFromString(PREVIEW_VARIANT_GROUP_FQN))
+            ?.asStarProjectedType() ?: return true
+
+        return previewVariantGroupType.isAssignableFrom(variantGroupType)
+    }
+
+    private fun variantGroupTypeName(
+        function: KSFunctionDeclaration,
+        annotationFqn: String,
+    ): String {
+        val ann = function.annotations.firstOrNull { a ->
+            a.annotationType.resolve().declaration.qualifiedName?.asString() == annotationFqn
+        } ?: return "unknown"
+
+        val variantGroupType = ann.arguments
+            .firstOrNull { it.name?.asString() == "variantGroup" }
+            ?.value as? KSType
+            ?: return "unknown"
+
+        return variantGroupType.declaration.qualifiedName?.asString()
+            ?: variantGroupType.toString()
+    }
+
+    private fun usesDefaultVariantWithoutVariantGroup(
+        function: KSFunctionDeclaration,
+        annotationFqn: String,
+    ): Boolean {
+        val ann = function.annotations.firstOrNull { a ->
+            a.annotationType.resolve().declaration.qualifiedName?.asString() == annotationFqn
+        } ?: return false
+
+        val isDefaultVariant = ann.arguments
+            .firstOrNull { it.name?.asString() == "isDefaultVariant" }
+            ?.value as? Boolean ?: false
+        if (!isDefaultVariant) return false
+
+        val variantGroupType = ann.arguments
+            .firstOrNull { it.name?.asString() == "variantGroup" }
+            ?.value as? KSType ?: return true
+
+        return variantGroupType.declaration.qualifiedName?.asString() == PREVIEW_VARIANT_GROUP_FQN
     }
 
     private fun functionName(function: KSFunctionDeclaration): String =

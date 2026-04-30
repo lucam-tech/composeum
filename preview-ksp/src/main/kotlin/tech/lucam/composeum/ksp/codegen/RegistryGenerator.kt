@@ -57,6 +57,13 @@ internal object RegistryGenerator {
                     model.groupImport.substring(lastDot + 1),
                 )
             }
+            val variantLastDot = model.variantGroupImport.lastIndexOf('.')
+            if (variantLastDot >= 0) {
+                fileBuilder.addImport(
+                    model.variantGroupImport.substring(0, variantLastDot),
+                    model.variantGroupImport.substring(variantLastDot + 1),
+                )
+            }
         }
 
         // Emit one private synthetic PreviewGroup object per unique generated group string.
@@ -113,6 +120,11 @@ internal object RegistryGenerator {
             addStatement("key = %S,", model.key)
             addStatement("name = %S,", model.name)
             addStatement("group = %L,", model.groupExpression)
+            addStatement(
+                "variantGroup = %L,",
+                model.variantGroupExpression ?: "null",
+            )
+            addStatement("isDefaultVariant = %L,", model.isDefaultVariant)
             addStatement("description = %S,", model.description)
             if (model.tags.isEmpty()) {
                 addStatement("tags = emptyList(),")
