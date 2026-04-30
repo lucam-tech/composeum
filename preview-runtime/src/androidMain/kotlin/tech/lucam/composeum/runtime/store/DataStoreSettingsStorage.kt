@@ -7,6 +7,8 @@ import androidx.datastore.preferences.core.edit
 import tech.lucam.composeum.runtime.ColorBlindMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 /**
  * Reads and writes [RuntimeSettings] via [DataStore].
@@ -15,6 +17,8 @@ import kotlinx.coroutines.flow.map
  * [tech.lucam.composeum.runtime.ui.ComposeumBrowser] or the host activity).
  */
 class DataStoreSettingsStorage(private val dataStore: DataStore<Preferences>) : SettingsStorage {
+
+    private val json = Json { ignoreUnknownKeys = true }
 
     override val settings: Flow<RuntimeSettings> = dataStore.data.map { it.toRuntimeSettings() }
 
@@ -39,6 +43,11 @@ class DataStoreSettingsStorage(private val dataStore: DataStore<Preferences>) : 
             prefs -= SettingsKeys.COLOR_BLIND_MODE
             prefs -= SettingsKeys.REDUCED_MOTION_MODE
             prefs -= SettingsKeys.LARGE_TOUCH_TARGETS_MODE
+            prefs -= SettingsKeys.LAST_ROUTE
+            prefs -= SettingsKeys.EXPANDED_GROUP_KEYS
+            prefs -= SettingsKeys.INLINE_EXPANDED_GROUP_KEYS
+            prefs -= SettingsKeys.FAVORITE_FAMILY_KEYS
+            prefs -= SettingsKeys.RECENT_FAMILY_KEYS
         }
     }
 
@@ -59,6 +68,11 @@ class DataStoreSettingsStorage(private val dataStore: DataStore<Preferences>) : 
             ?.let { runCatching { ColorBlindMode.valueOf(it) }.getOrNull() },
         reducedMotionMode = this[SettingsKeys.REDUCED_MOTION_MODE],
         largeTouchTargetsMode = this[SettingsKeys.LARGE_TOUCH_TARGETS_MODE],
+        lastRoute = this[SettingsKeys.LAST_ROUTE],
+        expandedGroupKeys = this[SettingsKeys.EXPANDED_GROUP_KEYS]?.decodeStringList(),
+        inlineExpandedGroupKeys = this[SettingsKeys.INLINE_EXPANDED_GROUP_KEYS]?.decodeStringList(),
+        favoriteFamilyKeys = this[SettingsKeys.FAVORITE_FAMILY_KEYS]?.decodeStringList() ?: emptyList(),
+        recentFamilyKeys = this[SettingsKeys.RECENT_FAMILY_KEYS]?.decodeStringList() ?: emptyList(),
     )
 
     private fun MutablePreferences.writeSettings(s: RuntimeSettings) {
@@ -87,5 +101,21 @@ class DataStoreSettingsStorage(private val dataStore: DataStore<Preferences>) : 
         else this -= SettingsKeys.REDUCED_MOTION_MODE
         if (s.largeTouchTargetsMode != null) this[SettingsKeys.LARGE_TOUCH_TARGETS_MODE] = s.largeTouchTargetsMode
         else this -= SettingsKeys.LARGE_TOUCH_TARGETS_MODE
+        if (s.lastRoute != null) this[SettingsKeys.LAST_ROUTE] = s.lastRoute
+        else this -= SettingsKeys.LAST_ROUTE
+        if (s.expandedGroupKeys != null) this[SettingsKeys.EXPANDED_GROUP_KEYS] = encodeStringList(s.expandedGroupKeys)
+        else this -= SettingsKeys.EXPANDED_GROUP_KEYS
+        if (s.inlineExpandedGroupKeys != null) {
+            this[SettingsKeys.INLINE_EXPANDED_GROUP_KEYS] = encodeStringList(s.inlineExpandedGroupKeys)
+        } else {
+            this -= SettingsKeys.INLINE_EXPANDED_GROUP_KEYS
+        }
+        this[SettingsKeys.FAVORITE_FAMILY_KEYS] = encodeStringList(s.favoriteFamilyKeys)
+        this[SettingsKeys.RECENT_FAMILY_KEYS] = encodeStringList(s.recentFamilyKeys)
     }
+
+    private fun String.decodeStringList(): List<String>? =
+        runCatching { json.decodeFromString<List<String>>(this) }.getOrNull()
+
+    private fun encodeStringList(values: List<String>): String = json.encodeToString(values)
 }

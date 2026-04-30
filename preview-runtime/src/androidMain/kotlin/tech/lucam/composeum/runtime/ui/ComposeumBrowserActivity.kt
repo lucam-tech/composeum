@@ -22,6 +22,11 @@ import tech.lucam.composeum.runtime.config.PreviewConfig
  */
 open class ComposeumBrowserActivity : ComponentActivity() {
 
+    companion object {
+        /** Intent extra used to open the browser at a specific route. */
+        const val EXTRA_ROUTE = "tech.lucam.composeum.runtime.ui.ROUTE"
+    }
+
     /** Override to provide the preview registry. */
     open val registry: PreviewRegistry
         get() = error("Override ComposeumBrowserActivity.registry")
@@ -32,8 +37,13 @@ open class ComposeumBrowserActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val launchRoute = intent?.getStringExtra(EXTRA_ROUTE)
+            ?: intent?.data?.getQueryParameter("composeumRoute")
         setContent {
-            ComposeumBrowser(registry = registry, config = config)
+            ComposeumBrowser(
+                registry = registry,
+                config = if (launchRoute != null) config.copy(initialRoute = launchRoute) else config,
+            )
         }
     }
 }

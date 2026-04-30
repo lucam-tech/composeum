@@ -29,6 +29,8 @@ internal data class PreviewModel(
     val functionPackage: String,
     /** @PreviewParam-annotated parameters in declaration order. */
     val params: List<ParamModel>,
+    /** Flattened state-key to Kotlin-type hints for shareable route serialization. */
+    val paramTypeHints: Map<String, String> = emptyMap(),
     /** True when built from a @ViewPreview function rather than @ComposePreview. */
     val isViewPreview: Boolean = false,
     /**

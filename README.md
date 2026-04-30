@@ -31,6 +31,7 @@ Annotate your composables with `@ComposePreview`, run KSP, and get a fully inter
 - [Known limitations](#known-limitations)
 - [Module architecture](#module-architecture)
 - [Building locally](#building-locally)
+- [Release checklist](#release-checklist)
 
 ---
 
@@ -39,9 +40,10 @@ Annotate your composables with `@ComposePreview`, run KSP, and get a fully inter
 Composeum scans your source files at compile time (via KSP) and builds a typed registry of every composable you annotate with `@ComposePreview`. At runtime it renders a navigation-based browser where you can:
 
 - Browse and search all previews, organized by your own group hierarchy
+- Favorite important previews and jump back to recent ones from the root screen
 - Tweak every `@PreviewParam` parameter live with built-in widgets (string, boolean, int, float, colour, dp, sp, dropdown)
 - Toggle dark/light mode, font scale, UI scale, and locale without restarting
-- Deep-link directly to any preview
+- Deep-link directly to any preview family, flavor, and supported parameter state
 - See where each composable lives in source
 
 No reflection is used. Every composable is discovered and registered at compile time.
@@ -748,6 +750,15 @@ val config = previewConfig {
     // --- Source code links ---
     sourceBaseUrl = "https://github.com/myorg/myapp/blob/main/"
     sourceStripPrefix = "/home/runner/work/myapp/myapp/"
+    sourceStripPrefixes = listOf(
+        "/Users/alice/dev/myapp/",
+        "C:/work/myapp/",
+    )
+
+    // --- Shareable route callback ---
+    onShareableRouteChanged { route ->
+        println(route)
+    }
 
     // --- Custom settings panel items ---
     settingsItems = listOf(
@@ -868,10 +879,28 @@ previewConfig {
     // Prefix stripped from the absolute paths recorded by KSP
     // (KSP records the absolute path on the build machine)
     sourceStripPrefix = "/home/runner/work/myapp/myapp/"
+
+    // Optional fallbacks when local and CI roots differ
+    sourceStripPrefixes = listOf(
+        "/Users/alice/dev/myapp/",
+        "C:/work/myapp/",
+    )
 }
 ```
 
 The final URL is constructed as `sourceBaseUrl + (absolutePath - sourceStripPrefix) + "#L{line}"`.
+
+Composeum strips the longest matching prefix across `sourceStripPrefix` and
+`sourceStripPrefixes`, then normalizes the path for browser use.
+
+### Opening a shared route on Android
+
+`ComposeumBrowserActivity` accepts a full route through either:
+
+- intent extra `ComposeumBrowserActivity.EXTRA_ROUTE`
+- query parameter `composeumRoute` on the activity data URI
+
+You can capture that route from `previewConfig { onShareableRouteChanged { ... } }`.
 
 ---
 
@@ -1002,7 +1031,7 @@ tech.lucam.composeum.runtime.store       # DataStore keys, settings model
 
 ## Building locally
 
-**Prerequisites:** JDK 17+, Android SDK with API 35.
+**Prerequisites:** JDK 17+, Android SDK with API 36.
 
 ```bash
 git clone https://github.com/lucam-tech/composeum.git
@@ -1032,11 +1061,19 @@ Key versions:
 
 | Dependency            | Version       |
 | --------------------- | ------------- |
-| Kotlin                | 2.0.21        |
-| KSP                   | 2.0.21-1.0.28 |
-| Compose BOM           | 2024.12.01    |
-| Compose Multiplatform | 1.7.1         |
+| Kotlin                | 2.3.21        |
+| KSP                   | 2.3.6         |
+| Compose BOM           | 2026.04.01    |
+| Compose Multiplatform | 1.10.3        |
 | Android Gradle Plugin | 8.13.2        |
-| DataStore             | 1.1.1         |
-| Navigation            | 2.8.5         |
-| KotlinPoet            | 2.0.0         |
+| DataStore             | 1.2.1         |
+| Navigation            | 2.9.x         |
+| KotlinPoet            | 2.3.0         |
+
+---
+
+## Release checklist
+
+Use [docs/release-checklist.md](docs/release-checklist.md) for the canonical
+Maven Central publishing flow, signing environment variables, and verification
+commands.

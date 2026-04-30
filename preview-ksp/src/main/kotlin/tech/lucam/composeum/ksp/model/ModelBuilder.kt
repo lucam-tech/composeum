@@ -68,6 +68,7 @@ internal object ModelBuilder {
             functionSimpleName = function.simpleName.asString(),
             functionPackage = function.packageName.asString(),
             params = params,
+            paramTypeHints = collectParamTypeHints(params),
             syntheticGroupDisplayName = syntheticGroupDisplayName,
             sourceFile = function.containingFile?.filePath ?: "",
             sourceLine = (function.location as? FileLocation)?.lineNumber ?: 0,
@@ -102,6 +103,7 @@ internal object ModelBuilder {
             functionSimpleName = function.simpleName.asString(),
             functionPackage = function.packageName.asString(),
             params = params,
+            paramTypeHints = collectParamTypeHints(params),
             isAndroidPreview = true,
             syntheticGroupDisplayName = groupDisplayName,
             androidPreviewGroupName = groupDisplayName,
@@ -152,6 +154,7 @@ internal object ModelBuilder {
             functionSimpleName = function.simpleName.asString(),
             functionPackage = function.packageName.asString(),
             params = emptyList(),
+            paramTypeHints = emptyMap(),
             isViewPreview = true,
             hasContextParam = hasContextParam,
             sourceFile = function.containingFile?.filePath ?: "",
@@ -345,4 +348,36 @@ internal object ModelBuilder {
 
     private fun simpleTagExpression(title: String): String =
         "$SIMPLE_PREVIEW_TAG_FQN(\"${title.replace("\\", "\\\\").replace("\"", "\\\"")}\")"
+
+    private fun collectParamTypeHints(params: List<ParamModel>): Map<String, String> {
+        val result = linkedMapOf<String, String>()
+        params.forEach { collectParamTypeHints(it, result) }
+        return result
+    }
+
+    private fun collectParamTypeHints(param: ParamModel, result: MutableMap<String, String>) {
+        when {
+            param.isNullable -> {
+                result["${param.name}#isNull"] = "kotlin.Boolean"
+                collectParamTypeHints(param.copy(isNullable = false), result)
+            }
+            param.isDataClass -> param.dataClassParams.forEach { sub ->
+                collectParamTypeHints(sub.copy(name = "${param.name}.${sub.name}"), result)
+            }
+            param.isSealedClass -> {
+                result["${param.name}#variant"] = "kotlin.String"
+                param.sealedSubtypes.forEach { subtype ->
+                    subtype.params.forEach { sub ->
+                        collectParamTypeHints(
+                            sub.copy(name = "${param.name}.${subtype.name}.${sub.name}"),
+                            result,
+                        )
+                    }
+                }
+            }
+            param.isList -> result["${param.name}#count"] = "kotlin.Int"
+            param.isEnum || param.options.isNotEmpty() -> result[param.name] = "kotlin.String"
+            else -> result[param.name] = param.kotlinType
+        }
+    }
 }

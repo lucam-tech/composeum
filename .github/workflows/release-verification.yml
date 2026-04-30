@@ -1,0 +1,48 @@
+name: Release Verification
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/release-verification.yml"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle/**"
+      - "build-logic/**"
+      - "preview-annotation/**"
+      - "preview-ksp/**"
+      - "preview-runtime/**"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses
+
+      - name: Install Android platform
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Verify build
+        run: ./gradlew build
+
+      - name: Publish to Maven Local
+        run: ./gradlew publishToMavenLocal
+
+      - name: List published Composeum modules
+        run: find ~/.m2/repository/tech/lucam/composeum -maxdepth 2 -type d | sort
+
+      - name: List generated signatures
+        run: find . -path '*build/publications/*' -name '*.asc' | sort

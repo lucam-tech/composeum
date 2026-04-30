@@ -59,7 +59,10 @@ fun PreviewDetailScreen(
     familyKey: String,
     registry: PreviewRegistry,
     config: PreviewConfig,
+    initialSelectedEntryKey: String? = null,
+    initialParamState: PreviewParamState? = null,
     onActiveEntryChanged: (PreviewEntry?) -> Unit = {},
+    onParamStateChanged: (PreviewEntry, PreviewParamState) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     val family = remember(registry.entries, familyKey) {
@@ -79,7 +82,12 @@ fun PreviewDetailScreen(
         return
     }
 
-    var selectedEntryKey by remember(familyKey) { mutableStateOf(family.defaultEntry.key) }
+    var selectedEntryKey by remember(familyKey, initialSelectedEntryKey) {
+        mutableStateOf(
+            initialSelectedEntryKey?.takeIf { key -> family.entries.any { it.key == key } }
+                ?: family.defaultEntry.key,
+        )
+    }
     val activeConfig = LocalPreviewConfig.current
     val activeEntry = family.entries.firstOrNull { it.key == selectedEntryKey } ?: family.defaultEntry
     val previewOverride = activeConfig.previewOverrides[activeEntry.key]
@@ -89,7 +97,13 @@ fun PreviewDetailScreen(
     val accessibilityWrapper = activeConfig.accessibilityWrapper
     val showParamPanel = previewOverride?.showParamPanel ?: activeConfig.showParamPanel
     val hasParams = activeEntry.paramForm != null && showParamPanel
-    val paramStates = remember(familyKey) { mutableStateMapOf<String, PreviewParamState>() }
+    val paramStates = remember(familyKey, initialSelectedEntryKey, initialParamState) {
+        mutableStateMapOf<String, PreviewParamState>().apply {
+            if (initialSelectedEntryKey != null && initialParamState != null) {
+                this[initialSelectedEntryKey] = initialParamState
+            }
+        }
+    }
 
     fun initialState(entry: PreviewEntry): PreviewParamState =
         entry.paramDefaults.toInitialState().withCustomTypeDefaults(entry, activeConfig)
@@ -98,6 +112,10 @@ fun PreviewDetailScreen(
 
     LaunchedEffect(activeEntry.key) {
         onActiveEntryChanged(activeEntry)
+    }
+
+    LaunchedEffect(activeEntry.key, paramState) {
+        onParamStateChanged(activeEntry, paramState)
     }
 
     var selectorExpanded by remember(familyKey) { mutableStateOf(false) }

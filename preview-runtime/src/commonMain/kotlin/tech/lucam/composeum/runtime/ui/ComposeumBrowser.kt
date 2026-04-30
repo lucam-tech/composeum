@@ -6,6 +6,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -19,6 +21,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -37,23 +40,29 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.savedstate.read
 import tech.lucam.composeum.runtime.PreviewRegistry
+import tech.lucam.composeum.runtime.PreviewParamState
 import tech.lucam.composeum.runtime.familyKey
 import tech.lucam.composeum.runtime.families
+import tech.lucam.composeum.runtime.toPreviewParamState
+import tech.lucam.composeum.runtime.toShareableMap
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.ThemeOption
 import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
 import tech.lucam.composeum.runtime.config.mergedWith
 import tech.lucam.composeum.runtime.ui.component.LocalAccessibilityPreviewState
+import tech.lucam.composeum.runtime.store.RuntimeSettings
 import tech.lucam.composeum.runtime.store.SettingsStorage
 import tech.lucam.composeum.runtime.store.SettingsViewModel
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewConfig
 import tech.lucam.composeum.runtime.ui.component.LocalResolvedSettings
+import tech.lucam.composeum.runtime.ui.component.LocalRuntimeSettings
 import tech.lucam.composeum.runtime.ui.component.LocalSettingsStorage
 import tech.lucam.composeum.runtime.ui.component.SettingsSheet
 import tech.lucam.composeum.runtime.ui.component.SourceLocationDialog
 import tech.lucam.composeum.runtime.ui.screen.GroupListScreen
 import tech.lucam.composeum.runtime.ui.screen.PreviewDetailScreen
 import tech.lucam.composeum.runtime.ui.screen.PreviewListScreen
+import kotlinx.coroutines.launch
 
 /**
  * Composition local exposing the resolved dark-mode flag to [BrowserWrapper] lambdas.
@@ -106,11 +115,16 @@ fun ComposeumBrowser(
     }
 
     val resolvedSettings by viewModel.resolvedSettings.collectAsState()
+    val runtimeSettings by storage.settings.collectAsState(initial = RuntimeSettings())
 
     val navController = rememberNavController()
     val currentBackStack by navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStack?.destination?.route
     var activeDetailEntryKey by remember { mutableStateOf<String?>(null) }
+    var activeDetailParamState by remember { mutableStateOf<PreviewParamState?>(null) }
+    val currentShareableState = decodeShareablePreviewState(
+        navArgumentValue(currentBackStack, PreviewRoute.STATE_ARG),
+    )
 
     val isRoot = currentRoute == null || currentRoute == PreviewRoute.GroupList.route
 
@@ -118,7 +132,8 @@ fun ComposeumBrowser(
     val currentDetailEntry = when (currentRoute) {
         PreviewRoute.PreviewDetail("").route -> {
             val familyKey = navArgumentValue(currentBackStack, PreviewRoute.PreviewDetail.ARG)
-            val activeEntry = activeDetailEntryKey?.let { entryKey ->
+            val selectedEntryKey = activeDetailEntryKey ?: currentShareableState?.selectedEntryKey
+            val activeEntry = selectedEntryKey?.let { entryKey ->
                 registry.entries.firstOrNull { it.key == entryKey && it.familyKey() == familyKey }
             }
             activeEntry ?: registry.families().find { it.key == familyKey }?.defaultEntry
@@ -141,10 +156,43 @@ fun ComposeumBrowser(
     var showSettings by remember { mutableStateOf(false) }
     var showSourceDialog by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val favoriteFamilyKeys = runtimeSettings.favoriteFamilyKeys.toSet()
+    val currentFamilyKey = currentDetailEntry?.familyKey()
+    val isFavorite = currentFamilyKey != null && currentFamilyKey in favoriteFamilyKeys
+    val initialRoute = effectiveConfig.initialRoute ?: runtimeSettings.lastRoute
+    var restoredInitialRoute by remember(initialRoute) { mutableStateOf(false) }
+
+    LaunchedEffect(navController, initialRoute, restoredInitialRoute) {
+        if (!restoredInitialRoute && !initialRoute.isNullOrBlank()) {
+            restoredInitialRoute = true
+            navController.navigate(initialRoute) {
+                launchSingleTop = true
+            }
+        }
+    }
+
+    LaunchedEffect(currentShareableState) {
+        val state = currentShareableState ?: return@LaunchedEffect
+        storage.update {
+            copy(
+                themeOverride = state.themeOverride ?: themeOverride,
+                themeId = state.themeId ?: themeId,
+                fontScale = state.fontScale ?: fontScale,
+                uiScale = state.uiScale ?: uiScale,
+                locale = state.locale ?: locale,
+                screenReaderMode = state.accessibilityState.screenReaderMode,
+                highContrastMode = state.accessibilityState.highContrastMode,
+                colorBlindMode = state.accessibilityState.colorBlindMode,
+                reducedMotionMode = state.accessibilityState.reducedMotionMode,
+                largeTouchTargetsMode = state.accessibilityState.largeTouchTargetsMode,
+            )
+        }
+    }
 
     val browserContent: @Composable () -> Unit = {
         CompositionLocalProvider(
             LocalResolvedSettings provides resolvedSettings,
+            LocalRuntimeSettings provides runtimeSettings,
             LocalSettingsStorage provides storage,
             LocalPreviewConfig provides effectiveConfig,
             LocalAccessibilityPreviewState provides resolvedSettings.accessibilityState,
@@ -176,6 +224,32 @@ fun ComposeumBrowser(
                                     Icon(
                                         imageVector = Icons.Default.Code,
                                         contentDescription = "Open source file",
+                                    )
+                                }
+                            }
+                            if (detailEntry != null) {
+                                IconButton(
+                                    onClick = {
+                                        val familyKey = detailEntry.familyKey()
+                                        scope.launch {
+                                            storage.update {
+                                                val nextFavorites = if (familyKey in favoriteFamilyKeys) {
+                                                    favoriteFamilyKeys - familyKey
+                                                } else {
+                                                    favoriteFamilyKeys + familyKey
+                                                }.toList()
+                                                copy(favoriteFamilyKeys = nextFavorites)
+                                            }
+                                        }
+                                    },
+                                ) {
+                                    Icon(
+                                        imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                                        contentDescription = if (isFavorite) {
+                                            "Remove preview from favorites"
+                                        } else {
+                                            "Add preview to favorites"
+                                        },
                                     )
                                 }
                             }
@@ -231,11 +305,38 @@ fun ComposeumBrowser(
                         ),
                     ) { backStackEntry ->
                         val familyKey = navArgumentValue(backStackEntry, PreviewRoute.PreviewDetail.ARG)
+                        val routeState = decodeShareablePreviewState(
+                            navArgumentValue(backStackEntry, PreviewRoute.STATE_ARG),
+                        )
+                        val initialEntry = routeState?.selectedEntryKey
+                        val initialParamState = initialEntry?.let { entryKey ->
+                            registry.entries.firstOrNull { it.key == entryKey && it.familyKey() == familyKey }
+                        }?.let { entry ->
+                            routeState.paramState.toPreviewParamState(entry)
+                        }
                         PreviewDetailScreen(
                             familyKey = familyKey,
                             registry = registry,
                             config = effectiveConfig,
-                            onActiveEntryChanged = { activeDetailEntryKey = it?.key },
+                            initialSelectedEntryKey = initialEntry,
+                            initialParamState = initialParamState,
+                            onActiveEntryChanged = { entry ->
+                                activeDetailEntryKey = entry?.key
+                                if (entry != null) {
+                                    scope.launch {
+                                        storage.update {
+                                            val familyKeyForRecent = entry.familyKey()
+                                            copy(
+                                                recentFamilyKeys = (
+                                                    listOf(familyKeyForRecent) +
+                                                        recentFamilyKeys.filterNot { it == familyKeyForRecent }
+                                                    ).take(12),
+                                            )
+                                        }
+                                    }
+                                }
+                            },
+                            onParamStateChanged = { _, state -> activeDetailParamState = state },
                         )
                     }
                 }
@@ -261,6 +362,45 @@ fun ComposeumBrowser(
                     onDismiss = { showSourceDialog = false },
                 )
             }
+        }
+    }
+
+    LaunchedEffect(
+        currentRoute,
+        currentBackStack,
+        currentDetailEntry,
+        activeDetailParamState,
+        resolvedSettings,
+        runtimeSettings.themeOverride,
+    ) {
+        val routePattern = currentRoute ?: return@LaunchedEffect
+        val shareState = ShareablePreviewState(
+            selectedEntryKey = currentDetailEntry?.key,
+            paramState = currentDetailEntry?.let { entry ->
+                activeDetailParamState?.toShareableMap(entry)
+            }.orEmpty(),
+            themeId = resolvedSettings.theme.id,
+            themeOverride = runtimeSettings.themeOverride,
+            fontScale = resolvedSettings.fontScale,
+            uiScale = resolvedSettings.uiScale,
+            locale = resolvedSettings.locale,
+            accessibilityState = resolvedSettings.accessibilityState,
+        )
+        val route = when (routePattern) {
+            PreviewRoute.GroupList.route -> PreviewRoute.GroupList.routeFor(shareState)
+            PreviewRoute.PreviewList("").route -> {
+                val groupKey = navArgumentValue(currentBackStack, PreviewRoute.PreviewList.ARG)
+                PreviewRoute.PreviewList.routeFor(groupKey, shareState)
+            }
+            PreviewRoute.PreviewDetail("").route -> {
+                val familyKey = navArgumentValue(currentBackStack, PreviewRoute.PreviewDetail.ARG)
+                PreviewRoute.PreviewDetail.routeFor(familyKey, shareState)
+            }
+            else -> return@LaunchedEffect
+        }
+        effectiveConfig.onShareableRouteChanged?.invoke(route)
+        if (runtimeSettings.lastRoute != route) {
+            storage.update { copy(lastRoute = route) }
         }
     }
 
@@ -291,10 +431,19 @@ fun ComposeumBrowser(
 }
 
 private fun buildWebUrl(sourceFile: String, sourceLine: Int, config: PreviewConfig): String {
-    val relativePath = sourceFile
-        .removePrefix(config.sourceStripPrefix ?: "")
-        .trimStart('/')
-    return "${config.sourceBaseUrl!!.trimEnd('/')}/$relativePath#L$sourceLine"
+    val normalized = sourceFile.replace('\\', '/')
+    val prefixes = buildList {
+        config.sourceStripPrefix?.let(::add)
+        addAll(config.sourceStripPrefixes)
+    }.map { it.replace('\\', '/').trimEnd('/') }
+    val relativePath = prefixes
+        .sortedByDescending { it.length }
+        .firstNotNullOfOrNull { prefix ->
+            normalized.takeIf { it.startsWith(prefix) }?.removePrefix(prefix)
+        }
+        ?: normalized
+    val webPath = relativePath.trimStart('/').replace(" ", "%20")
+    return "${config.sourceBaseUrl!!.trimEnd('/')}/$webPath#L$sourceLine"
 }
 
 private fun navArgumentValue(

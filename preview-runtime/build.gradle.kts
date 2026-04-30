@@ -31,6 +31,7 @@ kotlin {
             implementation(libs.compose.multiplatform.icons.ext)
             implementation(libs.collections.immutable)
             implementation(libs.kotlinx.serialization.core)
+            implementation(libs.kotlinx.serialization.json)
             implementation(libs.navigation.compose.cmp)
         }
         androidMain.dependencies {

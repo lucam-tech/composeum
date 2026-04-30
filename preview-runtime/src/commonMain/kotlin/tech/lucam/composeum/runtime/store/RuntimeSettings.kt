@@ -43,6 +43,16 @@ data class RuntimeSettings(
     val reducedMotionMode: Boolean? = null,
     /** Accessibility test-mode large touch targets toggle, or null to use the config default. */
     val largeTouchTargetsMode: Boolean? = null,
+    /** Last browser route encoded by [tech.lucam.composeum.runtime.ui.PreviewRoute]. */
+    val lastRoute: String? = null,
+    /** Persisted expanded non-leaf group keys. Null means use runtime defaults. */
+    val expandedGroupKeys: List<String>? = null,
+    /** Persisted inline-expanded leaf group keys. Null means use runtime defaults. */
+    val inlineExpandedGroupKeys: List<String>? = null,
+    /** Favorited preview family keys. */
+    val favoriteFamilyKeys: List<String> = emptyList(),
+    /** Most-recently opened preview family keys, newest first. */
+    val recentFamilyKeys: List<String> = emptyList(),
 )
 
 /**

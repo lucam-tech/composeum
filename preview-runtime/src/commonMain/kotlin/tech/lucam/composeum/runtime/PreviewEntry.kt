@@ -35,6 +35,11 @@ data class PreviewEntry(
     val paramForm: (@Composable (PreviewParamState, (PreviewParamState) -> Unit) -> Unit)?,
     /** Default values used to construct the initial [PreviewParamState] for this entry. */
     val paramDefaults: PreviewParamDefaults,
+    /**
+     * Flattened state-key to Kotlin-type hints used for shareable route serialization.
+     * Generated registries populate this for supported preview params.
+     */
+    val paramTypeHints: Map<String, String> = emptyMap(),
     /** Absolute path to the source file that declares this preview, captured by KSP. Empty when created manually. */
     val sourceFile: String = "",
     /** Line number of the annotated function declaration, captured by KSP. 0 when not available. */

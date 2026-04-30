@@ -19,4 +19,9 @@ internal object SettingsKeys {
     val COLOR_BLIND_MODE = stringPreferencesKey("color_blind_mode")
     val REDUCED_MOTION_MODE = booleanPreferencesKey("reduced_motion_mode")
     val LARGE_TOUCH_TARGETS_MODE = booleanPreferencesKey("large_touch_targets_mode")
+    val LAST_ROUTE = stringPreferencesKey("last_route")
+    val EXPANDED_GROUP_KEYS = stringPreferencesKey("expanded_group_keys")
+    val INLINE_EXPANDED_GROUP_KEYS = stringPreferencesKey("inline_expanded_group_keys")
+    val FAVORITE_FAMILY_KEYS = stringPreferencesKey("favorite_family_keys")
+    val RECENT_FAMILY_KEYS = stringPreferencesKey("recent_family_keys")
 }

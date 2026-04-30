@@ -146,6 +146,7 @@ internal object RegistryGenerator {
                     "paramDefaults = %T(defaults = emptyMap()),",
                     previewParamDefaultsClass,
                 )
+                addStatement("paramTypeHints = emptyMap(),")
             } else {
                 val formName = "${model.functionSimpleName}ParamForm"
                 addStatement(
@@ -174,6 +175,17 @@ internal object RegistryGenerator {
                     add("customTypeParamKeys = mapOf(\n")
                     indent()
                     for ((key, type) in customKeys) {
+                        addStatement("%S to %S,", key, type)
+                    }
+                    unindent()
+                    add("),\n")
+                }
+                if (model.paramTypeHints.isEmpty()) {
+                    addStatement("paramTypeHints = emptyMap(),")
+                } else {
+                    add("paramTypeHints = mapOf(\n")
+                    indent()
+                    for ((key, type) in model.paramTypeHints) {
                         addStatement("%S to %S,", key, type)
                     }
                     unindent()

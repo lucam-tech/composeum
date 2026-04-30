@@ -57,6 +57,12 @@ data class PreviewConfig(
      * machine. Example: `"/home/user/workspace/my-project"`.
      */
     val sourceStripPrefix: String? = null,
+    /** Additional absolute path prefixes that may need stripping for source links in multi-module repos. */
+    val sourceStripPrefixes: List<String> = emptyList(),
+    /** Optional initial browser route, usually produced by [tech.lucam.composeum.runtime.ui.PreviewRoute]. */
+    val initialRoute: String? = null,
+    /** Callback invoked whenever the browser produces an updated shareable route. */
+    val onShareableRouteChanged: ((String) -> Unit)? = null,
     val browserWrapper: BrowserWrapper? = null,
     val groupWrapper: GroupWrapper? = null,
     val previewWrapper: PreviewWrapper? = null,
@@ -122,6 +128,13 @@ internal fun PreviewConfig.mergedWith(override: PreviewConfig): PreviewConfig {
         topBarActions = topBarActions + override.topBarActions,
         sourceBaseUrl = override.sourceBaseUrl ?: sourceBaseUrl,
         sourceStripPrefix = override.sourceStripPrefix ?: sourceStripPrefix,
+        sourceStripPrefixes = if (override.sourceStripPrefixes.isNotEmpty()) {
+            sourceStripPrefixes + override.sourceStripPrefixes
+        } else {
+            sourceStripPrefixes
+        },
+        initialRoute = override.initialRoute ?: initialRoute,
+        onShareableRouteChanged = override.onShareableRouteChanged ?: onShareableRouteChanged,
         browserWrapper = override.browserWrapper ?: browserWrapper,
         groupWrapper = override.groupWrapper ?: groupWrapper,
         previewWrapper = override.previewWrapper ?: previewWrapper,

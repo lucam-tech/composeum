@@ -81,6 +81,12 @@ class PreviewConfigBuilder {
      */
     var sourceStripPrefix: String? = null
 
+    /** Additional source-path prefixes to strip, useful when builds run from different roots. */
+    var sourceStripPrefixes: List<String> = emptyList()
+
+    /** Optional initial route string, typically produced by PreviewRoute route helpers. */
+    var initialRoute: String? = null
+
     /**
      * Locale options shown in the settings sheet locale picker.
      * Pass `null` (default) to use the built-in list (System + en, de, fr, es, ja, ar).
@@ -91,6 +97,7 @@ class PreviewConfigBuilder {
     var themeOptions: List<ThemeOption> = emptyList()
 
     private var browserWrapper: BrowserWrapper? = null
+    private var onShareableRouteChanged: ((String) -> Unit)? = null
     private var groupWrapper: GroupWrapper? = null
     private var previewWrapper: PreviewWrapper? = null
     private var accessibilityWrapper: AccessibilityWrapper? = null
@@ -103,6 +110,11 @@ class PreviewConfigBuilder {
     /** Sets the composable that wraps the entire browser. */
     fun browserWrapper(block: BrowserWrapper) {
         browserWrapper = block
+    }
+
+    /** Receives the browser's current shareable route whenever it changes. */
+    fun onShareableRouteChanged(block: (String) -> Unit) {
+        onShareableRouteChanged = block
     }
 
     /** Sets the composable that wraps each group's preview list. */
@@ -207,6 +219,9 @@ class PreviewConfigBuilder {
         topBarActions = topBarActionsList.toList(),
         sourceBaseUrl = sourceBaseUrl,
         sourceStripPrefix = sourceStripPrefix,
+        sourceStripPrefixes = sourceStripPrefixes,
+        initialRoute = initialRoute,
+        onShareableRouteChanged = onShareableRouteChanged,
         browserWrapper = browserWrapper,
         groupWrapper = groupWrapper,
         previewWrapper = previewWrapper,

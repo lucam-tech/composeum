@@ -2,6 +2,7 @@ package tech.lucam.composeum.ksp
 
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
+import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspArgs
 import com.tschuchort.compiletesting.symbolProcessorProviders
 import org.junit.Assert.assertFalse
@@ -35,10 +36,12 @@ class ComposeumProcessorTest {
             val variantGroup: PreviewVariantGroup? = null,
             val isDefaultVariant: Boolean = false,
             val description: String,
-            val tags: List<String>,
+            val tags: List<tech.lucam.composeum.annotation.PreviewTag>,
             val composable: @Composable () -> Unit,
             val paramForm: (@Composable (PreviewParamState, (PreviewParamState) -> Unit) -> Unit)?,
             val paramDefaults: PreviewParamDefaults,
+            val paramTypeHints: Map<String, String> = emptyMap(),
+            val customTypeParamKeys: Map<String, String> = emptyMap(),
             val sourceFile: String = "",
             val sourceLine: Int = 0,
         )
@@ -829,7 +832,7 @@ class ComposeumProcessorTest {
     }
 
     private fun findGeneratedFile(compilation: KotlinCompilation, name: String): File? =
-        compilation.workingDir
+        compilation.kspSourcesDir
             .walkTopDown()
             .firstOrNull { it.isFile && it.name == "$name.kt" }
 

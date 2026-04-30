@@ -48,7 +48,7 @@ internal class ComposeumProcessor(
 
         val models = (composeModels + viewModels + androidPreviewModels).toList()
 
-        if (models.isNotEmpty() && !reportDuplicateKeys(models)) {
+        if (models.isNotEmpty() && !reportDuplicateKeys(models) && !reportVariantGroupIssues(models)) {
             val fnPkg = models.first().functionPackage
             val defaultPackage = if (fnPkg.isEmpty()) "generated" else "$fnPkg.generated"
             val registryPackage = environment.options["composeum.registryPackage"] ?: defaultPackage
@@ -81,5 +81,32 @@ internal class ComposeumProcessor(
                 )
             }
         return hasDuplicates
+    }
+
+    private fun reportVariantGroupIssues(models: List<tech.lucam.composeum.ksp.model.PreviewModel>): Boolean {
+        var hasErrors = false
+        models.groupBy { it.variantGroupImport.takeIf(String::isNotEmpty) ?: return@groupBy null }
+            .filterKeys { it != null }
+            .values
+            .forEach { family ->
+                val defaults = family.count { it.isDefaultVariant }
+                if (defaults > 1) {
+                    hasErrors = true
+                    logger.error(
+                        "Variant group '${family.first().variantGroupImport}' declares $defaults default previews. " +
+                            "Mark exactly one preview with isDefaultVariant=true.",
+                    )
+                }
+                val distinctGroups = family.map { it.groupImport.ifEmpty { it.groupExpression } }.distinct()
+                if (distinctGroups.size > 1) {
+                    hasErrors = true
+                    logger.error(
+                        "Variant group '${family.first().variantGroupImport}' is used across multiple preview groups " +
+                            distinctGroups.joinToString(prefix = "[", postfix = "]") +
+                            ". Keep a variant family inside a single PreviewGroup.",
+                    )
+                }
+            }
+        return hasErrors
     }
 }

@@ -29,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,9 +45,12 @@ import tech.lucam.composeum.runtime.PreviewRegistry
 import tech.lucam.composeum.runtime.config.PreviewWrapper
 import tech.lucam.composeum.runtime.config.GroupExpansionMode
 import tech.lucam.composeum.runtime.config.PreviewConfig
+import tech.lucam.composeum.runtime.PreviewFamily
 import tech.lucam.composeum.runtime.families
 import tech.lucam.composeum.runtime.familyKey
 import tech.lucam.composeum.runtime.ui.component.LocalResolvedSettings
+import tech.lucam.composeum.runtime.ui.component.LocalRuntimeSettings
+import tech.lucam.composeum.runtime.ui.component.LocalSettingsStorage
 import tech.lucam.composeum.runtime.ui.component.PreviewThumbnailCard
 
 /**
@@ -78,9 +82,12 @@ fun GroupListScreen(
     modifier: Modifier = Modifier,
 ) {
     val settings = LocalResolvedSettings.current
+    val runtimeSettings = LocalRuntimeSettings.current
+    val storage = LocalSettingsStorage.current
     var query by remember { mutableStateOf("") }
-    val rootNodes = remember(registry.entries) {
-        buildGroupTree(registry.families().map { it.defaultEntry })
+    val families = remember(registry.entries) { registry.families() }
+    val rootNodes = remember(families) {
+        buildGroupTree(families.map { it.defaultEntry })
     }
     val (rootPreviewNodes, groupedRootNodes) = remember(rootNodes) {
         rootNodes.partition { it.isLeaf && it.name.isEmpty() && it.description.isEmpty() }
@@ -93,11 +100,34 @@ fun GroupListScreen(
     var selectedTags by remember { mutableStateOf(emptySet<String>()) }
 
     // Tracks which non-leaf tree nodes are expanded (roots start expanded).
-    var expandedKeys by remember(rootNodes) {
-        mutableStateOf(rootNodes.map { it.key }.toSet())
+    var expandedKeys by remember(rootNodes, runtimeSettings.expandedGroupKeys) {
+        mutableStateOf(runtimeSettings.expandedGroupKeys?.toSet() ?: rootNodes.map { it.key }.toSet())
     }
     // Tracks which leaf nodes are expanded inline (all start collapsed).
-    var inlineExpandedKeys by remember { mutableStateOf(emptySet<String>()) }
+    var inlineExpandedKeys by remember(runtimeSettings.inlineExpandedGroupKeys) {
+        mutableStateOf(runtimeSettings.inlineExpandedGroupKeys?.toSet() ?: emptySet())
+    }
+    val favoriteFamilyKeys = remember(runtimeSettings.favoriteFamilyKeys) {
+        runtimeSettings.favoriteFamilyKeys.toSet()
+    }
+    val recentFamilyKeys = runtimeSettings.recentFamilyKeys
+    val hasFlavoredFamilies = remember(families) { families.any { it.entries.size > 1 } }
+    var favoritesOnly by remember { mutableStateOf(false) }
+    var flavoredOnly by remember { mutableStateOf(false) }
+
+    LaunchedEffect(expandedKeys) {
+        storage.update { copy(expandedGroupKeys = expandedKeys.toList()) }
+    }
+    LaunchedEffect(inlineExpandedKeys) {
+        storage.update { copy(inlineExpandedGroupKeys = inlineExpandedKeys.toList()) }
+    }
+
+    val favoriteFamilies = remember(families, favoriteFamilyKeys) {
+        families.filter { it.key in favoriteFamilyKeys }
+    }
+    val recentFamilies = remember(families, recentFamilyKeys) {
+        recentFamilyKeys.mapNotNull { key -> families.firstOrNull { it.key == key } }
+    }
 
     Column(modifier = modifier.fillMaxSize()) {
         OutlinedTextField(
@@ -136,12 +166,58 @@ fun GroupListScreen(
             }
         }
 
+        if (favoriteFamilies.isNotEmpty() || hasFlavoredFamilies) {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (favoriteFamilies.isNotEmpty()) {
+                    item {
+                        FilterChip(
+                            selected = favoritesOnly,
+                            onClick = { favoritesOnly = !favoritesOnly },
+                            label = { Text("Favorites") },
+                        )
+                    }
+                }
+                if (hasFlavoredFamilies) {
+                    item {
+                        FilterChip(
+                            selected = flavoredOnly,
+                            onClick = { flavoredOnly = !flavoredOnly },
+                            label = { Text("Flavored") },
+                        )
+                    }
+                }
+            }
+        }
+
         HorizontalDivider()
 
-        val isFiltered = query.isNotBlank() || selectedTags.isNotEmpty()
+        val isFiltered = query.isNotBlank() || selectedTags.isNotEmpty() || favoritesOnly || flavoredOnly
 
         if (!isFiltered) {
             LazyColumn {
+                if (favoriteFamilies.isNotEmpty()) {
+                    item(key = "favorites_header") { SectionHeader("Favorites") }
+                    entryGridItem(
+                        nodeKey = "favorites",
+                        entries = favoriteFamilies.map(PreviewFamily::defaultEntry),
+                        config = config,
+                        depth = 0,
+                        onEntrySelected = onEntrySelected,
+                    )
+                }
+                if (recentFamilies.isNotEmpty()) {
+                    item(key = "recents_header") { SectionHeader("Recent") }
+                    entryGridItem(
+                        nodeKey = "recent",
+                        entries = recentFamilies.map(PreviewFamily::defaultEntry),
+                        config = config,
+                        depth = 0,
+                        onEntrySelected = onEntrySelected,
+                    )
+                }
                 rootPreviewNodes.forEach { node ->
                     entryGridItem(node.key, node.entries, config, 0, onEntrySelected)
                 }
@@ -166,8 +242,15 @@ fun GroupListScreen(
                 )
             }
         } else {
-            val filtered = remember(query, selectedTags, rootNodes) {
-                filterNodes(rootNodes, query, selectedTags)
+            val filtered = remember(query, selectedTags, rootNodes, favoriteFamilyKeys, favoritesOnly, flavoredOnly) {
+                filterNodes(
+                    nodes = rootNodes,
+                    query = query,
+                    selectedTags = selectedTags,
+                    favoriteFamilyKeys = favoriteFamilyKeys,
+                    favoritesOnly = favoritesOnly,
+                    flavoredOnly = flavoredOnly,
+                )
             }
             val (filteredRootPreviewNodes, filteredGroupedNodes) = remember(filtered) {
                 filtered.partition { it.isLeaf && it.name.isEmpty() && it.description.isEmpty() }
@@ -200,6 +283,15 @@ fun GroupListScreen(
             }
         }
     }
+}
+
+@Composable
+private fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
 }
 
 // ── Lazy list builders ────────────────────────────────────────────────────────
@@ -473,11 +565,16 @@ private fun filterNodes(
     nodes: List<GroupNode>,
     query: String,
     selectedTags: Set<String>,
+    favoriteFamilyKeys: Set<String>,
+    favoritesOnly: Boolean,
+    flavoredOnly: Boolean,
 ): List<GroupNode> {
     val q = query.trim().lowercase()
     if (q.isEmpty() && selectedTags.isEmpty()) return nodes
 
     fun PreviewEntry.passes(): Boolean {
+        if (favoritesOnly && familyKey() !in favoriteFamilyKeys) return false
+        if (flavoredOnly && variantGroup == null) return false
         if (selectedTags.isNotEmpty() && tags.none { it.title in selectedTags }) return false
         if (q.isNotEmpty()) {
             return name.lowercase().contains(q) ||
