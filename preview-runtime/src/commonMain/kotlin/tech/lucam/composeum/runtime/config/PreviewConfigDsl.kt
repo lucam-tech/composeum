@@ -2,6 +2,7 @@ package tech.lucam.composeum.runtime.config
 
 import androidx.compose.runtime.Composable
 import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.runtime.AccessibilityPreviewState
 import kotlin.reflect.KClass
 
 /**
@@ -40,6 +41,9 @@ class PreviewConfigBuilder {
 
     /** BCP 47 locale tag (e.g. "en-US", "fr"), or null to inherit the device locale. */
     var locale: String? = null
+
+    /** Default accessibility test-mode state applied before any user override. */
+    var accessibilityState: AccessibilityPreviewState = AccessibilityPreviewState()
 
     /** Whether group descriptions are shown in the group list by default. */
     var showDescriptions: Boolean = true
@@ -89,6 +93,7 @@ class PreviewConfigBuilder {
     private var browserWrapper: BrowserWrapper? = null
     private var groupWrapper: GroupWrapper? = null
     private var previewWrapper: PreviewWrapper? = null
+    private var accessibilityWrapper: AccessibilityWrapper? = null
     private val groupOverrides = mutableMapOf<KClass<out PreviewGroup>, GroupConfig>()
     private val previewOverrides = mutableMapOf<String, PreviewOverride>()
     private val topBarActionsList = mutableListOf<TopBarAction>()
@@ -108,6 +113,11 @@ class PreviewConfigBuilder {
     /** Sets the composable that wraps each individual preview card. */
     fun previewWrapper(block: PreviewWrapper) {
         previewWrapper = block
+    }
+
+    /** Sets the composable that wraps preview renders with the resolved accessibility state. */
+    fun accessibilityWrapper(block: AccessibilityWrapper) {
+        accessibilityWrapper = block
     }
 
     /** Configures per-group overrides. */
@@ -187,6 +197,7 @@ class PreviewConfigBuilder {
         isDarkMode = isDarkMode,
         defaultThemeId = defaultThemeId,
         locale = locale,
+        accessibilityState = accessibilityState,
         showDescriptions = showDescriptions,
         showTags = showTags,
         showParamPanel = showParamPanel,
@@ -199,6 +210,7 @@ class PreviewConfigBuilder {
         browserWrapper = browserWrapper,
         groupWrapper = groupWrapper,
         previewWrapper = previewWrapper,
+        accessibilityWrapper = accessibilityWrapper,
         groupOverrides = groupOverrides,
         previewOverrides = previewOverrides,
         localeOptions = localeOptions,

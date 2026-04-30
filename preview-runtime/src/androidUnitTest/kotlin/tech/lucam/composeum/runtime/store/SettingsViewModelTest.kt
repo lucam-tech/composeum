@@ -2,6 +2,8 @@ package tech.lucam.composeum.runtime.store
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.compose.ui.graphics.Color
+import tech.lucam.composeum.runtime.AccessibilityPreviewState
+import tech.lucam.composeum.runtime.ColorBlindMode
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.ThemeOption
 import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
@@ -39,6 +41,7 @@ class SettingsViewModelTest {
         assertFalse(resolved.showDescriptions)
         assertFalse(resolved.showTags)
         assertEquals(ThemeOptionDefaults.Classic, resolved.theme)
+        assertEquals(AccessibilityPreviewState(), resolved.accessibilityState)
     }
 
     @Test
@@ -97,6 +100,41 @@ class SettingsViewModelTest {
         val config = PreviewConfig(locale = "ja-JP")
         val resolved = RuntimeSettings().resolve(config)
         assertEquals("ja-JP", resolved.locale)
+    }
+
+    @Test
+    fun `runtime accessibility modes override config defaults`() {
+        val config = PreviewConfig(
+            accessibilityState = AccessibilityPreviewState(),
+        )
+        val resolved = RuntimeSettings(
+            screenReaderMode = true,
+            highContrastMode = true,
+            colorBlindMode = ColorBlindMode.DEUTERANOPIA,
+            reducedMotionMode = true,
+            largeTouchTargetsMode = true,
+        ).resolve(config)
+
+        assertTrue(resolved.accessibilityState.screenReaderMode)
+        assertTrue(resolved.accessibilityState.highContrastMode)
+        assertEquals(ColorBlindMode.DEUTERANOPIA, resolved.accessibilityState.colorBlindMode)
+        assertTrue(resolved.accessibilityState.reducedMotionMode)
+        assertTrue(resolved.accessibilityState.largeTouchTargetsMode)
+    }
+
+    @Test
+    fun `config accessibility defaults are used when runtime values are null`() {
+        val config = PreviewConfig(
+            accessibilityState = AccessibilityPreviewState(
+                screenReaderMode = true,
+                highContrastMode = true,
+                colorBlindMode = ColorBlindMode.PROTANOPIA,
+                reducedMotionMode = true,
+                largeTouchTargetsMode = true,
+            ),
+        )
+        val resolved = RuntimeSettings().resolve(config)
+        assertEquals(config.accessibilityState, resolved.accessibilityState)
     }
 
     @Test

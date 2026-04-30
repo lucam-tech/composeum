@@ -1,6 +1,7 @@
 package tech.lucam.composeum.runtime.store
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import tech.lucam.composeum.runtime.ColorBlindMode
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -35,6 +36,11 @@ class DataStoreSettingsStorageTest {
         assertNull(settings.showDescriptions)
         assertNull(settings.showTags)
         assertNull(settings.locale)
+        assertNull(settings.screenReaderMode)
+        assertNull(settings.highContrastMode)
+        assertNull(settings.colorBlindMode)
+        assertNull(settings.reducedMotionMode)
+        assertNull(settings.largeTouchTargetsMode)
     }
 
     @Test
@@ -94,6 +100,26 @@ class DataStoreSettingsStorageTest {
     }
 
     @Test
+    fun `update persists accessibility settings`() = runTest {
+        val storage = buildStorage()
+        storage.update {
+            copy(
+                screenReaderMode = true,
+                highContrastMode = true,
+                colorBlindMode = ColorBlindMode.PROTANOPIA,
+                reducedMotionMode = true,
+                largeTouchTargetsMode = true,
+            )
+        }
+        val settings = storage.settings.first()
+        assertEquals(true, settings.screenReaderMode)
+        assertEquals(true, settings.highContrastMode)
+        assertEquals(ColorBlindMode.PROTANOPIA, settings.colorBlindMode)
+        assertEquals(true, settings.reducedMotionMode)
+        assertEquals(true, settings.largeTouchTargetsMode)
+    }
+
+    @Test
     fun `reset clears all keys so settings reverts to defaults`() = runTest {
         val storage = buildStorage()
         storage.update {
@@ -106,6 +132,11 @@ class DataStoreSettingsStorageTest {
                 showDescriptions = false,
                 showTags = false,
                 locale = "fr",
+                screenReaderMode = true,
+                highContrastMode = true,
+                colorBlindMode = ColorBlindMode.TRITANOPIA,
+                reducedMotionMode = true,
+                largeTouchTargetsMode = true,
             )
         }
         storage.reset()
@@ -118,6 +149,11 @@ class DataStoreSettingsStorageTest {
         assertNull(settings.showDescriptions)
         assertNull(settings.showTags)
         assertNull(settings.locale)
+        assertNull(settings.screenReaderMode)
+        assertNull(settings.highContrastMode)
+        assertNull(settings.colorBlindMode)
+        assertNull(settings.reducedMotionMode)
+        assertNull(settings.largeTouchTargetsMode)
     }
 
     @Test

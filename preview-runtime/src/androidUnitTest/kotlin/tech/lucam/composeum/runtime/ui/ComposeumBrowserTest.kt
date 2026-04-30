@@ -2,6 +2,7 @@ package tech.lucam.composeum.runtime.ui
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -9,11 +10,14 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.runtime.AccessibilityPreviewState
+import tech.lucam.composeum.runtime.ColorBlindMode
 import tech.lucam.composeum.runtime.PreviewEntry
 import tech.lucam.composeum.runtime.PreviewParamDefaults
 import tech.lucam.composeum.runtime.PreviewRegistry
 import tech.lucam.composeum.runtime.config.GroupExpansionMode
 import tech.lucam.composeum.runtime.config.PreviewConfig
+import tech.lucam.composeum.runtime.ui.component.LocalAccessibilityPreviewState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -281,6 +285,75 @@ class ComposeumBrowserTest {
         composeRule.onNodeWithContentDescription("Open source file").assertDoesNotExist()
     }
 
+    @Test
+    fun `previews receive resolved accessibility state from config`() {
+        val entry = PreviewEntry(
+            key = "test.accessibility",
+            name = "Accessibility",
+            group = TestGroup.Components,
+            description = "",
+            tags = emptyList(),
+            composable = {
+                val state = LocalAccessibilityPreviewState.current
+                Text("sr=${state.screenReaderMode},cb=${state.colorBlindMode.name},motion=${state.reducedMotionMode}")
+            },
+            paramForm = null,
+            paramDefaults = PreviewParamDefaults(emptyMap()),
+        )
+
+        composeRule.setContent {
+            MaterialTheme {
+                ComposeumBrowser(
+                    registry = registryOf(entry),
+                    config = PreviewConfig(
+                        accessibilityState = AccessibilityPreviewState(
+                            screenReaderMode = true,
+                            colorBlindMode = ColorBlindMode.TRITANOPIA,
+                            reducedMotionMode = true,
+                        ),
+                    ),
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Components").performClick()
+        composeRule.onNodeWithText("Accessibility").performClick()
+        composeRule.onNodeWithText("sr=true,cb=TRITANOPIA,motion=true").assertIsDisplayed()
+    }
+
+    @Test
+    fun `accessibility wrapper is applied to preview renders`() {
+        val entry = PreviewEntry(
+            key = "test.wrapper",
+            name = "Wrapper",
+            group = TestGroup.Components,
+            description = "",
+            tags = emptyList(),
+            composable = { Text("Inner Preview") },
+            paramForm = null,
+            paramDefaults = PreviewParamDefaults(emptyMap()),
+        )
+
+        composeRule.setContent {
+            MaterialTheme {
+                ComposeumBrowser(
+                    registry = registryOf(entry),
+                    config = PreviewConfig(
+                        accessibilityState = AccessibilityPreviewState(highContrastMode = true),
+                        accessibilityWrapper = { state, _, content ->
+                            WrapperProbe(state.highContrastMode, content)
+                        },
+                    ),
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Components").performClick()
+        composeRule.onNodeWithText("Wrapper").performClick()
+        composeRule.onNodeWithText("Wrapper highContrast=true").assertIsDisplayed()
+        composeRule.onNodeWithText("Inner Preview").assertIsDisplayed()
+    }
+
     // --- Browser wrapper ---
 
     @Test
@@ -306,4 +379,13 @@ class ComposeumBrowserTest {
         composeRule.waitForIdle()
         assert(wrapperInvoked) { "browserWrapper was not invoked" }
     }
+}
+
+@Composable
+private fun WrapperProbe(
+    highContrastEnabled: Boolean,
+    content: @Composable () -> Unit,
+) {
+    Text("Wrapper highContrast=$highContrastEnabled")
+    content()
 }

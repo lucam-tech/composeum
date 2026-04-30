@@ -2,6 +2,7 @@ package tech.lucam.composeum.runtime.config
 
 import androidx.compose.runtime.Immutable
 import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.runtime.AccessibilityPreviewState
 import kotlin.reflect.KClass
 
 /** Immutable configuration for the preview browser. Build with [previewConfig]. */
@@ -22,6 +23,8 @@ data class PreviewConfig(
     val defaultThemeId: String = ThemeOptionDefaults.Classic.id,
     /** BCP 47 locale tag (e.g. "en-US", "fr"), or null to inherit the device locale. */
     val locale: String? = null,
+    /** Default accessibility test-mode state applied before any persisted user override. */
+    val accessibilityState: AccessibilityPreviewState = AccessibilityPreviewState(),
     /** Whether group descriptions are shown in the group list by default. */
     val showDescriptions: Boolean = true,
     /** Whether tag chips are shown on thumbnail cards by default. */
@@ -57,6 +60,7 @@ data class PreviewConfig(
     val browserWrapper: BrowserWrapper? = null,
     val groupWrapper: GroupWrapper? = null,
     val previewWrapper: PreviewWrapper? = null,
+    val accessibilityWrapper: AccessibilityWrapper? = null,
     val groupOverrides: Map<KClass<out PreviewGroup>, GroupConfig> = emptyMap(),
     val previewOverrides: Map<String, PreviewOverride> = emptyMap(),
     /**
@@ -104,6 +108,11 @@ internal fun PreviewConfig.mergedWith(override: PreviewConfig): PreviewConfig {
         isDarkMode = if (override.isDarkMode != defaults.isDarkMode) override.isDarkMode else isDarkMode,
         defaultThemeId = if (override.defaultThemeId != defaults.defaultThemeId) override.defaultThemeId else defaultThemeId,
         locale = if (override.locale != defaults.locale) override.locale else locale,
+        accessibilityState = if (override.accessibilityState != defaults.accessibilityState) {
+            override.accessibilityState
+        } else {
+            accessibilityState
+        },
         showDescriptions = if (override.showDescriptions != defaults.showDescriptions) override.showDescriptions else showDescriptions,
         showTags = if (override.showTags != defaults.showTags) override.showTags else showTags,
         showParamPanel = if (override.showParamPanel != defaults.showParamPanel) override.showParamPanel else showParamPanel,
@@ -116,6 +125,7 @@ internal fun PreviewConfig.mergedWith(override: PreviewConfig): PreviewConfig {
         browserWrapper = override.browserWrapper ?: browserWrapper,
         groupWrapper = override.groupWrapper ?: groupWrapper,
         previewWrapper = override.previewWrapper ?: previewWrapper,
+        accessibilityWrapper = override.accessibilityWrapper ?: accessibilityWrapper,
         groupOverrides = groupOverrides + override.groupOverrides,
         previewOverrides = previewOverrides + override.previewOverrides,
         localeOptions = override.localeOptions ?: localeOptions,

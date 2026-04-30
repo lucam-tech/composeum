@@ -14,4 +14,9 @@ internal object SettingsKeys {
     val SHOW_DESCRIPTIONS = booleanPreferencesKey("show_descriptions")
     val SHOW_TAGS = booleanPreferencesKey("show_tags")
     val LOCALE = stringPreferencesKey("locale")
+    val SCREEN_READER_MODE = booleanPreferencesKey("screen_reader_mode")
+    val HIGH_CONTRAST_MODE = booleanPreferencesKey("high_contrast_mode")
+    val COLOR_BLIND_MODE = stringPreferencesKey("color_blind_mode")
+    val REDUCED_MOTION_MODE = booleanPreferencesKey("reduced_motion_mode")
+    val LARGE_TOUCH_TARGETS_MODE = booleanPreferencesKey("large_touch_targets_mode")
 }

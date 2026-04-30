@@ -30,5 +30,10 @@ object BuiltInSettingId {
     const val SHOW_DESCRIPTIONS = "show_descriptions"
     const val SHOW_TAGS = "show_tags"
     const val LOCALE = "locale"
+    const val ACCESSIBILITY_SCREEN_READER = "accessibility_screen_reader"
+    const val ACCESSIBILITY_HIGH_CONTRAST = "accessibility_high_contrast"
+    const val ACCESSIBILITY_COLOR_BLIND = "accessibility_color_blind"
+    const val ACCESSIBILITY_REDUCED_MOTION = "accessibility_reduced_motion"
+    const val ACCESSIBILITY_LARGE_TOUCH_TARGETS = "accessibility_large_touch_targets"
     const val RESET = "reset"
 }

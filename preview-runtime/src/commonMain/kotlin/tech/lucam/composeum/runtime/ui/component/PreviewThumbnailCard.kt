@@ -95,7 +95,15 @@ fun PreviewThumbnailCard(
                 LocalPreviewParamState provides thumbnailState,
                 LocalPreviewRenderContext provides THUMBNAIL_CONTEXT,
             ) {
-                ScaledPreviewContent(entry = entry, previewWrapper = previewWrapper)
+                val accessibilityState = LocalAccessibilityPreviewState.current
+                val accessibilityWrapper = LocalPreviewConfig.current.accessibilityWrapper
+                if (accessibilityWrapper != null) {
+                    accessibilityWrapper(accessibilityState, entry) {
+                        ScaledPreviewContent(entry = entry, previewWrapper = previewWrapper)
+                    }
+                } else {
+                    ScaledPreviewContent(entry = entry, previewWrapper = previewWrapper)
+                }
             }
         }
 

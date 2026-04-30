@@ -43,6 +43,7 @@ import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.ThemeOption
 import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
 import tech.lucam.composeum.runtime.config.mergedWith
+import tech.lucam.composeum.runtime.ui.component.LocalAccessibilityPreviewState
 import tech.lucam.composeum.runtime.store.SettingsStorage
 import tech.lucam.composeum.runtime.store.SettingsViewModel
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewConfig
@@ -146,6 +147,7 @@ fun ComposeumBrowser(
             LocalResolvedSettings provides resolvedSettings,
             LocalSettingsStorage provides storage,
             LocalPreviewConfig provides effectiveConfig,
+            LocalAccessibilityPreviewState provides resolvedSettings.accessibilityState,
         ) {
             Scaffold(
                 modifier = modifier,

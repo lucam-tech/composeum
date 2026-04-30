@@ -3,6 +3,8 @@ package tech.lucam.composeum.runtime.store
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
 import tech.lucam.composeum.runtime.config.resolvedThemeOptions
+import tech.lucam.composeum.runtime.AccessibilityPreviewState
+import tech.lucam.composeum.runtime.ColorBlindMode
 import kotlinx.serialization.Serializable
 
 /** User-selectable theme override stored in DataStore. */
@@ -31,6 +33,16 @@ data class RuntimeSettings(
     val showTags: Boolean? = null,
     /** BCP 47 locale tag (e.g. "en-US"), or null to use the device default. */
     val locale: String? = null,
+    /** Accessibility test-mode screen-reader toggle, or null to use the config default. */
+    val screenReaderMode: Boolean? = null,
+    /** Accessibility test-mode high-contrast toggle, or null to use the config default. */
+    val highContrastMode: Boolean? = null,
+    /** Accessibility test-mode color-vision mode, or null to use the config default. */
+    val colorBlindMode: ColorBlindMode? = null,
+    /** Accessibility test-mode reduced-motion toggle, or null to use the config default. */
+    val reducedMotionMode: Boolean? = null,
+    /** Accessibility test-mode large touch targets toggle, or null to use the config default. */
+    val largeTouchTargetsMode: Boolean? = null,
 )
 
 /**
@@ -58,6 +70,8 @@ data class ResolvedSettings(
     val showTags: Boolean,
     /** BCP 47 locale tag, or `"system"` to use the device default. */
     val locale: String,
+    /** Resolved accessibility test-mode state. */
+    val accessibilityState: AccessibilityPreviewState,
 ) {
     companion object {
         /** Neutral defaults used as the [LocalResolvedSettings] fallback value. */
@@ -70,6 +84,7 @@ data class ResolvedSettings(
             showDescriptions = true,
             showTags = true,
             locale = "system",
+            accessibilityState = AccessibilityPreviewState(),
         )
     }
 }
@@ -103,5 +118,12 @@ internal fun RuntimeSettings.resolve(config: PreviewConfig, systemIsDark: Boolea
         showDescriptions = showDescriptions ?: config.showDescriptions,
         showTags = showTags ?: config.showTags,
         locale = locale ?: config.locale ?: "system",
+        accessibilityState = AccessibilityPreviewState(
+            screenReaderMode = screenReaderMode ?: config.accessibilityState.screenReaderMode,
+            highContrastMode = highContrastMode ?: config.accessibilityState.highContrastMode,
+            colorBlindMode = colorBlindMode ?: config.accessibilityState.colorBlindMode,
+            reducedMotionMode = reducedMotionMode ?: config.accessibilityState.reducedMotionMode,
+            largeTouchTargetsMode = largeTouchTargetsMode ?: config.accessibilityState.largeTouchTargetsMode,
+        ),
     )
 }

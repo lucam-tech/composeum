@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
+import tech.lucam.composeum.runtime.ColorBlindMode
 import tech.lucam.composeum.runtime.config.BuiltInSettingId
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.SettingItem
@@ -265,6 +266,51 @@ class SettingsSheetTest {
         assertNull(settings.locale)
     }
 
+    @Test
+    fun `screen reader switch stores enabled state`() {
+        setContent(configWithOnly(BuiltInSettingId.ACCESSIBILITY_SCREEN_READER))
+        composeRule.onNodeWithContentDescription("Screen reader mode switch").performClick()
+        val settings = awaitSettings { it.screenReaderMode == true }
+        assertEquals(true, settings.screenReaderMode)
+    }
+
+    @Test
+    fun `high contrast switch stores enabled state`() {
+        setContent(configWithOnly(BuiltInSettingId.ACCESSIBILITY_HIGH_CONTRAST))
+        composeRule.onNodeWithContentDescription("High contrast switch").performClick()
+        val settings = awaitSettings { it.highContrastMode == true }
+        assertEquals(true, settings.highContrastMode)
+    }
+
+    @Test
+    fun `color blindness dropdown stores selected mode`() {
+        setContent(configWithOnly(BuiltInSettingId.ACCESSIBILITY_COLOR_BLIND))
+        composeRule.onNodeWithContentDescription("Color blindness mode dropdown").performClick()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodes(hasText("Deuteranopia"), useUnmergedTree = true)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText("Deuteranopia", useUnmergedTree = true).performClick()
+        val settings = awaitSettings { it.colorBlindMode == ColorBlindMode.DEUTERANOPIA }
+        assertEquals(ColorBlindMode.DEUTERANOPIA, settings.colorBlindMode)
+    }
+
+    @Test
+    fun `reduced motion switch stores enabled state`() {
+        setContent(configWithOnly(BuiltInSettingId.ACCESSIBILITY_REDUCED_MOTION))
+        composeRule.onNodeWithContentDescription("Reduced motion switch").performClick()
+        val settings = awaitSettings { it.reducedMotionMode == true }
+        assertEquals(true, settings.reducedMotionMode)
+    }
+
+    @Test
+    fun `large touch targets switch stores enabled state`() {
+        setContent(configWithOnly(BuiltInSettingId.ACCESSIBILITY_LARGE_TOUCH_TARGETS))
+        composeRule.onNodeWithContentDescription("Large touch targets switch").performClick()
+        val settings = awaitSettings { it.largeTouchTargetsMode == true }
+        assertEquals(true, settings.largeTouchTargetsMode)
+    }
+
     // ── Reset ─────────────────────────────────────────────────────────────────
 
     @Test
@@ -280,6 +326,11 @@ class SettingsSheetTest {
                     showDescriptions = false,
                     showTags = false,
                     locale = "ja",
+                    screenReaderMode = true,
+                    highContrastMode = true,
+                    colorBlindMode = ColorBlindMode.TRITANOPIA,
+                    reducedMotionMode = true,
+                    largeTouchTargetsMode = true,
                 )
             }
         }
@@ -294,5 +345,10 @@ class SettingsSheetTest {
         assertNull(settings.showDescriptions)
         assertNull(settings.showTags)
         assertNull(settings.locale)
+        assertNull(settings.screenReaderMode)
+        assertNull(settings.highContrastMode)
+        assertNull(settings.colorBlindMode)
+        assertNull(settings.reducedMotionMode)
+        assertNull(settings.largeTouchTargetsMode)
     }
 }
