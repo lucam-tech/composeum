@@ -4,17 +4,17 @@ Composeum is a compile-time Jetpack Compose preview browser. Annotate composable
 
 Artifacts:
 
-- `tech.lucam.composeum:preview-annotation:0.2.0`
-- `tech.lucam.composeum:preview-runtime:0.2.0`
-- `tech.lucam.composeum:preview-ksp:0.2.0`
+- `tech.lucam.composeum:preview-annotation:0.3.0`
+- `tech.lucam.composeum:preview-runtime:0.3.0`
+- `tech.lucam.composeum:preview-ksp:0.3.0`
 
 Minimal setup:
 
 ```kotlin
 dependencies {
-    implementation("tech.lucam.composeum:preview-annotation:0.2.0")
-    ksp("tech.lucam.composeum:preview-ksp:0.2.0")
-    implementation("tech.lucam.composeum:preview-runtime:0.2.0")
+    implementation("tech.lucam.composeum:preview-annotation:0.3.0")
+    ksp("tech.lucam.composeum:preview-ksp:0.3.0")
+    implementation("tech.lucam.composeum:preview-runtime:0.3.0")
 }
 ```
 

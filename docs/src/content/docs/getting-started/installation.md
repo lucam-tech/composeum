@@ -6,9 +6,9 @@ description: Add Composeum to a module that declares previews and a host that re
 Composeum publishes three artifacts:
 
 ```text
-tech.lucam.composeum:preview-annotation:0.2.0
-tech.lucam.composeum:preview-runtime:0.2.0
-tech.lucam.composeum:preview-ksp:0.2.0
+tech.lucam.composeum:preview-annotation:0.3.0
+tech.lucam.composeum:preview-runtime:0.3.0
+tech.lucam.composeum:preview-ksp:0.3.0
 ```
 
 Recommended split:
@@ -25,8 +25,8 @@ plugins {
 }
 
 dependencies {
-    implementation("tech.lucam.composeum:preview-annotation:0.2.0")
-    ksp("tech.lucam.composeum:preview-ksp:0.2.0")
+    implementation("tech.lucam.composeum:preview-annotation:0.3.0")
+    ksp("tech.lucam.composeum:preview-ksp:0.3.0")
 }
 ```
 
@@ -37,7 +37,7 @@ under `<first preview package>.generated`.
 
 ```kotlin
 dependencies {
-    implementation("tech.lucam.composeum:preview-runtime:0.2.0")
+    implementation("tech.lucam.composeum:preview-runtime:0.3.0")
 }
 ```
 
