@@ -147,7 +147,11 @@ fun GroupListScreen(
         recentFamilyKeys.mapNotNull { key -> families.firstOrNull { it.key == key } }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },

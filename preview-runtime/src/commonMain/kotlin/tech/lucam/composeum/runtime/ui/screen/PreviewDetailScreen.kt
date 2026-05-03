@@ -1,5 +1,6 @@
 package tech.lucam.composeum.runtime.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -124,7 +125,11 @@ fun PreviewDetailScreen(
 
     var selectorExpanded by remember(familyKey) { mutableStateOf(false) }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
         if (family.entries.size > 1) {
             Row(
                 modifier = Modifier
@@ -154,7 +159,10 @@ fun PreviewDetailScreen(
         }
 
         Box(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.Center,
         ) {
             CompositionLocalProvider(

@@ -1,5 +1,6 @@
 package tech.lucam.composeum.runtime.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -99,7 +100,11 @@ fun PreviewListScreen(
         }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+    ) {
         if (effectiveGroupWrapper != null && group != null) {
             effectiveGroupWrapper(group, gridContent)
         } else {

@@ -1,6 +1,9 @@
 package tech.lucam.composeum.runtime.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -161,7 +164,12 @@ fun ComposeumBrowser(
     val favoriteFamilyKeys = loadedRuntimeSettings.favoriteFamilyKeys.toSet()
     val currentFamilyKey = currentDetailEntry?.familyKey()
     val isFavorite = currentFamilyKey != null && currentFamilyKey in favoriteFamilyKeys
-    val initialRoute = effectiveConfig.initialRoute ?: loadedRuntimeSettings.lastRoute
+    // startDestination should be chosen once when the browser enters composition.
+    // Persisting lastRoute during navigation must not feed back into NavHost and cause
+    // a second pass of route setup right after the screen is shown.
+    val initialRoute = remember {
+        effectiveConfig.initialRoute ?: loadedRuntimeSettings.lastRoute
+    }
     val navigateBackOneLevel =
         remember(navController, currentRoute, currentBackStack, registry.entries) {
             {
@@ -287,7 +295,13 @@ fun ComposeumBrowser(
                 NavHost(
                     navController = navController,
                     startDestination = initialRoute ?: PreviewRoute.GroupList.routeFor(),
-                    modifier = Modifier.padding(innerPadding),
+                    modifier = Modifier
+                        .padding(innerPadding)
+                        .background(MaterialTheme.colorScheme.background),
+                    enterTransition = { EnterTransition.None },
+                    exitTransition = { ExitTransition.None },
+                    popEnterTransition = { EnterTransition.None },
+                    popExitTransition = { ExitTransition.None },
                 ) {
                     composable(route = PreviewRoute.GroupList.route) {
                         GroupListScreen(
