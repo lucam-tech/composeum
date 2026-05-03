@@ -15,6 +15,7 @@ import tech.lucam.composeum.runtime.PreviewParamDefaults
 import tech.lucam.composeum.runtime.PreviewParamState
 import tech.lucam.composeum.runtime.PreviewRegistry
 import tech.lucam.composeum.runtime.config.PreviewConfig
+import tech.lucam.composeum.runtime.config.previewConfig
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewParamState
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -187,6 +188,29 @@ class PreviewDetailScreenTest {
         }
 
         composeRule.onNodeWithContentDescription("Reset parameters").assertIsDisplayed()
+    }
+
+    @Test
+    fun `preview override can replace the param form for a single preview`() {
+        val entry = entryWithParams()
+        val config = previewConfig {
+            preview(entry.key) {
+                paramForm { _, _ -> Text("override-form-sentinel") }
+            }
+        }
+
+        composeRule.setContent {
+            MaterialTheme {
+                PreviewDetailScreen(
+                    familyKey = entry.key,
+                    registry = registryOf(entry),
+                    config = config,
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("override-form-sentinel").assertIsDisplayed()
+        composeRule.onNodeWithText("param-form-sentinel").assertDoesNotExist()
     }
 
     // --- Param change re-renders composable ---

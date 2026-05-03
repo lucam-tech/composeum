@@ -28,6 +28,7 @@ import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.unit.dp
 import tech.lucam.composeum.runtime.PreviewEntry
 import tech.lucam.composeum.runtime.PreviewParamState
+import tech.lucam.composeum.runtime.config.PreviewParamForm
 import kotlinx.coroutines.channels.Channel
 
 /**
@@ -46,6 +47,7 @@ import kotlinx.coroutines.channels.Channel
 @Composable
 fun ParamPanel(
     entry: PreviewEntry,
+    paramForm: PreviewParamForm?,
     paramState: PreviewParamState,
     onParamStateChange: (PreviewParamState) -> Unit,
     onReset: (() -> Unit)? = null,
@@ -89,7 +91,7 @@ fun ParamPanel(
             }
 
             if (expanded) {
-                if (entry.paramForm == null) {
+                if (paramForm == null) {
                     Text(
                         text = "No parameters",
                         style = MaterialTheme.typography.bodyMedium,
@@ -98,6 +100,7 @@ fun ParamPanel(
                 } else {
                     CrashIsolatedParamForm(
                         entry = entry,
+                        paramForm = paramForm,
                         paramState = paramState,
                         onParamStateChange = onParamStateChange,
                     )
@@ -116,6 +119,7 @@ fun ParamPanel(
 @Composable
 private fun CrashIsolatedParamForm(
     entry: PreviewEntry,
+    paramForm: PreviewParamForm,
     paramState: PreviewParamState,
     onParamStateChange: (PreviewParamState) -> Unit,
 ) {
@@ -145,7 +149,7 @@ private fun CrashIsolatedParamForm(
         val measurables = try {
             subcompose("form") {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    entry.paramForm!!.invoke(paramState, onParamStateChange)
+                    paramForm.invoke(paramState, onParamStateChange)
                 }
             }
         } catch (t: Throwable) {

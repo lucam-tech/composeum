@@ -148,7 +148,7 @@ internal object ParamFormGenerator {
         param.listElementIsEnum -> buildCodeBlock {
             add("%M(\n", MemberName(WIDGETS_PACKAGE, "PreviewDropdownField"))
             indent()
-            add("label = \"[\$\${ _idx + 1 }]\",\n")
+            add("label = \"[\${_idx + 1}]\",\n")
             add("value = state.get<String>(%S + _idx.toString()) ?: %S,\n",
                 prefix, param.listElementEnumValues.firstOrNull() ?: "")
             add("options = listOf(")
@@ -161,7 +161,7 @@ internal object ParamFormGenerator {
         param.listElementKotlinType == "kotlin.String" -> buildCodeBlock {
             add("%M(\n", MemberName(WIDGETS_PACKAGE, "PreviewStringField"))
             indent()
-            add("label = \"[\$\${ _idx + 1 }]\",\n")
+            add("label = \"[\${_idx + 1}]\",\n")
             add("value = state.get<String>(%S + _idx.toString()) ?: %S,\n", prefix, "")
             add("onValue = { onUpdate(state.put(%S + _idx.toString(), it)) },\n", prefix)
             unindent()
@@ -170,7 +170,7 @@ internal object ParamFormGenerator {
         param.listElementKotlinType == "kotlin.Boolean" -> buildCodeBlock {
             add("%M(\n", MemberName(WIDGETS_PACKAGE, "PreviewBooleanField"))
             indent()
-            add("label = \"[\$\${ _idx + 1 }]\",\n")
+            add("label = \"[\${_idx + 1}]\",\n")
             add("value = state.get<Boolean>(%S + _idx.toString()) ?: false,\n", prefix)
             add("onValue = { onUpdate(state.put(%S + _idx.toString(), it)) },\n", prefix)
             unindent()
@@ -180,7 +180,7 @@ internal object ParamFormGenerator {
         param.listElementKotlinType == "kotlin.Long" -> buildCodeBlock {
             add("%M(\n", MemberName(WIDGETS_PACKAGE, "PreviewIntField"))
             indent()
-            add("label = \"[\$\${ _idx + 1 }]\",\n")
+            add("label = \"[\${_idx + 1}]\",\n")
             add("value = state.get<Int>(%S + _idx.toString()) ?: 0,\n", prefix)
             add("onValue = { onUpdate(state.put(%S + _idx.toString(), it)) },\n", prefix)
             unindent()
@@ -190,7 +190,7 @@ internal object ParamFormGenerator {
         param.listElementKotlinType == "kotlin.Double" -> buildCodeBlock {
             add("%M(\n", MemberName(WIDGETS_PACKAGE, "PreviewFloatField"))
             indent()
-            add("label = \"[\$\${ _idx + 1 }]\",\n")
+            add("label = \"[\${_idx + 1}]\",\n")
             add("value = state.get<Float>(%S + _idx.toString()) ?: 0f,\n", prefix)
             add("onValue = { onUpdate(state.put(%S + _idx.toString(), it)) },\n", prefix)
             unindent()
@@ -200,7 +200,7 @@ internal object ParamFormGenerator {
             // Fallback: string field
             add("%M(\n", MemberName(WIDGETS_PACKAGE, "PreviewStringField"))
             indent()
-            add("label = \"[\$\${ _idx + 1 }]\",\n")
+            add("label = \"[\${_idx + 1}]\",\n")
             add("value = state.get<String>(%S + _idx.toString()) ?: %S,\n", prefix, "")
             add("onValue = { onUpdate(state.put(%S + _idx.toString(), it)) },\n", prefix)
             unindent()

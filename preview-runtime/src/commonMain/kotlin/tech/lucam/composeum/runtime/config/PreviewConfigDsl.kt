@@ -408,13 +408,30 @@ class PreviewOverrideBuilder {
     var showParamPanel: Boolean? = null
 
     private var previewWrapper: PreviewWrapper? = null
+    private var paramForm: PreviewParamForm? = null
+    private var paramDefaults: tech.lucam.composeum.runtime.PreviewParamDefaults? = null
 
     fun previewWrapper(block: PreviewWrapper) {
         previewWrapper = block
     }
 
+    fun paramForm(block: PreviewParamForm) {
+        paramForm = block
+    }
+
+    fun params(params: tech.lucam.composeum.runtime.PreviewParamsDsl) {
+        paramForm = params.buildParamForm()
+        paramDefaults = params.buildDefaults()
+    }
+
+    fun params(block: tech.lucam.composeum.runtime.PreviewParamsDsl.() -> Unit) {
+        params(tech.lucam.composeum.runtime.previewParams(block))
+    }
+
     fun build(): PreviewOverride = PreviewOverride(
         previewWrapper = previewWrapper,
         showParamPanel = showParamPanel,
+        paramForm = paramForm,
+        paramDefaults = paramDefaults,
     )
 }

@@ -49,6 +49,17 @@ class ComposeumProcessorTest {
         """,
     )
 
+    private val previewRuntimeUiStubs = SourceFile.kotlin(
+        "PreviewRuntimeUi.kt",
+        """
+        package tech.lucam.composeum.runtime.ui.component
+        import tech.lucam.composeum.runtime.PreviewParamState
+        object LocalPreviewParamState {
+            val current: PreviewParamState get() = PreviewParamState()
+        }
+        """,
+    )
+
     private val widgetStubs = SourceFile.kotlin(
         "Widgets.kt",
         """
@@ -68,6 +79,7 @@ class ComposeumProcessorTest {
         @Composable fun PreviewTextUnitField(label: String, value: TextUnit, onValue: (TextUnit) -> Unit, range: ClosedFloatingPointRange<Float> = 8f..64f, description: String = "") {}
         @Composable fun PreviewNullableWrapper(label: String, isNull: Boolean, onNullChange: (Boolean) -> Unit, description: String = "", content: @Composable () -> Unit) {}
         @Composable fun PreviewListField(label: String, itemCount: Int, onAdd: () -> Unit, onRemove: (Int) -> Unit, description: String = "", itemContent: @Composable (Int) -> Unit) {}
+        @Composable fun PreviewCustomTypeField(label: String, kotlinType: String, stateKey: String, state: tech.lucam.composeum.runtime.PreviewParamState, onUpdate: (tech.lucam.composeum.runtime.PreviewParamState) -> Unit, description: String = "") {}
         """,
     )
 
@@ -113,6 +125,11 @@ class ComposeumProcessorTest {
         "Composable.kt",
         """
         package androidx.compose.runtime
+        @Target(
+            AnnotationTarget.FUNCTION,
+            AnnotationTarget.TYPE,
+            AnnotationTarget.TYPE_PARAMETER,
+        )
         annotation class Composable
         """,
     )
@@ -139,7 +156,6 @@ class ComposeumProcessorTest {
         package tech.lucam.composeum.annotation
         annotation class PreviewParam(
             val label: String,
-            val default: String = "",
             val description: String = "",
             val options: Array<String> = [],
         )
@@ -591,129 +607,6 @@ class ComposeumProcessorTest {
     }
 
     @Test
-    fun `error when PreviewParam Int default is invalid`() {
-        val result = compile(
-            SourceFile.kotlin(
-                "Preview.kt",
-                """
-                import androidx.compose.runtime.Composable
-                import tech.lucam.composeum.annotation.ComposePreview
-                import tech.lucam.composeum.annotation.PreviewGroup
-                import tech.lucam.composeum.annotation.PreviewParam
-
-                object MyGroup : PreviewGroup { override val name = "Group" }
-
-                @ComposePreview(name = "Test", group = MyGroup::class)
-                @Composable
-                fun myPreview(
-                    @PreviewParam(label = "Count", default = "abc") count: Int = 1,
-                ) {}
-                """,
-            ),
-        )
-
-        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertHasExactMessage(
-            result,
-            "@ComposePreview function 'myPreview' parameter 'count' annotated with @PreviewParam has invalid default 'abc' for type 'kotlin.Int'. Change the default string to a valid kotlin.Int value or remove the annotation default.",
-        )
-    }
-
-    @Test
-    fun `error when PreviewParam enum default is invalid`() {
-        val result = compile(
-            SourceFile.kotlin(
-                "Preview.kt",
-                """
-                import androidx.compose.runtime.Composable
-                import tech.lucam.composeum.annotation.ComposePreview
-                import tech.lucam.composeum.annotation.PreviewGroup
-                import tech.lucam.composeum.annotation.PreviewParam
-
-                object MyGroup : PreviewGroup { override val name = "Group" }
-                enum class ButtonVariant { Primary, Secondary }
-
-                @ComposePreview(name = "Test", group = MyGroup::class)
-                @Composable
-                fun myPreview(
-                    @PreviewParam(label = "Variant", default = "Missing")
-                    variant: ButtonVariant = ButtonVariant.Primary,
-                ) {}
-                """,
-            ),
-        )
-
-        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertHasExactMessage(
-            result,
-            "@ComposePreview function 'myPreview' parameter 'variant' annotated with @PreviewParam has invalid default 'Missing' for type 'ButtonVariant'. Change the default string to a valid ButtonVariant value or remove the annotation default.",
-        )
-    }
-
-    @Test
-    fun `error when PreviewParam sealed default is invalid`() {
-        val result = compile(
-            SourceFile.kotlin(
-                "Preview.kt",
-                """
-                import androidx.compose.runtime.Composable
-                import tech.lucam.composeum.annotation.ComposePreview
-                import tech.lucam.composeum.annotation.PreviewGroup
-                import tech.lucam.composeum.annotation.PreviewParam
-
-                object MyGroup : PreviewGroup { override val name = "Group" }
-                sealed class UiState {
-                    object Loading : UiState()
-                    data class Success(val message: String) : UiState()
-                }
-
-                @ComposePreview(name = "Test", group = MyGroup::class)
-                @Composable
-                fun myPreview(
-                    @PreviewParam(label = "State", default = "Unknown") state: UiState = UiState.Loading,
-                ) {}
-                """,
-            ),
-        )
-
-        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertHasExactMessage(
-            result,
-            "@ComposePreview function 'myPreview' parameter 'state' annotated with @PreviewParam has invalid default 'Unknown' for type 'UiState'. Change the default string to a valid UiState value or remove the annotation default.",
-        )
-    }
-
-    @Test
-    fun `error when PreviewParam data class default string is provided`() {
-        val result = compile(
-            SourceFile.kotlin(
-                "Preview.kt",
-                """
-                import androidx.compose.runtime.Composable
-                import tech.lucam.composeum.annotation.ComposePreview
-                import tech.lucam.composeum.annotation.PreviewGroup
-                import tech.lucam.composeum.annotation.PreviewParam
-
-                object MyGroup : PreviewGroup { override val name = "Group" }
-                data class Config(val text: String)
-
-                @ComposePreview(name = "Test", group = MyGroup::class)
-                @Composable
-                fun myPreview(
-                    @PreviewParam(label = "Config", default = "ignored") config: Config = Config("hello"),
-                ) {}
-                """,
-            ),
-        )
-
-        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
-        assertHasExactMessage(
-            result,
-            "@ComposePreview function 'myPreview' parameter 'config' annotated with @PreviewParam does not support string defaults for data class type 'Config'. Remove the annotation default and rely on the function signature default value instead.",
-        )
-    }
-
-    @Test
     fun `multiple ComposePreview violations are all reported`() {
         val result = compile(
             SourceFile.kotlin(
@@ -822,6 +715,7 @@ class ComposeumProcessorTest {
                 previewParamStub,
                 composePreviewStub,
                 runtimeStubs,
+                previewRuntimeUiStubs,
                 widgetStubs,
             ) + sources.toList()
             symbolProcessorProviders = listOf(ComposeumProcessorProvider())
@@ -848,6 +742,7 @@ class ComposeumProcessorTest {
                 previewParamStub,
                 composePreviewStub,
                 runtimeStubs,
+                previewRuntimeUiStubs,
                 widgetStubs,
             ) + sources.toList()
             symbolProcessorProviders = listOf(ComposeumProcessorProvider())
@@ -870,6 +765,7 @@ class ComposeumProcessorTest {
                 viewPreviewStub,
             ) + androidViewStubs + listOf(
                 runtimeStubs,
+                previewRuntimeUiStubs,
                 widgetStubs,
             ) + sources.toList()
             symbolProcessorProviders = listOf(ComposeumProcessorProvider())
@@ -970,7 +866,7 @@ class ComposeumProcessorTest {
     }
 
     @Test
-    fun `error when default is not present in options`() {
+    fun `error when function default is not present in options`() {
         val result = compile(
             SourceFile.kotlin(
                 "Preview.kt",
@@ -985,7 +881,7 @@ class ComposeumProcessorTest {
                 @ComposePreview(name = "Test", group = MyGroup::class)
                 @Composable
                 fun myPreview(
-                    @PreviewParam(label = "Text", default = "c", options = ["a", "b"]) text: String = "a",
+                    @PreviewParam(label = "Text", options = ["a", "b"]) text: String = "c",
                 ) {}
                 """,
             ),
@@ -994,7 +890,7 @@ class ComposeumProcessorTest {
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
         assertHasExactMessage(
             result,
-            "@ComposePreview function 'myPreview' parameter 'text' annotated with @PreviewParam uses default 'c' that is not present in options [a, b]. Add 'c' to the options list or change the default.",
+            "@ComposePreview function 'myPreview' parameter 'text' annotated with @PreviewParam uses function default 'c' that is not present in options [a, b]. Add 'c' to the options list or change the function signature default.",
         )
     }
 
@@ -1017,7 +913,6 @@ class ComposeumProcessorTest {
                 fun myPreview(
                     @PreviewParam(
                         label = "Variant",
-                        default = "Primary",
                         options = ["Primary", "Missing"],
                     )
                     variant: ButtonVariant = ButtonVariant.Primary,
@@ -1088,8 +983,8 @@ class ComposeumProcessorTest {
                 @ComposePreview(name = "Button", group = MyGroup::class)
                 @Composable
                 fun buttonPreview(
-                    @PreviewParam(label = "Label", default = "Click me") text: String = "Click me",
-                    @PreviewParam(label = "Enabled", default = "true") enabled: Boolean = true,
+                    @PreviewParam(label = "Label") text: String = "Click me",
+                    @PreviewParam(label = "Enabled") enabled: Boolean = true,
                 ) {}
                 """,
             ),
@@ -1124,7 +1019,7 @@ class ComposeumProcessorTest {
                 @ComposePreview(name = "T", group = MyGroup::class)
                 @Composable
                 fun myPreview(
-                    @PreviewParam(label = "Title", default = "Hello") title: String = "Hello",
+                    @PreviewParam(label = "Title") title: String = "Hello",
                 ) {}
                 """,
             ),
@@ -1154,7 +1049,7 @@ class ComposeumProcessorTest {
                 @ComposePreview(name = "T", group = MyGroup::class)
                 @Composable
                 fun myPreview(
-                    @PreviewParam(label = "Enabled", default = "true") enabled: Boolean = true,
+                    @PreviewParam(label = "Enabled") enabled: Boolean = true,
                 ) {}
                 """,
             ),
@@ -1183,7 +1078,7 @@ class ComposeumProcessorTest {
                 @ComposePreview(name = "T", group = MyGroup::class)
                 @Composable
                 fun myPreview(
-                    @PreviewParam(label = "Count", default = "5") count: Int = 5,
+                    @PreviewParam(label = "Count") count: Int = 5,
                 ) {}
                 """,
             ),
@@ -1212,7 +1107,7 @@ class ComposeumProcessorTest {
                 @ComposePreview(name = "T", group = MyGroup::class)
                 @Composable
                 fun myPreview(
-                    @PreviewParam(label = "Alpha", default = "0.5") alpha: Float = 0.5f,
+                    @PreviewParam(label = "Alpha") alpha: Float = 0.5f,
                 ) {}
                 """,
             ),
@@ -1699,6 +1594,7 @@ class ComposeumProcessorTest {
                 viewPreviewStub,
             ) + androidViewStubs + listOf(
                 runtimeStubs,
+                previewRuntimeUiStubs,
                 widgetStubs,
             ) + sources.toList()
             symbolProcessorProviders = listOf(ComposeumProcessorProvider())
@@ -1745,6 +1641,7 @@ class ComposeumProcessorTest {
                 composePreviewStub,
                 androidPreviewStub,
                 runtimeStubs,
+                previewRuntimeUiStubs,
                 widgetStubs,
             ) + sources.toList()
             symbolProcessorProviders = listOf(ComposeumProcessorProvider())
@@ -2069,7 +1966,7 @@ class ComposeumProcessorTest {
                 @ComposePreview(name = "T", group = MyGroup::class)
                 @Composable
                 fun myPreview(
-                    @PreviewParam(label = "Size", default = "16") size: Dp = Dp(16f),
+                    @PreviewParam(label = "Size") size: Dp = Dp(16f),
                 ) {}
                 """,
             ),
@@ -2100,7 +1997,7 @@ class ComposeumProcessorTest {
                 @ComposePreview(name = "T", group = MyGroup::class)
                 @Composable
                 fun myPreview(
-                    @PreviewParam(label = "Font Size", default = "14") fontSize: TextUnit = TextUnit(14f, TextUnitType.Sp),
+                    @PreviewParam(label = "Font Size") fontSize: TextUnit = TextUnit(14f, TextUnitType.Sp),
                 ) {}
                 """,
             ),
@@ -2164,7 +2061,7 @@ class ComposeumProcessorTest {
                 @ComposePreview(name = "T", group = MyGroup::class)
                 @Composable
                 fun myPreview(
-                    @PreviewParam(label = "Variant", default = "Secondary")
+                    @PreviewParam(label = "Variant")
                     variant: ButtonVariant = ButtonVariant.Secondary,
                 ) {}
                 """,
@@ -2198,7 +2095,7 @@ class ComposeumProcessorTest {
                 @ComposePreview(name = "T", group = MyGroup::class)
                 @Composable
                 fun myPreview(
-                    @PreviewParam(label = "Variant", default = "Secondary")
+                    @PreviewParam(label = "Variant")
                     variant: ButtonVariant = ButtonVariant.Secondary,
                 ) {}
                 """,
@@ -2268,7 +2165,7 @@ class ComposeumProcessorTest {
                 @ComposePreview(name = "T", group = MyGroup::class)
                 @Composable
                 fun myPreview(
-                    @PreviewParam(label = "State", default = "Loading") state: UiState = UiState.Loading,
+                    @PreviewParam(label = "State") state: UiState = UiState.Loading,
                 ) {}
                 """,
             ),
@@ -2305,7 +2202,7 @@ class ComposeumProcessorTest {
                 @ComposePreview(name = "T", group = MyGroup::class)
                 @Composable
                 fun myPreview(
-                    @PreviewParam(label = "Tags", default = "alpha|beta") tags: List<String> = listOf("alpha", "beta"),
+                    @PreviewParam(label = "Tags") tags: List<String> = listOf("alpha", "beta"),
                 ) {}
                 """,
             ),
@@ -2398,7 +2295,7 @@ class ComposeumProcessorTest {
                 @ComposePreview(name = "Test", group = MyGroup::class)
                 @Composable
                 fun myPreview(
-                    @PreviewParam(label = "State", default = "Loading") state: State = State.Loading,
+                    @PreviewParam(label = "State") state: State = State.Loading,
                 ) {}
                 """,
             ),
@@ -2428,7 +2325,7 @@ class ComposeumProcessorTest {
                 @ComposePreview(name = "Test", group = MyGroup::class)
                 @Composable
                 fun myPreview(
-                    @PreviewParam(label = "State", default = "Loaded") state: State = State.Idle,
+                    @PreviewParam(label = "State") state: State = State.Idle,
                 ) {}
                 """,
             ),
@@ -2513,7 +2410,7 @@ class ComposeumProcessorTest {
                 @ComposePreview(name = "Test", group = MyGroup::class)
                 @Composable
                 fun myPreview(
-                    @PreviewParam(label = "States", default = "Idle|Loading")
+                    @PreviewParam(label = "States")
                     states: List<State> = listOf(State.Idle),
                 ) {}
                 """,

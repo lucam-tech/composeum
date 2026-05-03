@@ -19,6 +19,7 @@ import tech.lucam.composeum.annotation.PreviewVariantGroup
 import tech.lucam.composeum.runtime.config.GroupConfigBuilder
 import tech.lucam.composeum.runtime.config.PreviewConfigOverride
 import tech.lucam.composeum.runtime.config.PreviewConfigOverrideBuilder
+import tech.lucam.composeum.runtime.config.PreviewParamForm
 import tech.lucam.composeum.runtime.config.PreviewOverrideBuilder
 import tech.lucam.composeum.runtime.config.asOverride
 import tech.lucam.composeum.runtime.config.mergedWith
@@ -189,7 +190,7 @@ class RegistryBuilder {
         description: String,
         tags: List<PreviewTag>,
         key: String,
-        paramForm: (@Composable (PreviewParamState, (PreviewParamState) -> Unit) -> Unit)?,
+        paramForm: PreviewParamForm?,
         paramDefaults: PreviewParamDefaults,
         configure: PreviewOverrideBuilder.() -> Unit,
         composable: @Composable () -> Unit,
@@ -263,7 +264,7 @@ class GroupScope internal constructor(
         isDefaultVariant: Boolean = false,
         description: String = "",
         tags: List<PreviewTag> = emptyList(),
-        key: String = "${defaultGroup.name}/$name",
+        key: String = "${defaultGroup.groupKey()}/$name",
         configure: PreviewOverrideBuilder.() -> Unit = {},
         composable: @Composable () -> Unit,
     ) {
@@ -287,7 +288,7 @@ class GroupScope internal constructor(
         isDefaultVariant: Boolean = false,
         description: String = "",
         tags: List<PreviewTag> = emptyList(),
-        key: String = "${defaultGroup.name}/$name",
+        key: String = "${defaultGroup.groupKey()}/$name",
         configure: PreviewOverrideBuilder.() -> Unit = {},
         composable: @Composable (PreviewParamState) -> Unit,
     ) {
@@ -331,16 +332,18 @@ class PreviewParamsDsl {
         default: String = "",
         label: String = key,
         description: String = "",
-    ) {
+    ): PreviewParamKey<String> {
+        val paramKey = previewParamKey<String>(key)
         defs += ParamDef(key, default) { state, onState ->
-            val value: String = state[key] ?: default
+            val value: String = state[paramKey] ?: default
             PreviewStringField(
                 label = label,
                 value = value,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /** Registers a Boolean toggle parameter. */
@@ -349,16 +352,18 @@ class PreviewParamsDsl {
         default: Boolean = false,
         label: String = key,
         description: String = "",
-    ) {
+    ): PreviewParamKey<Boolean> {
+        val paramKey = previewParamKey<Boolean>(key)
         defs += ParamDef(key, default) { state, onState ->
-            val value: Boolean = state[key] ?: default
+            val value: Boolean = state[paramKey] ?: default
             PreviewBooleanField(
                 label = label,
                 value = value,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /** Registers an Int slider parameter. */
@@ -368,17 +373,19 @@ class PreviewParamsDsl {
         label: String = key,
         range: IntRange = 0..100,
         description: String = "",
-    ) {
+    ): PreviewParamKey<Int> {
+        val paramKey = previewParamKey<Int>(key)
         defs += ParamDef(key, default) { state, onState ->
-            val value: Int = state[key] ?: default
+            val value: Int = state[paramKey] ?: default
             PreviewIntField(
                 label = label,
                 value = value,
                 range = range,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /** Registers a Float slider parameter. */
@@ -388,17 +395,19 @@ class PreviewParamsDsl {
         label: String = key,
         range: ClosedFloatingPointRange<Float> = 0f..1f,
         description: String = "",
-    ) {
+    ): PreviewParamKey<Float> {
+        val paramKey = previewParamKey<Float>(key)
         defs += ParamDef(key, default) { state, onState ->
-            val value: Float = state[key] ?: default
+            val value: Float = state[paramKey] ?: default
             PreviewFloatField(
                 label = label,
                 value = value,
                 range = range,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /** Registers a [Color] swatch-picker parameter. */
@@ -407,16 +416,18 @@ class PreviewParamsDsl {
         default: Color = Color.Unspecified,
         label: String = key,
         description: String = "",
-    ) {
+    ): PreviewParamKey<Color> {
+        val paramKey = previewParamKey<Color>(key)
         defs += ParamDef(key, default) { state, onState ->
-            val value: Color = state[key] ?: default
+            val value: Color = state[paramKey] ?: default
             PreviewColorField(
                 label = label,
                 value = value,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /** Registers a [Dp] slider parameter. */
@@ -426,17 +437,19 @@ class PreviewParamsDsl {
         label: String = key,
         range: ClosedFloatingPointRange<Float> = 0f..512f,
         description: String = "",
-    ) {
+    ): PreviewParamKey<Dp> {
+        val paramKey = previewParamKey<Dp>(key)
         defs += ParamDef(key, default) { state, onState ->
-            val value: Dp = state[key] ?: default
+            val value: Dp = state[paramKey] ?: default
             PreviewDpField(
                 label = label,
                 value = value,
                 range = range,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /** Registers a [TextUnit] (sp) slider parameter. */
@@ -446,17 +459,19 @@ class PreviewParamsDsl {
         label: String = key,
         range: ClosedFloatingPointRange<Float> = 8f..64f,
         description: String = "",
-    ) {
+    ): PreviewParamKey<TextUnit> {
+        val paramKey = previewParamKey<TextUnit>(key)
         defs += ParamDef(key, default) { state, onState ->
-            val value: TextUnit = state[key] ?: default
+            val value: TextUnit = state[paramKey] ?: default
             PreviewTextUnitField(
                 label = label,
                 value = value,
                 range = range,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /** Registers a String dropdown parameter. */
@@ -466,17 +481,19 @@ class PreviewParamsDsl {
         default: String = options.first(),
         label: String = key,
         description: String = "",
-    ) {
+    ): PreviewParamKey<String> {
+        val paramKey = previewParamKey<String>(key)
         defs += ParamDef(key, default) { state, onState ->
-            val value: String = state[key] ?: default
+            val value: String = state[paramKey] ?: default
             PreviewDropdownField(
                 label = label,
                 value = value,
                 options = options,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /** Registers a 2D [Alignment] parameter rendered as a 3×3 grid picker. */
@@ -485,16 +502,18 @@ class PreviewParamsDsl {
         default: Alignment = Alignment.Center,
         label: String = key,
         description: String = "",
-    ) {
+    ): PreviewParamKey<Alignment> {
+        val paramKey = previewParamKey<Alignment>(key)
         defs += ParamDef(key, default) { state, onState ->
-            val value: Alignment = state[key] ?: default
+            val value: Alignment = state[paramKey] ?: default
             PreviewAlignmentField(
                 label = label,
                 value = value,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /** Registers an [Alignment.Horizontal] parameter rendered as an option chip row. */
@@ -503,22 +522,24 @@ class PreviewParamsDsl {
         default: Alignment.Horizontal = Alignment.Start,
         label: String = key,
         description: String = "",
-    ) {
+    ): PreviewParamKey<Alignment.Horizontal> {
+        val paramKey = previewParamKey<Alignment.Horizontal>(key)
         val options = listOf(
             "Start" to Alignment.Start,
             "Center" to Alignment.CenterHorizontally,
             "End" to Alignment.End,
         )
         defs += ParamDef(key, default) { state, onState ->
-            val value: Alignment.Horizontal = state[key] ?: default
+            val value: Alignment.Horizontal = state[paramKey] ?: default
             PreviewOptionChipsField(
                 label = label,
                 value = value,
                 options = options,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /** Registers an [Alignment.Vertical] parameter rendered as an option chip row. */
@@ -527,22 +548,24 @@ class PreviewParamsDsl {
         default: Alignment.Vertical = Alignment.Top,
         label: String = key,
         description: String = "",
-    ) {
+    ): PreviewParamKey<Alignment.Vertical> {
+        val paramKey = previewParamKey<Alignment.Vertical>(key)
         val options = listOf(
             "Top" to Alignment.Top,
             "Center" to Alignment.CenterVertically,
             "Bottom" to Alignment.Bottom,
         )
         defs += ParamDef(key, default) { state, onState ->
-            val value: Alignment.Vertical = state[key] ?: default
+            val value: Alignment.Vertical = state[paramKey] ?: default
             PreviewOptionChipsField(
                 label = label,
                 value = value,
                 options = options,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /** Registers an [Arrangement.Horizontal] parameter rendered as an option chip row. */
@@ -551,7 +574,8 @@ class PreviewParamsDsl {
         default: Arrangement.Horizontal = Arrangement.Start,
         label: String = key,
         description: String = "",
-    ) {
+    ): PreviewParamKey<Arrangement.Horizontal> {
+        val paramKey = previewParamKey<Arrangement.Horizontal>(key)
         val options = listOf(
             "Start" to Arrangement.Start,
             "Center" to Arrangement.Center,
@@ -561,15 +585,16 @@ class PreviewParamsDsl {
             "Space Evenly" to Arrangement.SpaceEvenly,
         )
         defs += ParamDef(key, default) { state, onState ->
-            val value: Arrangement.Horizontal = state[key] ?: default
+            val value: Arrangement.Horizontal = state[paramKey] ?: default
             PreviewOptionChipsField(
                 label = label,
                 value = value,
                 options = options,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /** Registers an [Arrangement.Vertical] parameter rendered as an option chip row. */
@@ -578,7 +603,8 @@ class PreviewParamsDsl {
         default: Arrangement.Vertical = Arrangement.Top,
         label: String = key,
         description: String = "",
-    ) {
+    ): PreviewParamKey<Arrangement.Vertical> {
+        val paramKey = previewParamKey<Arrangement.Vertical>(key)
         val options = listOf(
             "Top" to Arrangement.Top,
             "Center" to Arrangement.Center,
@@ -588,15 +614,16 @@ class PreviewParamsDsl {
             "Space Evenly" to Arrangement.SpaceEvenly,
         )
         defs += ParamDef(key, default) { state, onState ->
-            val value: Arrangement.Vertical = state[key] ?: default
+            val value: Arrangement.Vertical = state[paramKey] ?: default
             PreviewOptionChipsField(
                 label = label,
                 value = value,
                 options = options,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /**
@@ -615,20 +642,22 @@ class PreviewParamsDsl {
         defaultIndex: Int = 0,
         label: String = key,
         description: String = "",
-    ) {
+    ): PreviewParamKey<ContentSlotValue> {
+        val paramKey = previewParamKey<ContentSlotValue>(key)
         require(options.isNotEmpty()) { "contentSlot '$key' must have at least one option" }
         val safeDefault = defaultIndex.coerceIn(options.indices)
         val default = ContentSlotValue(options, safeDefault)
         defs += ParamDef(key, default) { state, onState ->
-            val value: ContentSlotValue = state[key] ?: default
+            val value: ContentSlotValue = state[paramKey] ?: default
             PreviewContentSlotField(
                 label = label,
                 optionNames = value.optionNames,
                 selectedIndex = value.selectedIndex,
                 description = description,
-                onIndex = { onState(state.put(key, ContentSlotValue(options, it))) },
+                onIndex = { onState(state.put(paramKey, ContentSlotValue(options, it))) },
             )
         }
+        return paramKey
     }
 
     /** Registers a [FontWeight] parameter rendered as an option chip row. */
@@ -637,7 +666,8 @@ class PreviewParamsDsl {
         default: FontWeight = FontWeight.Normal,
         label: String = key,
         description: String = "",
-    ) {
+    ): PreviewParamKey<FontWeight> {
+        val paramKey = previewParamKey<FontWeight>(key)
         val options = listOf(
             "Thin" to FontWeight.Thin,
             "ExtraLight" to FontWeight.ExtraLight,
@@ -650,15 +680,16 @@ class PreviewParamsDsl {
             "Black" to FontWeight.Black,
         )
         defs += ParamDef(key, default) { state, onState ->
-            val value: FontWeight = state[key] ?: default
+            val value: FontWeight = state[paramKey] ?: default
             PreviewOptionChipsField(
                 label = label,
                 value = value,
                 options = options,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /** Registers a [TextAlign] parameter rendered as an option chip row. */
@@ -667,7 +698,8 @@ class PreviewParamsDsl {
         default: TextAlign = TextAlign.Start,
         label: String = key,
         description: String = "",
-    ) {
+    ): PreviewParamKey<TextAlign> {
+        val paramKey = previewParamKey<TextAlign>(key)
         val options = listOf(
             "Start" to TextAlign.Start,
             "Center" to TextAlign.Center,
@@ -675,15 +707,16 @@ class PreviewParamsDsl {
             "Justify" to TextAlign.Justify,
         )
         defs += ParamDef(key, default) { state, onState ->
-            val value: TextAlign = state[key] ?: default
+            val value: TextAlign = state[paramKey] ?: default
             PreviewOptionChipsField(
                 label = label,
                 value = value,
                 options = options,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /**
@@ -705,17 +738,19 @@ class PreviewParamsDsl {
         label: String = key,
         range: ClosedFloatingPointRange<Float> = 0f..64f,
         description: String = "",
-    ) {
+    ): PreviewParamKey<Dp> {
+        val paramKey = previewParamKey<Dp>(key)
         defs += ParamDef(key, default) { state, onState ->
-            val value: Dp = state[key] ?: default
+            val value: Dp = state[paramKey] ?: default
             PreviewDpField(
                 label = label,
                 value = value,
                 range = range,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /** Registers a [ContentScale] parameter rendered as an option chip row. */
@@ -724,7 +759,8 @@ class PreviewParamsDsl {
         default: ContentScale = ContentScale.Fit,
         label: String = key,
         description: String = "",
-    ) {
+    ): PreviewParamKey<ContentScale> {
+        val paramKey = previewParamKey<ContentScale>(key)
         val options = listOf(
             "Fit" to ContentScale.Fit,
             "Crop" to ContentScale.Crop,
@@ -735,15 +771,16 @@ class PreviewParamsDsl {
             "None" to ContentScale.None,
         )
         defs += ParamDef(key, default) { state, onState ->
-            val value: ContentScale = state[key] ?: default
+            val value: ContentScale = state[paramKey] ?: default
             PreviewOptionChipsField(
                 label = label,
                 value = value,
                 options = options,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /** Registers a [LayoutDirection] parameter rendered as an option chip row (Ltr / Rtl). */
@@ -752,21 +789,23 @@ class PreviewParamsDsl {
         default: LayoutDirection = LayoutDirection.Ltr,
         label: String = key,
         description: String = "",
-    ) {
+    ): PreviewParamKey<LayoutDirection> {
+        val paramKey = previewParamKey<LayoutDirection>(key)
         val options = listOf(
             "LTR" to LayoutDirection.Ltr,
             "RTL" to LayoutDirection.Rtl,
         )
         defs += ParamDef(key, default) { state, onState ->
-            val value: LayoutDirection = state[key] ?: default
+            val value: LayoutDirection = state[paramKey] ?: default
             PreviewOptionChipsField(
                 label = label,
                 value = value,
                 options = options,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /**
@@ -783,17 +822,19 @@ class PreviewParamsDsl {
         label: String = key,
         range: ClosedFloatingPointRange<Float> = 0f..128f,
         description: String = "",
-    ) {
+    ): PreviewParamKey<PreviewPaddingValues> {
+        val paramKey = previewParamKey<PreviewPaddingValues>(key)
         defs += ParamDef(key, default) { state, onState ->
-            val value: PreviewPaddingValues = state[key] ?: default
+            val value: PreviewPaddingValues = state[paramKey] ?: default
             PreviewPaddingValuesField(
                 label = label,
                 value = value,
                 range = range,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     /** Registers a [FontFamily] parameter rendered as an option chip row. */
@@ -802,7 +843,8 @@ class PreviewParamsDsl {
         default: FontFamily = FontFamily.Default,
         label: String = key,
         description: String = "",
-    ) {
+    ): PreviewParamKey<FontFamily> {
+        val paramKey = previewParamKey<FontFamily>(key)
         val options = listOf(
             "Default" to FontFamily.Default,
             "Serif" to FontFamily.Serif,
@@ -811,15 +853,16 @@ class PreviewParamsDsl {
             "Cursive" to FontFamily.Cursive,
         )
         defs += ParamDef(key, default) { state, onState ->
-            val value: FontFamily = state[key] ?: default
+            val value: FontFamily = state[paramKey] ?: default
             PreviewOptionChipsField(
                 label = label,
                 value = value,
                 options = options,
                 description = description,
-                onValue = { onState(state.put(key, it)) },
+                onValue = { onState(state.put(paramKey, it)) },
             )
         }
+        return paramKey
     }
 
     internal fun buildDefaults(): PreviewParamDefaults =

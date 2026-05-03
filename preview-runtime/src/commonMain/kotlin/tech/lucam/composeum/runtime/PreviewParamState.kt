@@ -15,9 +15,17 @@ data class PreviewParamState(
     fun put(key: String, value: Any): PreviewParamState =
         copy(values = values.put(key, value))
 
+    /** Returns a new state with [key] set to [value]. */
+    fun <T> put(key: PreviewParamKey<T>, value: T): PreviewParamState =
+        copy(values = values.put(key.name, value as Any))
+
     /** Returns the typed value currently stored under [key], or `null` when absent. */
     @Suppress("UNCHECKED_CAST")
     operator fun <T> get(key: String): T? = values[key] as? T
+
+    /** Returns the typed value currently stored under [key], or `null` when absent. */
+    @Suppress("UNCHECKED_CAST")
+    operator fun <T> get(key: PreviewParamKey<T>): T? = values[key.name] as? T
 }
 
 /** Default parameter values used to construct the initial [PreviewParamState]. */

@@ -58,7 +58,7 @@ fun GreetingPreview() {
 )
 @Composable
 fun PrimaryButtonPreview(
-    @PreviewParam(label = "Label", default = "Continue") label: String = "Continue",
+    @PreviewParam(label = "Label") label: String = "Continue",
 ) {
     Card(modifier = Modifier.padding(16.dp)) {
         Button(
@@ -77,8 +77,8 @@ fun PrimaryButtonPreview(
 )
 @Composable
 fun InboxSummaryPreview(
-    @PreviewParam(label = "Filter", default = "All") filter: InboxFilter = InboxFilter.All,
-    @PreviewParam(label = "Notifications", default = "true") notificationsEnabled: Boolean = true,
+    @PreviewParam(label = "Filter") filter: InboxFilter = InboxFilter.All,
+    @PreviewParam(label = "Notifications") notificationsEnabled: Boolean = true,
 ) {
     Card(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -118,8 +118,8 @@ fun InboxSummaryPreview(
 )
 @Composable
 fun ProfileCardPreview(
-    @PreviewParam(label = "Name", default = "Jane Doe") name: String = "Jane Doe",
-    @PreviewParam(label = "Online", default = "true") online: Boolean = true,
+    @PreviewParam(label = "Name") name: String = "Jane Doe",
+    @PreviewParam(label = "Online") online: Boolean = true,
 ) {
     Card(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
         Row(

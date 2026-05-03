@@ -38,6 +38,14 @@ class PreviewParamStateTest {
     }
 
     @Test
+    fun `typed keys provide typed put and get access`() {
+        val countKey = previewParamKey<Int>("count")
+        val state = PreviewParamState().put(countKey, 7)
+
+        assertEquals(7, state[countKey])
+    }
+
+    @Test
     fun `toInitialState produces state matching defaults`() {
         val defaults = PreviewParamDefaults(mapOf("label" to "hello", "enabled" to true))
         val state = defaults.toInitialState()

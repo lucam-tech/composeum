@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import tech.lucam.composeum.runtime.PreviewEntry
+import tech.lucam.composeum.runtime.PreviewParamDefaults
 import tech.lucam.composeum.runtime.withCustomTypeDefaults
 import tech.lucam.composeum.runtime.config.PreviewWrapper
 
@@ -80,8 +81,11 @@ fun PreviewThumbnailCard(
         // Thumbnail preview area — provide the entry's default param state so composables
         // that read LocalPreviewParamState (including custom-type params) render correctly.
         val config = LocalPreviewConfig.current
-        val thumbnailState = remember(entry.key) {
-            entry.paramDefaults.toInitialState().withCustomTypeDefaults(entry, config)
+        val thumbnailState = remember(entry.key, config) {
+            val overrideDefaults = config.previewOverrides[entry.key]?.paramDefaults?.defaults.orEmpty()
+            PreviewParamDefaults(entry.paramDefaults.defaults + overrideDefaults)
+                .toInitialState()
+                .withCustomTypeDefaults(entry, config)
         }
         Card(
             modifier = Modifier

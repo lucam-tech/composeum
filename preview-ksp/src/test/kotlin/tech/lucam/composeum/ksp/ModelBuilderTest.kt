@@ -50,6 +50,11 @@ class ModelBuilderTest {
         "Composable.kt",
         """
         package androidx.compose.runtime
+        @Target(
+            AnnotationTarget.FUNCTION,
+            AnnotationTarget.TYPE,
+            AnnotationTarget.TYPE_PARAMETER,
+        )
         annotation class Composable
         """,
     )
@@ -81,7 +86,6 @@ class ModelBuilderTest {
         package tech.lucam.composeum.annotation
         annotation class PreviewParam(
             val label: String,
-            val default: String = "",
             val description: String = "",
             val options: Array<String> = [],
         )
@@ -131,7 +135,7 @@ class ModelBuilderTest {
                 @ComposePreview(name = "Button Preview", group = MyGroup::class, description = "A button")
                 @Composable
                 fun buttonPreview(
-                    @PreviewParam(label = "Label", default = "Click me") text: String = "Click me",
+                    @PreviewParam(label = "Label") text: String = "Click me",
                 ) {}
                 """,
             ),
@@ -168,7 +172,7 @@ class ModelBuilderTest {
                 @ComposePreview(name = "Toggle", group = MyGroup::class)
                 @Composable
                 fun togglePreview(
-                    @PreviewParam(label = "Enabled", default = "true") enabled: Boolean = true,
+                    @PreviewParam(label = "Enabled") enabled: Boolean = true,
                 ) {}
                 """,
             ),

@@ -29,7 +29,6 @@ import tech.lucam.composeum.runtime.PreviewEntry
 import tech.lucam.composeum.runtime.families
 import tech.lucam.composeum.runtime.withCustomTypeDefaults
 import tech.lucam.composeum.runtime.config.PreviewConfig
-import tech.lucam.composeum.runtime.ui.component.LocalPreviewConfig
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewParamState
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewRenderContext
 import tech.lucam.composeum.runtime.ui.component.ParamPanel
@@ -87,13 +86,14 @@ fun PreviewDetailScreen(
                 ?: family.defaultEntry.key,
         )
     }
-    val activeConfig = LocalPreviewConfig.current
+    val activeConfig = config
     val activeEntry = family.entries.firstOrNull { it.key == selectedEntryKey } ?: family.defaultEntry
     val previewOverride = activeConfig.previewOverrides[activeEntry.key]
     val groupConfig = activeConfig.groupOverrides[activeEntry.group::class]
     val effectivePreviewWrapper = previewOverride?.previewWrapper ?: groupConfig?.previewWrapper ?: activeConfig.previewWrapper
     val showParamPanel = previewOverride?.showParamPanel ?: activeConfig.showParamPanel
-    val hasParams = activeEntry.paramForm != null && showParamPanel
+    val effectiveParamForm = previewOverride?.paramForm ?: activeEntry.paramForm
+    val hasParams = effectiveParamForm != null && showParamPanel
     val paramStates = remember(familyKey, initialSelectedEntryKey, initialParamState) {
         mutableStateMapOf<String, PreviewParamState>().apply {
             if (initialSelectedEntryKey != null && initialParamState != null) {
@@ -102,8 +102,12 @@ fun PreviewDetailScreen(
         }
     }
 
-    fun initialState(entry: PreviewEntry): PreviewParamState =
-        entry.paramDefaults.toInitialState().withCustomTypeDefaults(entry, activeConfig)
+    fun initialState(entry: PreviewEntry): PreviewParamState {
+        val overrideDefaults = activeConfig.previewOverrides[entry.key]?.paramDefaults?.defaults.orEmpty()
+        return tech.lucam.composeum.runtime.PreviewParamDefaults(
+            defaults = entry.paramDefaults.defaults + overrideDefaults,
+        ).toInitialState().withCustomTypeDefaults(entry, activeConfig)
+    }
 
     val paramState = paramStates.getOrPut(activeEntry.key) { initialState(activeEntry) }
 
@@ -167,6 +171,7 @@ fun PreviewDetailScreen(
         if (hasParams) {
             ParamPanel(
                 entry = activeEntry,
+                paramForm = effectiveParamForm,
                 paramState = paramState,
                 onParamStateChange = { paramStates[activeEntry.key] = it },
                 onReset = {

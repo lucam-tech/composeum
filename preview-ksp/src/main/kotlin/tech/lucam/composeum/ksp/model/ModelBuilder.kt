@@ -165,15 +165,15 @@ internal object ModelBuilder {
     private fun collectPreviewParams(
         function: KSFunctionDeclaration,
         kdocParamDescriptions: Map<String, String> = emptyMap(),
-    ): List<ParamModel> =
-        function.parameters.mapNotNull { param ->
+    ): List<ParamModel> {
+        val functionDefaults = FunctionDefaultParser.parse(function)
+        return function.parameters.mapNotNull { param ->
             val paramAnn = param.annotations.firstOrNull { ann ->
                 ann.annotationType.resolve().declaration.qualifiedName?.asString() == PREVIEW_PARAM_FQN
             } ?: return@mapNotNull null
 
             val pArgs = paramAnn.arguments.associate { it.name?.asString() to it.value }
             val label = pArgs["label"] as? String ?: ""
-            val defaultValue = pArgs["default"] as? String ?: ""
             val paramName = param.name?.asString() ?: ""
             val paramDescription = (pArgs["description"] as? String ?: "")
                 .ifEmpty { kdocParamDescriptions[paramName].orEmpty() }
@@ -184,11 +184,12 @@ internal object ModelBuilder {
                 ksParam = param,
                 name = paramName,
                 label = label,
-                defaultValue = defaultValue,
+                defaultValue = functionDefaults[paramName].orEmpty(),
                 description = paramDescription,
                 options = options,
             )
         }
+    }
 
     /**
      * Builds a [ParamModel] from a KSP parameter, detecting enums, nullability,

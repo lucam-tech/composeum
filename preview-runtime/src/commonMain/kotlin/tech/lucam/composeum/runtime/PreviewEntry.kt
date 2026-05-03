@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import tech.lucam.composeum.annotation.PreviewGroup
 import tech.lucam.composeum.annotation.PreviewTag
 import tech.lucam.composeum.annotation.PreviewVariantGroup
+import tech.lucam.composeum.runtime.config.PreviewParamForm
 
 /**
  * A single registered composable preview.
@@ -32,7 +33,7 @@ data class PreviewEntry(
      * Composable that renders the interactive param form, or null when there are no params.
      * Receives the current [PreviewParamState] and an update callback.
      */
-    val paramForm: (@Composable (PreviewParamState, (PreviewParamState) -> Unit) -> Unit)?,
+    val paramForm: PreviewParamForm?,
     /** Default values used to construct the initial [PreviewParamState] for this entry. */
     val paramDefaults: PreviewParamDefaults,
     /**

@@ -388,7 +388,6 @@ Marks a composable parameter as controllable from the browser's parameter panel.
 @Retention(AnnotationRetention.SOURCE)
 annotation class PreviewParam(
     val label: String,
-    val default: String = "",
     val description: String = "",
     val options: Array<String> = [],
 )
@@ -397,20 +396,19 @@ annotation class PreviewParam(
 | Parameter     | Description                                                     |
 | ------------- | --------------------------------------------------------------- |
 | `label`       | Widget label shown in the param panel                           |
-| `default`     | String-encoded default value (e.g. `"true"`, `"16"`, `"Hello"`) |
 | `description` | Tooltip / helper text for the widget                            |
 | `options`     | Non-empty list turns the widget into a dropdown picker          |
 
-**Every `@PreviewParam` parameter must have a Kotlin default value** in the function signature. This ensures the composable is callable from the browser with no initial state, and the KSP processor enforces it at compile time.
+**Every `@PreviewParam` parameter must have a Kotlin default value** in the function signature. That default is the single source of truth for the browser's initial state, and the KSP processor enforces it at compile time.
 
 ```kotlin
 @ComposePreview(name = "Alert Banner", group = MyGroup.Components::class)
 @Composable
 fun AlertBannerPreview(
-    @PreviewParam(label = "Message", default = "Something went wrong")
+    @PreviewParam(label = "Message")
     message: String = "Something went wrong",
 
-    @PreviewParam(label = "Dismissible", default = "true")
+    @PreviewParam(label = "Dismissible")
     dismissible: Boolean = true,
 
     @PreviewParam(label = "Severity", options = ["Info", "Warning", "Error"])
