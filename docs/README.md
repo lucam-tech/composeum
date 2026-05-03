@@ -11,3 +11,5 @@ npm run build
 ```
 
 Deploy `docs/` as the project root on Vercel.
+
+Production domain: `https://composeum.lucam.tech`

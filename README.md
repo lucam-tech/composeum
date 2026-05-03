@@ -32,6 +32,6 @@ class PreviewCatalogActivity : ComposeumBrowserActivity() {
 }
 ```
 
-Full documentation now lives in the Starlight site source under [docs](docs/). Deploy that directory to Vercel and place the public docs URL here.
+Get started and check out the full documentation under [docs](docs/)
 
-License: [MIT](LICENSE)
+License: [Apache 2.0](LICENSE)

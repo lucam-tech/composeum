@@ -1,8 +1,8 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 
-const site = process.env.DOCS_SITE_URL;
-const base = process.env.DOCS_BASE_PATH;
+const site = process.env.DOCS_SITE_URL ?? 'https://composeum.lucam.tech';
+const base = process.env.DOCS_BASE_PATH ?? '/';
 
 export default defineConfig({
   site,

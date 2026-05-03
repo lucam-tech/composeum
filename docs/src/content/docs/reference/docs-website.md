@@ -6,6 +6,8 @@ description: Local development and deployment for the Starlight docs app.
 The documentation website lives in the repo-level `docs/` directory and is designed to deploy
 cleanly to Vercel.
 
+Production URL: `https://composeum.lucam.tech`
+
 ## Local development
 
 ```bash
@@ -30,9 +32,11 @@ Recommended settings:
 - Root directory: `docs`
 - Build command: `npm run build`
 - Output directory: `dist`
+- Production domain: `composeum.lucam.tech`
+- Custom domain target: `https://composeum.lucam.tech`
 
-Once you know the final docs domain, add it to `astro.config.mjs` as `site` for canonical URLs and
-metadata.
+The Astro config already defaults `site` to `https://composeum.lucam.tech` for canonical URLs and
+metadata. Override `DOCS_SITE_URL` only when you explicitly need a different host.
 
 ## GitHub Pages fallback
 
