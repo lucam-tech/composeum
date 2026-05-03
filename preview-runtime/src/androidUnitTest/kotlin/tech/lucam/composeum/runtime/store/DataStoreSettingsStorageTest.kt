@@ -1,7 +1,6 @@
 package tech.lucam.composeum.runtime.store
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
-import tech.lucam.composeum.runtime.ColorBlindMode
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -10,6 +9,7 @@ import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import tech.lucam.composeum.runtime.ColorBlindMode
 
 class DataStoreSettingsStorageTest {
 

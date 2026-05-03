@@ -64,7 +64,12 @@ internal object Validator {
             logger.error(
                 composePreviewMessage(
                     function,
-                    "declares group '${groupTypeName(function, COMPOSE_PREVIEW_FQN)}', which must implement PreviewGroup",
+                    "declares group '${
+                        groupTypeName(
+                            function,
+                            COMPOSE_PREVIEW_FQN
+                        )
+                    }', which must implement PreviewGroup",
                     "Change the group argument to a PreviewGroup object.",
                 ),
                 function,
@@ -76,7 +81,12 @@ internal object Validator {
             logger.error(
                 composePreviewMessage(
                     function,
-                    "declares variantGroup '${variantGroupTypeName(function, COMPOSE_PREVIEW_FQN)}', which must implement PreviewVariantGroup",
+                    "declares variantGroup '${
+                        variantGroupTypeName(
+                            function,
+                            COMPOSE_PREVIEW_FQN
+                        )
+                    }', which must implement PreviewVariantGroup",
                     "Change the variantGroup argument to a PreviewVariantGroup object.",
                 ),
                 function,
@@ -217,7 +227,12 @@ internal object Validator {
             logger.error(
                 viewPreviewMessage(
                     function,
-                    "declares group '${groupTypeName(function, VIEW_PREVIEW_FQN)}', which must implement PreviewGroup",
+                    "declares group '${
+                        groupTypeName(
+                            function,
+                            VIEW_PREVIEW_FQN
+                        )
+                    }', which must implement PreviewGroup",
                     "Change the group argument to a PreviewGroup object.",
                 ),
                 function,
@@ -229,7 +244,12 @@ internal object Validator {
             logger.error(
                 viewPreviewMessage(
                     function,
-                    "declares variantGroup '${variantGroupTypeName(function, VIEW_PREVIEW_FQN)}', which must implement PreviewVariantGroup",
+                    "declares variantGroup '${
+                        variantGroupTypeName(
+                            function,
+                            VIEW_PREVIEW_FQN
+                        )
+                    }', which must implement PreviewVariantGroup",
                     "Change the variantGroup argument to a PreviewVariantGroup object.",
                 ),
                 function,
@@ -383,12 +403,24 @@ internal object Validator {
                     valid = false
                 }
 
-                if (options.isNotEmpty() && !validatePreviewParamOptions(function, param, options, logger)) {
+                if (options.isNotEmpty() && !validatePreviewParamOptions(
+                        function,
+                        param,
+                        options,
+                        logger
+                    )
+                ) {
                     valid = false
                 }
 
                 if (options.isNotEmpty() &&
-                    !validatePreviewParamDefaultInOptions(function, param, options, functionDefaults, logger)
+                    !validatePreviewParamDefaultInOptions(
+                        function,
+                        param,
+                        options,
+                        functionDefaults,
+                        logger
+                    )
                 ) {
                     valid = false
                 }
@@ -411,7 +443,13 @@ internal object Validator {
                     valid = false
                 }
 
-                if (isUnsupportedNestedComplexType(function, declaration as? KSClassDeclaration, logger, param)) {
+                if (isUnsupportedNestedComplexType(
+                        function,
+                        declaration as? KSClassDeclaration,
+                        logger,
+                        param
+                    )
+                ) {
                     valid = false
                 }
 
@@ -551,7 +589,8 @@ internal object Validator {
     private fun isSupportedListElementType(listType: KSType): Boolean {
         val elementType = listType.arguments.firstOrNull()?.type?.resolve() ?: return false
         val elementDecl = elementType.declaration as? KSClassDeclaration
-        val elementTypeName = elementType.declaration.qualifiedName?.asString() ?: elementType.toString()
+        val elementTypeName =
+            elementType.declaration.qualifiedName?.asString() ?: elementType.toString()
         val isEnumElement = elementDecl?.classKind == ClassKind.ENUM_CLASS
         return isEnumElement || elementTypeName in setOf(
             "kotlin.String",
@@ -575,7 +614,8 @@ internal object Validator {
                 val nestedType = nestedParam.type.resolve()
                 if (!isUnsupportedNestedExpansionType(nestedType)) return@any false
                 val nestedName = nestedParam.name?.asString() ?: "unknown"
-                val nestedTypeName = nestedType.declaration.qualifiedName?.asString() ?: nestedType.toString()
+                val nestedTypeName =
+                    nestedType.declaration.qualifiedName?.asString() ?: nestedType.toString()
                 logger.error(
                     previewParamMessage(
                         function,
@@ -595,7 +635,8 @@ internal object Validator {
                     val nestedType = nestedParam.type.resolve()
                     if (!isUnsupportedNestedExpansionType(nestedType)) return@any false
                     val nestedName = nestedParam.name?.asString() ?: "unknown"
-                    val nestedTypeName = nestedType.declaration.qualifiedName?.asString() ?: nestedType.toString()
+                    val nestedTypeName =
+                        nestedType.declaration.qualifiedName?.asString() ?: nestedType.toString()
                     logger.error(
                         previewParamMessage(
                             function,
@@ -617,8 +658,8 @@ internal object Validator {
         val declaration = type.declaration as? KSClassDeclaration ?: return false
         val typeName = declaration.qualifiedName?.asString() ?: type.toString()
         return typeName == "kotlin.collections.List" ||
-            Modifier.DATA in declaration.modifiers ||
-            Modifier.SEALED in declaration.modifiers
+                Modifier.DATA in declaration.modifiers ||
+                Modifier.SEALED in declaration.modifiers
     }
 
     private fun groupImplementsPreviewGroup(

@@ -70,6 +70,7 @@ private fun serializeShareableValue(hint: String, value: Any): String? = when (h
         }
         "${it.value}|$unit"
     }
+
     else -> value as? String
 }
 

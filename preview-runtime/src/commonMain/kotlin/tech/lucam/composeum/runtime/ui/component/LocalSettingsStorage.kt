@@ -1,10 +1,10 @@
 package tech.lucam.composeum.runtime.ui.component
 
 import androidx.compose.runtime.compositionLocalOf
-import tech.lucam.composeum.runtime.store.SettingsStorage
-import tech.lucam.composeum.runtime.store.RuntimeSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import tech.lucam.composeum.runtime.store.RuntimeSettings
+import tech.lucam.composeum.runtime.store.SettingsStorage
 
 /**
  * Provides the [SettingsStorage] to descendant composables such as [SettingsSheet].
@@ -17,6 +17,7 @@ val LocalSettingsStorage = compositionLocalOf<SettingsStorage> {
         override suspend fun update(block: RuntimeSettings.() -> RuntimeSettings) {
             state.value = state.value.block()
         }
+
         override suspend fun reset() {
             state.value = RuntimeSettings()
         }

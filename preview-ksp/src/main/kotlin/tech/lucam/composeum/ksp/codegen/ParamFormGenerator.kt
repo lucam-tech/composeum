@@ -1,30 +1,31 @@
 package tech.lucam.composeum.ksp.codegen
 
-import tech.lucam.composeum.ksp.model.ParamModel
-import tech.lucam.composeum.ksp.model.PreviewModel
-import tech.lucam.composeum.ksp.model.SealedSubtype
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.LambdaTypeName
 import com.squareup.kotlinpoet.MemberName
 import com.squareup.kotlinpoet.UNIT
 import com.squareup.kotlinpoet.buildCodeBlock
 import com.squareup.kotlinpoet.ksp.writeTo
+import tech.lucam.composeum.ksp.model.ParamModel
+import tech.lucam.composeum.ksp.model.PreviewModel
 
 internal object ParamFormGenerator {
 
     private val composableClass = ClassName("androidx.compose.runtime", "Composable")
-    private val previewParamStateClass = ClassName("tech.lucam.composeum.runtime", "PreviewParamState")
+    private val previewParamStateClass =
+        ClassName("tech.lucam.composeum.runtime", "PreviewParamState")
     private val colorClass = ClassName("androidx.compose.ui.graphics", "Color")
     private val dpClass = ClassName("androidx.compose.ui.unit", "Dp")
     private val textUnitClass = ClassName("androidx.compose.ui.unit", "TextUnit")
     private val textUnitTypeClass = ClassName("androidx.compose.ui.unit", "TextUnitType")
     private val modifierClass = ClassName("androidx.compose.ui", "Modifier")
-    private val fillMaxWidthMember = MemberName("androidx.compose.foundation.layout", "fillMaxWidth")
+    private val fillMaxWidthMember =
+        MemberName("androidx.compose.foundation.layout", "fillMaxWidth")
     private val paddingMember = MemberName("androidx.compose.foundation.layout", "padding")
     private val dpMember = MemberName("androidx.compose.ui.unit", "dp")
     private const val WIDGETS_PACKAGE = "tech.lucam.composeum.runtime.ui.widgets"
@@ -111,8 +112,10 @@ internal object ParamFormGenerator {
             add("var _s = state\n")
             add("for (_i in _idx until (%L - 1)) {\n", countVar)
             indent()
-            add("_s = _s.put(%S + _i.toString(), %L)\n",
-                prefix, listItemReadExpr(param, prefix, "(_i + 1)"))
+            add(
+                "_s = _s.put(%S + _i.toString(), %L)\n",
+                prefix, listItemReadExpr(param, prefix, "(_i + 1)")
+            )
             unindent()
             add("}\n")
             add("onUpdate(_s.put(%S, (%L - 1).coerceAtLeast(0)))\n", countKey, countVar)
@@ -131,15 +134,51 @@ internal object ParamFormGenerator {
     /** Generates an expression that reads one list item from state. [indexExpr] is a code expression. */
     private fun listItemReadExpr(param: ParamModel, prefix: String, indexExpr: String): CodeBlock =
         when (param.listElementKotlinType) {
-            "kotlin.String"  -> buildCodeBlock {
+            "kotlin.String" -> buildCodeBlock {
                 add("state.get<String>(%S + %L.toString()) ?: %S", prefix, indexExpr, "")
             }
-            "kotlin.Int"     -> buildCodeBlock { add("state.get<Int>(%S + %L.toString()) ?: 0", prefix, indexExpr) }
-            "kotlin.Long"    -> buildCodeBlock { add("state.get<Long>(%S + %L.toString()) ?: 0L", prefix, indexExpr) }
-            "kotlin.Float"   -> buildCodeBlock { add("state.get<Float>(%S + %L.toString()) ?: 0f", prefix, indexExpr) }
-            "kotlin.Double"  -> buildCodeBlock { add("state.get<Double>(%S + %L.toString()) ?: 0.0", prefix, indexExpr) }
-            "kotlin.Boolean" -> buildCodeBlock { add("state.get<Boolean>(%S + %L.toString()) ?: false", prefix, indexExpr) }
-            else             -> buildCodeBlock {
+
+            "kotlin.Int" -> buildCodeBlock {
+                add(
+                    "state.get<Int>(%S + %L.toString()) ?: 0",
+                    prefix,
+                    indexExpr
+                )
+            }
+
+            "kotlin.Long" -> buildCodeBlock {
+                add(
+                    "state.get<Long>(%S + %L.toString()) ?: 0L",
+                    prefix,
+                    indexExpr
+                )
+            }
+
+            "kotlin.Float" -> buildCodeBlock {
+                add(
+                    "state.get<Float>(%S + %L.toString()) ?: 0f",
+                    prefix,
+                    indexExpr
+                )
+            }
+
+            "kotlin.Double" -> buildCodeBlock {
+                add(
+                    "state.get<Double>(%S + %L.toString()) ?: 0.0",
+                    prefix,
+                    indexExpr
+                )
+            }
+
+            "kotlin.Boolean" -> buildCodeBlock {
+                add(
+                    "state.get<Boolean>(%S + %L.toString()) ?: false",
+                    prefix,
+                    indexExpr
+                )
+            }
+
+            else -> buildCodeBlock {
                 add("state.get<String>(%S + %L.toString()) ?: %S", prefix, indexExpr, "")
             }
         }
@@ -149,15 +188,23 @@ internal object ParamFormGenerator {
             add("%M(\n", MemberName(WIDGETS_PACKAGE, "PreviewDropdownField"))
             indent()
             add("label = \"[\${_idx + 1}]\",\n")
-            add("value = state.get<String>(%S + _idx.toString()) ?: %S,\n",
-                prefix, param.listElementEnumValues.firstOrNull() ?: "")
+            add(
+                "value = state.get<String>(%S + _idx.toString()) ?: %S,\n",
+                prefix, param.listElementEnumValues.firstOrNull() ?: ""
+            )
             add("options = listOf(")
-            param.listElementEnumValues.forEachIndexed { i, v -> if (i > 0) add(", "); add("%S", v) }
+            param.listElementEnumValues.forEachIndexed { i, v ->
+                if (i > 0) add(", "); add(
+                "%S",
+                v
+            )
+            }
             add("),\n")
             add("onValue = { onUpdate(state.put(%S + _idx.toString(), it)) },\n", prefix)
             unindent()
             add(")\n")
         }
+
         param.listElementKotlinType == "kotlin.String" -> buildCodeBlock {
             add("%M(\n", MemberName(WIDGETS_PACKAGE, "PreviewStringField"))
             indent()
@@ -167,6 +214,7 @@ internal object ParamFormGenerator {
             unindent()
             add(")\n")
         }
+
         param.listElementKotlinType == "kotlin.Boolean" -> buildCodeBlock {
             add("%M(\n", MemberName(WIDGETS_PACKAGE, "PreviewBooleanField"))
             indent()
@@ -176,8 +224,9 @@ internal object ParamFormGenerator {
             unindent()
             add(")\n")
         }
+
         param.listElementKotlinType == "kotlin.Int" ||
-        param.listElementKotlinType == "kotlin.Long" -> buildCodeBlock {
+                param.listElementKotlinType == "kotlin.Long" -> buildCodeBlock {
             add("%M(\n", MemberName(WIDGETS_PACKAGE, "PreviewIntField"))
             indent()
             add("label = \"[\${_idx + 1}]\",\n")
@@ -186,8 +235,9 @@ internal object ParamFormGenerator {
             unindent()
             add(")\n")
         }
+
         param.listElementKotlinType == "kotlin.Float" ||
-        param.listElementKotlinType == "kotlin.Double" -> buildCodeBlock {
+                param.listElementKotlinType == "kotlin.Double" -> buildCodeBlock {
             add("%M(\n", MemberName(WIDGETS_PACKAGE, "PreviewFloatField"))
             indent()
             add("label = \"[\${_idx + 1}]\",\n")
@@ -196,6 +246,7 @@ internal object ParamFormGenerator {
             unindent()
             add(")\n")
         }
+
         else -> buildCodeBlock {
             // Fallback: string field
             add("%M(\n", MemberName(WIDGETS_PACKAGE, "PreviewStringField"))
@@ -215,10 +266,14 @@ internal object ParamFormGenerator {
         add("%M(\n", MemberName("androidx.compose.material3", "Text"))
         indent()
         addStatement("text = %S,", param.label)
-        add("style = %M.typography.labelSmall,\n",
-            MemberName("androidx.compose.material3", "MaterialTheme"))
-        add("modifier = %T.%M().%M(top = 8.%M),\n",
-            modifierClass, fillMaxWidthMember, paddingMember, dpMember)
+        add(
+            "style = %M.typography.labelSmall,\n",
+            MemberName("androidx.compose.material3", "MaterialTheme")
+        )
+        add(
+            "modifier = %T.%M().%M(top = 8.%M),\n",
+            modifierClass, fillMaxWidthMember, paddingMember, dpMember
+        )
         unindent()
         add(")\n")
         for (subParam in param.dataClassParams) {
@@ -272,19 +327,33 @@ internal object ParamFormGenerator {
     // ── typed primitives ──────────────────────────────────────────────────────
 
     private fun buildTypedFieldCall(param: ParamModel): CodeBlock = when (param.kotlinType) {
-        "kotlin.String"  -> buildFieldCall("PreviewStringField", param, CodeBlock.of("%S", param.defaultValue))
-        "kotlin.Boolean" -> buildFieldCall("PreviewBooleanField", param,
-            CodeBlock.of("%L", if (param.defaultValue == "true") "true" else "false"))
+        "kotlin.String" -> buildFieldCall(
+            "PreviewStringField",
+            param,
+            CodeBlock.of("%S", param.defaultValue)
+        )
+
+        "kotlin.Boolean" -> buildFieldCall(
+            "PreviewBooleanField", param,
+            CodeBlock.of("%L", if (param.defaultValue == "true") "true" else "false")
+        )
+
         "kotlin.Int",
-        "kotlin.Long"    -> buildFieldCall("PreviewIntField", param,
-            CodeBlock.of("%L", param.defaultValue.toIntOrNull() ?: 0))
+        "kotlin.Long" -> buildFieldCall(
+            "PreviewIntField", param,
+            CodeBlock.of("%L", param.defaultValue.toIntOrNull() ?: 0)
+        )
+
         "kotlin.Float",
-        "kotlin.Double"  -> buildFieldCall("PreviewFloatField", param,
-            CodeBlock.of("%L", "${param.defaultValue.toFloatOrNull() ?: 0.0f}f"))
+        "kotlin.Double" -> buildFieldCall(
+            "PreviewFloatField", param,
+            CodeBlock.of("%L", "${param.defaultValue.toFloatOrNull() ?: 0.0f}f")
+        )
+
         "androidx.compose.ui.graphics.Color" -> buildColorCall(param)
-        "androidx.compose.ui.unit.Dp"        -> buildDpCall(param)
-        "androidx.compose.ui.unit.TextUnit"  -> buildTextUnitCall(param)
-        else             -> buildCustomTypeCall(param)
+        "androidx.compose.ui.unit.Dp" -> buildDpCall(param)
+        "androidx.compose.ui.unit.TextUnit" -> buildTextUnitCall(param)
+        else -> buildCustomTypeCall(param)
     }
 
     private fun buildCustomTypeCall(param: ParamModel): CodeBlock = buildCodeBlock {
@@ -300,7 +369,11 @@ internal object ParamFormGenerator {
         add(")\n")
     }
 
-    private fun buildFieldCall(widgetName: String, param: ParamModel, defaultLiteral: CodeBlock): CodeBlock =
+    private fun buildFieldCall(
+        widgetName: String,
+        param: ParamModel,
+        defaultLiteral: CodeBlock
+    ): CodeBlock =
         buildCodeBlock {
             add("%M(\n", MemberName(WIDGETS_PACKAGE, widgetName))
             indent()
@@ -314,7 +387,8 @@ internal object ParamFormGenerator {
 
     private fun buildDropdownCall(param: ParamModel): CodeBlock {
         val options = param.options.ifEmpty { param.enumValues }
-        val defaultLiteral = CodeBlock.of("%S", param.defaultValue.ifEmpty { options.firstOrNull() ?: "" })
+        val defaultLiteral =
+            CodeBlock.of("%S", param.defaultValue.ifEmpty { options.firstOrNull() ?: "" })
         return buildCodeBlock {
             add("%M(\n", MemberName(WIDGETS_PACKAGE, "PreviewDropdownField"))
             indent()
@@ -345,7 +419,8 @@ internal object ParamFormGenerator {
 
     private fun buildTextUnitCall(param: ParamModel): CodeBlock {
         val floatVal = param.defaultValue.toFloatOrNull() ?: 16f
-        val defaultLiteral = CodeBlock.of("%T(%Lf, %T.%L)", textUnitClass, floatVal, textUnitTypeClass, "Sp")
+        val defaultLiteral =
+            CodeBlock.of("%T(%Lf, %T.%L)", textUnitClass, floatVal, textUnitTypeClass, "Sp")
         return buildFieldCall("PreviewTextUnitField", param, defaultLiteral)
     }
 }

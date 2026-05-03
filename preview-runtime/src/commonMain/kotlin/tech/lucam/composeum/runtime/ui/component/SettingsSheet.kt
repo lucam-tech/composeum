@@ -1,5 +1,8 @@
 package tech.lucam.composeum.runtime.ui.component
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,16 +10,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,6 +47,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import tech.lucam.composeum.runtime.config.BuiltInSettingId
 import tech.lucam.composeum.runtime.config.LocaleOption
 import tech.lucam.composeum.runtime.config.PreviewConfig
@@ -56,17 +58,15 @@ import tech.lucam.composeum.runtime.config.resolvedThemeOptions
 import tech.lucam.composeum.runtime.store.RuntimeSettings
 import tech.lucam.composeum.runtime.store.SettingsStorage
 import tech.lucam.composeum.runtime.store.ThemeOverride
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 private val defaultLocaleOptions = listOf(
     LocaleOption(tag = "system", displayName = "System"),
-    LocaleOption(tag = "en",     displayName = "English"),
-    LocaleOption(tag = "de",     displayName = "Deutsch"),
-    LocaleOption(tag = "fr",     displayName = "Français"),
-    LocaleOption(tag = "es",     displayName = "Español"),
-    LocaleOption(tag = "ja",     displayName = "日本語"),
-    LocaleOption(tag = "ar",     displayName = "العربية"),
+    LocaleOption(tag = "en", displayName = "English"),
+    LocaleOption(tag = "de", displayName = "Deutsch"),
+    LocaleOption(tag = "fr", displayName = "Français"),
+    LocaleOption(tag = "es", displayName = "Español"),
+    LocaleOption(tag = "ja", displayName = "日本語"),
+    LocaleOption(tag = "ar", displayName = "العربية"),
 )
 
 private val defaultSettingsItems: List<SettingItem> = listOf(
@@ -127,6 +127,7 @@ fun SettingsSheet(
                     storage = storage,
                     scope = scope,
                 )
+
                 is SettingItem.Custom -> item.content()
             }
             if (index < items.lastIndex) {
@@ -152,15 +153,34 @@ private fun BuiltInSetting(
         BuiltInSettingId.THEME -> ThemeSetting(config, runtimeSettings, storage, scope)
         BuiltInSettingId.FONT_SCALE -> FontScaleSetting(config, runtimeSettings, storage, scope)
         BuiltInSettingId.UI_SCALE -> UiScaleSetting(config, runtimeSettings, storage, scope)
-        BuiltInSettingId.THUMBNAIL_COLUMNS -> ThumbnailColumnsSetting(config, runtimeSettings, storage, scope)
-        BuiltInSettingId.SHOW_DESCRIPTIONS -> ShowDescriptionsSetting(config, runtimeSettings, storage, scope)
+        BuiltInSettingId.THUMBNAIL_COLUMNS -> ThumbnailColumnsSetting(
+            config,
+            runtimeSettings,
+            storage,
+            scope
+        )
+
+        BuiltInSettingId.SHOW_DESCRIPTIONS -> ShowDescriptionsSetting(
+            config,
+            runtimeSettings,
+            storage,
+            scope
+        )
+
         BuiltInSettingId.SHOW_TAGS -> ShowTagsSetting(config, runtimeSettings, storage, scope)
-        BuiltInSettingId.LOCALE -> LocaleSetting(runtimeSettings, storage, scope, config.localeOptions ?: defaultLocaleOptions)
+        BuiltInSettingId.LOCALE -> LocaleSetting(
+            runtimeSettings,
+            storage,
+            scope,
+            config.localeOptions ?: defaultLocaleOptions
+        )
+
         BuiltInSettingId.ACCESSIBILITY_SCREEN_READER,
         BuiltInSettingId.ACCESSIBILITY_HIGH_CONTRAST,
         BuiltInSettingId.ACCESSIBILITY_COLOR_BLIND,
         BuiltInSettingId.ACCESSIBILITY_REDUCED_MOTION,
         BuiltInSettingId.ACCESSIBILITY_LARGE_TOUCH_TARGETS -> Unit
+
         BuiltInSettingId.RESET -> ResetSetting(storage, scope)
         // Unknown IDs are silently ignored to allow forward compatibility.
     }
@@ -186,7 +206,10 @@ private fun ThemeSetting(
                 onClick = {
                     scope.launch { storage.update { copy(themeOverride = option) } }
                 },
-                shape = SegmentedButtonDefaults.itemShape(index = index, count = ThemeOverride.entries.size),
+                shape = SegmentedButtonDefaults.itemShape(
+                    index = index,
+                    count = ThemeOverride.entries.size
+                ),
             ) {
                 Text(
                     when (option) {

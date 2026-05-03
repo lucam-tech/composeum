@@ -37,10 +37,12 @@ class PreviewIntFieldTest {
             PreviewIntField(label = "Count", value = 0, onValue = { received = it }, range = 0..100)
         }
         composeRule
-            .onNode(SemanticsMatcher.expectValue(
-                androidx.compose.ui.semantics.SemanticsProperties.ProgressBarRangeInfo,
-                ProgressBarRangeInfo(0f, 0f..100f, 0),
-            ))
+            .onNode(
+                SemanticsMatcher.expectValue(
+                    androidx.compose.ui.semantics.SemanticsProperties.ProgressBarRangeInfo,
+                    ProgressBarRangeInfo(0f, 0f..100f, 0),
+                )
+            )
             .performSemanticsAction(SemanticsActions.SetProgress) { it(50f) }
         assertNotNull(received)
         assertTrue("Expected value near 50, got $received", received!! in 45..55)

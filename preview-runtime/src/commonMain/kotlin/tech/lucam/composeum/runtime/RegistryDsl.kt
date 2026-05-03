@@ -19,8 +19,8 @@ import tech.lucam.composeum.annotation.PreviewVariantGroup
 import tech.lucam.composeum.runtime.config.GroupConfigBuilder
 import tech.lucam.composeum.runtime.config.PreviewConfigOverride
 import tech.lucam.composeum.runtime.config.PreviewConfigOverrideBuilder
-import tech.lucam.composeum.runtime.config.PreviewParamForm
 import tech.lucam.composeum.runtime.config.PreviewOverrideBuilder
+import tech.lucam.composeum.runtime.config.PreviewParamForm
 import tech.lucam.composeum.runtime.config.asOverride
 import tech.lucam.composeum.runtime.config.mergedWith
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewParamState
@@ -105,7 +105,7 @@ class RegistryBuilder {
         val builder = GroupConfigBuilder().apply(configure).build()
         if (builder != tech.lucam.composeum.runtime.config.GroupConfig()) {
             configBuilder.groups {
-                group(group::class) { 
+                group(group::class) {
                     thumbnailColumns = builder.thumbnailColumns
                     expansionMode = builder.expansionMode
                     builder.groupWrapper?.let { groupWrapper(it) }
@@ -215,9 +215,10 @@ class RegistryBuilder {
 
     internal fun build(): PreviewRegistry {
         val localConfigOverride = configBuilder.build()
-        val mergedConfigOverride = includedConfigOverrides.fold(PreviewConfigOverride()) { acc, next ->
-            acc.mergedWith(next)
-        }.mergedWith(localConfigOverride)
+        val mergedConfigOverride =
+            includedConfigOverrides.fold(PreviewConfigOverride()) { acc, next ->
+                acc.mergedWith(next)
+            }.mergedWith(localConfigOverride)
         val builtEntries = entries.toList().distinctBy { it.key }
         return object : PreviewRegistry {
             override val entries: List<PreviewEntry> = builtEntries

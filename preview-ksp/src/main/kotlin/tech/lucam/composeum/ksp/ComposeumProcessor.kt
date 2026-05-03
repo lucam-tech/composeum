@@ -1,14 +1,14 @@
 package tech.lucam.composeum.ksp
 
-import tech.lucam.composeum.ksp.codegen.ParamFormGenerator
-import tech.lucam.composeum.ksp.codegen.RegistryGenerator
-import tech.lucam.composeum.ksp.model.ModelBuilder
-import tech.lucam.composeum.ksp.validation.Validator
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import tech.lucam.composeum.ksp.codegen.ParamFormGenerator
+import tech.lucam.composeum.ksp.codegen.RegistryGenerator
+import tech.lucam.composeum.ksp.model.ModelBuilder
+import tech.lucam.composeum.ksp.validation.Validator
 
 /** KSP processor for @ComposePreview — generates preview registries and param forms. */
 internal class ComposeumProcessor(
@@ -52,8 +52,14 @@ internal class ComposeumProcessor(
             val fnPkg = models.first().functionPackage
             val defaultPackage = if (fnPkg.isEmpty()) "generated" else "$fnPkg.generated"
             val registryPackage = environment.options["composeum.registryPackage"] ?: defaultPackage
-            val registryName = environment.options["composeum.registryName"] ?: "GeneratedPreviewRegistry"
-            RegistryGenerator.generate(models, environment.codeGenerator, registryPackage, registryName)
+            val registryName =
+                environment.options["composeum.registryName"] ?: "GeneratedPreviewRegistry"
+            RegistryGenerator.generate(
+                models,
+                environment.codeGenerator,
+                registryPackage,
+                registryName
+            )
             for (model in models.filter { !it.isViewPreview }) {
                 ParamFormGenerator.generate(model, environment.codeGenerator, registryPackage)
             }
@@ -77,7 +83,7 @@ internal class ComposeumProcessor(
                 }
                 logger.error(
                     "Duplicate preview key '$key' detected from $sources. " +
-                        "Each discovered preview must have a unique fully-qualified function name.",
+                            "Each discovered preview must have a unique fully-qualified function name.",
                 )
             }
         return hasDuplicates
@@ -94,16 +100,17 @@ internal class ComposeumProcessor(
                     hasErrors = true
                     logger.error(
                         "Variant group '${family.first().variantGroupImport}' declares $defaults default previews. " +
-                            "Mark exactly one preview with isDefaultVariant=true.",
+                                "Mark exactly one preview with isDefaultVariant=true.",
                     )
                 }
-                val distinctGroups = family.map { it.groupImport.ifEmpty { it.groupExpression } }.distinct()
+                val distinctGroups =
+                    family.map { it.groupImport.ifEmpty { it.groupExpression } }.distinct()
                 if (distinctGroups.size > 1) {
                     hasErrors = true
                     logger.error(
                         "Variant group '${family.first().variantGroupImport}' is used across multiple preview groups " +
-                            distinctGroups.joinToString(prefix = "[", postfix = "]") +
-                            ". Keep a variant family inside a single PreviewGroup.",
+                                distinctGroups.joinToString(prefix = "[", postfix = "]") +
+                                ". Keep a variant family inside a single PreviewGroup.",
                     )
                 }
             }

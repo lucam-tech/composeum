@@ -27,9 +27,9 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.disabled
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
@@ -38,8 +38,8 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import tech.lucam.composeum.runtime.PreviewEntry
 import tech.lucam.composeum.runtime.PreviewParamDefaults
-import tech.lucam.composeum.runtime.withCustomTypeDefaults
 import tech.lucam.composeum.runtime.config.PreviewWrapper
+import tech.lucam.composeum.runtime.withCustomTypeDefaults
 
 /** Reference render width used when scaling the preview to thumbnail size. */
 private const val LOGICAL_WIDTH_PX_HINT = 1080f
@@ -82,7 +82,8 @@ fun PreviewThumbnailCard(
         // that read LocalPreviewParamState (including custom-type params) render correctly.
         val config = LocalPreviewConfig.current
         val thumbnailState = remember(entry.key, config) {
-            val overrideDefaults = config.previewOverrides[entry.key]?.paramDefaults?.defaults.orEmpty()
+            val overrideDefaults =
+                config.previewOverrides[entry.key]?.paramDefaults?.defaults.orEmpty()
             PreviewParamDefaults(entry.paramDefaults.defaults + overrideDefaults)
                 .toInitialState()
                 .withCustomTypeDefaults(entry, config)
@@ -148,7 +149,8 @@ private fun ScaledPreviewContent(
                 .fillMaxSize()
                 .layout { measurable, constraints ->
                     // Allow content to keep its natural size up to a screen-sized logical viewport.
-                    val logicalWidth = LOGICAL_WIDTH_PX_HINT.toInt().coerceAtLeast(constraints.maxWidth)
+                    val logicalWidth =
+                        LOGICAL_WIDTH_PX_HINT.toInt().coerceAtLeast(constraints.maxWidth)
                     val placeable = measurable.measure(
                         Constraints(
                             minWidth = 0,
@@ -168,8 +170,10 @@ private fun ScaledPreviewContent(
                         1f
                     }
                     val scale = minOf(1f, widthScale, heightScale)
-                    val scaledWidth = (placeable.width * scale).toInt().coerceAtMost(constraints.maxWidth)
-                    val scaledHeight = (placeable.height * scale).toInt().coerceAtMost(constraints.maxHeight)
+                    val scaledWidth =
+                        (placeable.width * scale).toInt().coerceAtMost(constraints.maxWidth)
+                    val scaledHeight =
+                        (placeable.height * scale).toInt().coerceAtMost(constraints.maxHeight)
                     val dx = ((constraints.maxWidth - scaledWidth) / 2f).toInt()
                     val dy = ((constraints.maxHeight - scaledHeight) / 2f).toInt()
 
@@ -183,7 +187,12 @@ private fun ScaledPreviewContent(
                 },
         ) {
             if (previewWrapper != null) {
-                previewWrapper(entry) { PreviewRenderer(entry, modifier = Modifier.wrapContentSize()) }
+                previewWrapper(entry) {
+                    PreviewRenderer(
+                        entry,
+                        modifier = Modifier.wrapContentSize()
+                    )
+                }
             } else {
                 PreviewRenderer(entry, modifier = Modifier.wrapContentSize())
             }

@@ -19,7 +19,12 @@ internal fun List<PreviewEntry>.groupIntoFamilies(): List<PreviewFamily> {
     for (entry in this) {
         families.getOrPut(entry.familyKey()) { mutableListOf() }.add(entry)
     }
-    return families.map { (familyKey, entries) -> PreviewFamily(key = familyKey, entries = entries.toList()) }
+    return families.map { (familyKey, entries) ->
+        PreviewFamily(
+            key = familyKey,
+            entries = entries.toList()
+        )
+    }
 }
 
 internal fun PreviewRegistry.families(): List<PreviewFamily> = entries.groupIntoFamilies()

@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
@@ -21,6 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,12 +41,13 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import tech.lucam.composeum.runtime.PreviewEntry
+import tech.lucam.composeum.runtime.PreviewFamily
 import tech.lucam.composeum.runtime.PreviewRegistry
-import tech.lucam.composeum.runtime.config.PreviewWrapper
 import tech.lucam.composeum.runtime.config.GroupExpansionMode
 import tech.lucam.composeum.runtime.config.PreviewConfig
-import tech.lucam.composeum.runtime.PreviewFamily
+import tech.lucam.composeum.runtime.config.PreviewWrapper
 import tech.lucam.composeum.runtime.families
 import tech.lucam.composeum.runtime.familyKey
 import tech.lucam.composeum.runtime.tagKey
@@ -54,7 +55,6 @@ import tech.lucam.composeum.runtime.ui.component.LocalResolvedSettings
 import tech.lucam.composeum.runtime.ui.component.LocalRuntimeSettings
 import tech.lucam.composeum.runtime.ui.component.LocalSettingsStorage
 import tech.lucam.composeum.runtime.ui.component.PreviewThumbnailCard
-import kotlinx.coroutines.launch
 
 /**
  * Displays a searchable, expandable tree of preview groups.
@@ -108,7 +108,8 @@ fun GroupListScreen(
 
     // Tracks which non-leaf tree nodes are expanded (roots start expanded).
     var expandedKeys by remember(rootNodes, runtimeSettings.expandedGroupKeys) {
-        mutableStateOf(runtimeSettings.expandedGroupKeys?.toSet() ?: rootNodes.map { it.key }.toSet())
+        mutableStateOf(runtimeSettings.expandedGroupKeys?.toSet() ?: rootNodes.map { it.key }
+            .toSet())
     }
     var expandedKeysDirty by remember { mutableStateOf(false) }
     // Tracks which leaf nodes are expanded inline (all start collapsed).
@@ -212,7 +213,8 @@ fun GroupListScreen(
 
         HorizontalDivider()
 
-        val isFiltered = query.isNotBlank() || selectedTags.isNotEmpty() || favoritesOnly || flavoredOnly
+        val isFiltered =
+            query.isNotBlank() || selectedTags.isNotEmpty() || favoritesOnly || flavoredOnly
 
         if (!isFiltered) {
             LazyColumn {
@@ -288,7 +290,14 @@ fun GroupListScreen(
                 )
             }
         } else {
-            val filtered = remember(query, selectedTags, rootNodes, favoriteFamilyKeys, favoritesOnly, flavoredOnly) {
+            val filtered = remember(
+                query,
+                selectedTags,
+                rootNodes,
+                favoriteFamilyKeys,
+                favoritesOnly,
+                flavoredOnly
+            ) {
                 filterNodes(
                     nodes = rootNodes,
                     query = query,
@@ -317,8 +326,9 @@ fun GroupListScreen(
                         inlineExpandedKeys = inlineExpandedKeys,
                         onInlineToggle = { key ->
                             inlineExpandedKeysDirty = true
-                            inlineExpandedKeys = if (key in inlineExpandedKeys) inlineExpandedKeys - key
-                            else inlineExpandedKeys + key
+                            inlineExpandedKeys =
+                                if (key in inlineExpandedKeys) inlineExpandedKeys - key
+                                else inlineExpandedKeys + key
                         },
                         onLeafClick = onGroupSelected,
                         onEntrySelected = onEntrySelected,
@@ -376,7 +386,8 @@ private fun LazyListScope.treeItems(
 ) {
     for (node in nodes) {
         val mode = resolveMode(node)
-        val isExpanded = if (node.isLeaf) node.key in inlineExpandedKeys else node.key in expandedKeys
+        val isExpanded =
+            if (node.isLeaf) node.key in inlineExpandedKeys else node.key in expandedKeys
 
         item(key = node.key) {
             GroupListItem(
@@ -643,8 +654,8 @@ private fun filterNodes(
         if (selectedTags.isNotEmpty() && tags.none { it.tagKey() in selectedTags }) return false
         if (q.isNotEmpty()) {
             return name.lowercase().contains(q) ||
-                description.lowercase().contains(q) ||
-                tags.any { it.title.lowercase().contains(q) }
+                    description.lowercase().contains(q) ||
+                    tags.any { it.title.lowercase().contains(q) }
         }
         return true
     }
@@ -653,16 +664,18 @@ private fun filterNodes(
         val result = mutableListOf<GroupNode>()
         for (node in nodes) {
             val selfMatchesText = q.isNotEmpty() && (
-                node.name.lowercase().contains(q) ||
-                    node.description.lowercase().contains(q)
-                )
+                    node.name.lowercase().contains(q) ||
+                            node.description.lowercase().contains(q)
+                    )
             // Ancestor/self text matching is only honoured when no tag filter is active,
             // otherwise we always require at least one entry to pass both filters.
-            val includeByAncestor = selectedTags.isEmpty() && (selfMatchesText || ancestorMatchesText)
+            val includeByAncestor =
+                selectedTags.isEmpty() && (selfMatchesText || ancestorMatchesText)
             if (node.isLeaf) {
                 // When the group matched by name/ancestor, show all its entries; otherwise
                 // show only the entries that individually satisfy the query and tag filters.
-                val matchingEntries = if (includeByAncestor) node.entries else node.entries.filter { it.passes() }
+                val matchingEntries =
+                    if (includeByAncestor) node.entries else node.entries.filter { it.passes() }
                 if (matchingEntries.isNotEmpty()) result.add(node.copy(entries = matchingEntries))
             } else {
                 result.addAll(collect(node.children, selfMatchesText || ancestorMatchesText))

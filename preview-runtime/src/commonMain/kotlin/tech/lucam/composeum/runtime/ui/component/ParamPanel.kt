@@ -26,10 +26,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.channels.Channel
 import tech.lucam.composeum.runtime.PreviewEntry
 import tech.lucam.composeum.runtime.PreviewParamState
 import tech.lucam.composeum.runtime.config.PreviewParamForm
-import kotlinx.coroutines.channels.Channel
 
 /**
  * A collapsible panel that renders the param form for a [PreviewEntry].

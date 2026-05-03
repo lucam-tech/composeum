@@ -2,31 +2,29 @@ package tech.lucam.composeum.runtime.ui
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import tech.lucam.composeum.annotation.PreviewGroup
-import tech.lucam.composeum.runtime.PreviewEntry
-import tech.lucam.composeum.runtime.PreviewParamDefaults
-import tech.lucam.composeum.runtime.PreviewRegistry
-import tech.lucam.composeum.runtime.familyKey
-import tech.lucam.composeum.runtime.config.GroupExpansionMode
-import tech.lucam.composeum.runtime.config.PreviewConfig
-import tech.lucam.composeum.runtime.store.RuntimeSettings
-import tech.lucam.composeum.runtime.store.SettingsStorage
-import org.junit.Rule
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.runtime.PreviewEntry
+import tech.lucam.composeum.runtime.PreviewParamDefaults
+import tech.lucam.composeum.runtime.PreviewRegistry
+import tech.lucam.composeum.runtime.config.GroupExpansionMode
+import tech.lucam.composeum.runtime.config.PreviewConfig
+import tech.lucam.composeum.runtime.familyKey
+import tech.lucam.composeum.runtime.store.RuntimeSettings
+import tech.lucam.composeum.runtime.store.SettingsStorage
 
 @RunWith(RobolectricTestRunner::class)
 class ComposeumBrowserTest {
@@ -54,7 +52,9 @@ class ComposeumBrowserTest {
     )
 
     private fun registryOf(vararg entries: PreviewEntry): PreviewRegistry =
-        object : PreviewRegistry { override val entries = entries.toList() }
+        object : PreviewRegistry {
+            override val entries = entries.toList()
+        }
 
     private class FakeSettingsStorage(
         initial: RuntimeSettings = RuntimeSettings(),

@@ -2,26 +2,23 @@ package tech.lucam.composeum.runtime.ui.screen
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import tech.lucam.composeum.annotation.PreviewGroup
-import tech.lucam.composeum.annotation.PreviewVariantGroup
-import tech.lucam.composeum.runtime.PreviewEntry
-import tech.lucam.composeum.runtime.PreviewParamDefaults
-import tech.lucam.composeum.runtime.PreviewParamState
-import tech.lucam.composeum.runtime.PreviewRegistry
-import tech.lucam.composeum.runtime.config.PreviewConfig
-import tech.lucam.composeum.runtime.config.previewConfig
-import tech.lucam.composeum.runtime.ui.component.LocalPreviewParamState
-import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.annotation.PreviewVariantGroup
+import tech.lucam.composeum.runtime.PreviewEntry
+import tech.lucam.composeum.runtime.PreviewParamDefaults
+import tech.lucam.composeum.runtime.PreviewRegistry
+import tech.lucam.composeum.runtime.config.PreviewConfig
+import tech.lucam.composeum.runtime.config.previewConfig
+import tech.lucam.composeum.runtime.ui.component.LocalPreviewParamState
 
 @RunWith(RobolectricTestRunner::class)
 class PreviewDetailScreenTest {
@@ -38,7 +35,9 @@ class PreviewDetailScreenTest {
     private object TestVariantGroup : PreviewVariantGroup
 
     private fun registryOf(vararg entries: PreviewEntry): PreviewRegistry =
-        object : PreviewRegistry { override val entries = entries.toList() }
+        object : PreviewRegistry {
+            override val entries = entries.toList()
+        }
 
     private val defaultConfig = PreviewConfig()
 

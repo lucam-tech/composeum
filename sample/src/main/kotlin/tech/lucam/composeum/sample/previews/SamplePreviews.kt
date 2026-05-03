@@ -28,10 +28,21 @@ import tech.lucam.composeum.sample.SampleGroup
 enum class InboxFilter { All, Unread, Starred }
 
 sealed interface SampleTag : PreviewTag {
-    data object Button : SampleTag { override val title: String = "button" }
-    data object Cta : SampleTag { override val title: String = "cta" }
-    data object Card : SampleTag { override val title: String = "card" }
-    data object Profile : SampleTag { override val title: String = "profile" }
+    data object Button : SampleTag {
+        override val title: String = "button"
+    }
+
+    data object Cta : SampleTag {
+        override val title: String = "cta"
+    }
+
+    data object Card : SampleTag {
+        override val title: String = "card"
+    }
+
+    data object Profile : SampleTag {
+        override val title: String = "profile"
+    }
 }
 
 @ComposePreview(
@@ -80,7 +91,9 @@ fun InboxSummaryPreview(
     @PreviewParam(label = "Filter") filter: InboxFilter = InboxFilter.All,
     @PreviewParam(label = "Notifications") notificationsEnabled: Boolean = true,
 ) {
-    Card(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+    Card(modifier = Modifier
+        .padding(16.dp)
+        .fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = "Inbox",
@@ -121,7 +134,9 @@ fun ProfileCardPreview(
     @PreviewParam(label = "Name") name: String = "Jane Doe",
     @PreviewParam(label = "Online") online: Boolean = true,
 ) {
-    Card(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+    Card(modifier = Modifier
+        .padding(16.dp)
+        .fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,

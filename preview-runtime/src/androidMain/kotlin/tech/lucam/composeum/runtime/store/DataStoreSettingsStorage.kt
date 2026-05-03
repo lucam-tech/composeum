@@ -4,11 +4,11 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import tech.lucam.composeum.runtime.ColorBlindMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import tech.lucam.composeum.runtime.ColorBlindMode
 
 /**
  * Reads and writes [RuntimeSettings] via [DataStore].
@@ -75,7 +75,8 @@ class DataStoreSettingsStorage(private val dataStore: DataStore<Preferences>) : 
         inlineExpandedGroupKeys = this[SettingsKeys.INLINE_EXPANDED_GROUP_KEYS]?.decodeStringList(),
         favoritesExpanded = this[SettingsKeys.FAVORITES_EXPANDED],
         recentExpanded = this[SettingsKeys.RECENT_EXPANDED],
-        favoriteFamilyKeys = this[SettingsKeys.FAVORITE_FAMILY_KEYS]?.decodeStringList() ?: emptyList(),
+        favoriteFamilyKeys = this[SettingsKeys.FAVORITE_FAMILY_KEYS]?.decodeStringList()
+            ?: emptyList(),
         recentFamilyKeys = this[SettingsKeys.RECENT_FAMILY_KEYS]?.decodeStringList() ?: emptyList(),
     )
 
@@ -101,16 +102,20 @@ class DataStoreSettingsStorage(private val dataStore: DataStore<Preferences>) : 
         else this -= SettingsKeys.HIGH_CONTRAST_MODE
         if (s.colorBlindMode != null) this[SettingsKeys.COLOR_BLIND_MODE] = s.colorBlindMode.name
         else this -= SettingsKeys.COLOR_BLIND_MODE
-        if (s.reducedMotionMode != null) this[SettingsKeys.REDUCED_MOTION_MODE] = s.reducedMotionMode
+        if (s.reducedMotionMode != null) this[SettingsKeys.REDUCED_MOTION_MODE] =
+            s.reducedMotionMode
         else this -= SettingsKeys.REDUCED_MOTION_MODE
-        if (s.largeTouchTargetsMode != null) this[SettingsKeys.LARGE_TOUCH_TARGETS_MODE] = s.largeTouchTargetsMode
+        if (s.largeTouchTargetsMode != null) this[SettingsKeys.LARGE_TOUCH_TARGETS_MODE] =
+            s.largeTouchTargetsMode
         else this -= SettingsKeys.LARGE_TOUCH_TARGETS_MODE
         if (s.lastRoute != null) this[SettingsKeys.LAST_ROUTE] = s.lastRoute
         else this -= SettingsKeys.LAST_ROUTE
-        if (s.expandedGroupKeys != null) this[SettingsKeys.EXPANDED_GROUP_KEYS] = encodeStringList(s.expandedGroupKeys)
+        if (s.expandedGroupKeys != null) this[SettingsKeys.EXPANDED_GROUP_KEYS] =
+            encodeStringList(s.expandedGroupKeys)
         else this -= SettingsKeys.EXPANDED_GROUP_KEYS
         if (s.inlineExpandedGroupKeys != null) {
-            this[SettingsKeys.INLINE_EXPANDED_GROUP_KEYS] = encodeStringList(s.inlineExpandedGroupKeys)
+            this[SettingsKeys.INLINE_EXPANDED_GROUP_KEYS] =
+                encodeStringList(s.inlineExpandedGroupKeys)
         } else {
             this -= SettingsKeys.INLINE_EXPANDED_GROUP_KEYS
         }

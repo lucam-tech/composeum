@@ -6,7 +6,7 @@
         (minSdk=1) is merged into the unit-test APK alongside navigation (minSdk=21).
         Runtime safety is guaranteed by defaultConfig.minSdk = 26.
     -->
-    <uses-sdk tools:overrideLibrary="androidx.navigation.common,androidx.navigation,androidx.navigation.compose,androidx.navigation.ktx,androidx.navigation.common.ktx"/>
+    <uses-sdk tools:overrideLibrary="androidx.navigation.common,androidx.navigation,androidx.navigation.compose,androidx.navigation.ktx,androidx.navigation.common.ktx" />
 
     <application>
         <activity

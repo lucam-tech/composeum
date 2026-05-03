@@ -1,8 +1,3 @@
-import org.gradle.api.plugins.JavaBasePlugin
-import org.gradle.api.plugins.JavaPluginExtension
-import org.gradle.api.publish.maven.tasks.AbstractPublishToMaven
-import org.gradle.plugins.signing.Sign
-
 plugins {
     `maven-publish`
     signing

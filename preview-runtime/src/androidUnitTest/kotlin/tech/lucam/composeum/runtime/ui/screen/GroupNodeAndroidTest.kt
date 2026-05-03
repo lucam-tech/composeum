@@ -2,17 +2,22 @@ package tech.lucam.composeum.runtime.ui.screen
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import tech.lucam.composeum.annotation.PreviewGroup
-import tech.lucam.composeum.runtime.PreviewEntry
-import tech.lucam.composeum.runtime.PreviewParamDefaults
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.runtime.PreviewEntry
+import tech.lucam.composeum.runtime.PreviewParamDefaults
 
 // Sealed fixture for the reflection-fallback test — must be top-level or class-level.
 private sealed interface SealedG : PreviewGroup {
-    data object Parent : SealedG { override val name = "Parent" }
-    data object Child : SealedG { override val name = "Child" }
+    data object Parent : SealedG {
+        override val name = "Parent"
+    }
+
+    data object Child : SealedG {
+        override val name = "Child"
+    }
 }
 
 class GroupNodeAndroidTest {
@@ -34,7 +39,9 @@ class GroupNodeAndroidTest {
 
     @Test
     fun `single group with no parent is a root node`() {
-        val g = object : PreviewGroup { override val name = "G" }
+        val g = object : PreviewGroup {
+            override val name = "G"
+        }
         val tree = buildGroupTree(listOf(entry("A", g)))
         assertEquals(1, tree.size)
         assertEquals("G", tree[0].name)
@@ -42,8 +49,12 @@ class GroupNodeAndroidTest {
 
     @Test
     fun `multiple independent groups produce multiple root nodes`() {
-        val g1 = object : PreviewGroup { override val name = "Alpha" }
-        val g2 = object : PreviewGroup { override val name = "Beta" }
+        val g1 = object : PreviewGroup {
+            override val name = "Alpha"
+        }
+        val g2 = object : PreviewGroup {
+            override val name = "Beta"
+        }
         val tree = buildGroupTree(listOf(entry("A", g1), entry("B", g2)))
         assertEquals(2, tree.size)
         assertEquals(listOf("Alpha", "Beta"), tree.map { it.name })
@@ -53,7 +64,9 @@ class GroupNodeAndroidTest {
 
     @Test
     fun `explicit parent creates a child node`() {
-        val parent = object : PreviewGroup { override val name = "Parent" }
+        val parent = object : PreviewGroup {
+            override val name = "Parent"
+        }
         val child = object : PreviewGroup {
             override val name = "Child"
             override val parent = parent
@@ -67,7 +80,9 @@ class GroupNodeAndroidTest {
 
     @Test
     fun `explicit parent with no entries of its own becomes a synthetic node`() {
-        val parent = object : PreviewGroup { override val name = "Container" }
+        val parent = object : PreviewGroup {
+            override val name = "Container"
+        }
         val child = object : PreviewGroup {
             override val name = "Inner"
             override val parent = parent
@@ -81,7 +96,9 @@ class GroupNodeAndroidTest {
 
     @Test
     fun `explicit parent with its own entries also shows them`() {
-        val parent = object : PreviewGroup { override val name = "Parent" }
+        val parent = object : PreviewGroup {
+            override val name = "Parent"
+        }
         val child = object : PreviewGroup {
             override val name = "Child"
             override val parent = parent
@@ -97,7 +114,9 @@ class GroupNodeAndroidTest {
 
     @Test
     fun `two-level explicit parent chain is reflected in the tree`() {
-        val root = object : PreviewGroup { override val name = "Root" }
+        val root = object : PreviewGroup {
+            override val name = "Root"
+        }
         val mid = object : PreviewGroup {
             override val name = "Mid"
             override val parent = root
@@ -117,10 +136,21 @@ class GroupNodeAndroidTest {
 
     @Test
     fun `children are sorted by name`() {
-        val parent = object : PreviewGroup { override val name = "Parent" }
-        val c1 = object : PreviewGroup { override val name = "Zeta"; override val parent = parent }
-        val c2 = object : PreviewGroup { override val name = "Alpha"; override val parent = parent }
-        val c3 = object : PreviewGroup { override val name = "Mu"; override val parent = parent }
+        val parent = object : PreviewGroup {
+            override val name = "Parent"
+        }
+        val c1 = object : PreviewGroup {
+            override val name = "Zeta"
+            override val parent = parent
+        }
+        val c2 = object : PreviewGroup {
+            override val name = "Alpha"
+            override val parent = parent
+        }
+        val c3 = object : PreviewGroup {
+            override val name = "Mu"
+            override val parent = parent
+        }
         val tree = buildGroupTree(listOf(entry("e1", c1), entry("e2", c2), entry("e3", c3)))
         val childNames = tree.single().children.map { it.name }
         assertEquals(listOf("Alpha", "Mu", "Zeta"), childNames)

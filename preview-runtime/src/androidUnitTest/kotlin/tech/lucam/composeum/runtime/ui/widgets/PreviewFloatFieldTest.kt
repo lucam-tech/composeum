@@ -34,13 +34,20 @@ class PreviewFloatFieldTest {
     fun `onValue fires when slider progress changes`() {
         var received: Float? = null
         composeRule.setContent {
-            PreviewFloatField(label = "Opacity", value = 0f, onValue = { received = it }, range = 0f..1f)
+            PreviewFloatField(
+                label = "Opacity",
+                value = 0f,
+                onValue = { received = it },
+                range = 0f..1f
+            )
         }
         composeRule
-            .onNode(SemanticsMatcher.expectValue(
-                androidx.compose.ui.semantics.SemanticsProperties.ProgressBarRangeInfo,
-                ProgressBarRangeInfo(0f, 0f..1f, 0),
-            ))
+            .onNode(
+                SemanticsMatcher.expectValue(
+                    androidx.compose.ui.semantics.SemanticsProperties.ProgressBarRangeInfo,
+                    ProgressBarRangeInfo(0f, 0f..1f, 0),
+                )
+            )
             .performSemanticsAction(SemanticsActions.SetProgress) { it(0.75f) }
         assertNotNull(received)
         assertTrue("Expected value near 0.75, got $received", received!! in 0.7f..0.8f)

@@ -1,11 +1,11 @@
 package tech.lucam.composeum.runtime.store
 
+import kotlinx.serialization.Serializable
+import tech.lucam.composeum.runtime.AccessibilityPreviewState
+import tech.lucam.composeum.runtime.ColorBlindMode
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
 import tech.lucam.composeum.runtime.config.resolvedThemeOptions
-import tech.lucam.composeum.runtime.AccessibilityPreviewState
-import tech.lucam.composeum.runtime.ColorBlindMode
-import kotlinx.serialization.Serializable
 
 /** User-selectable theme override stored in DataStore. */
 @Serializable
@@ -114,10 +114,14 @@ data class ResolvedSettings(
  * @param systemIsDark The actual device dark-mode state, read via `isSystemInDarkTheme()`.
  *                     Only used when [themeOverride] is [ThemeOverride.SYSTEM].
  */
-internal fun RuntimeSettings.resolve(config: PreviewConfig, systemIsDark: Boolean = false): ResolvedSettings {
+internal fun RuntimeSettings.resolve(
+    config: PreviewConfig,
+    systemIsDark: Boolean = false
+): ResolvedSettings {
     val themeOptions = config.resolvedThemeOptions()
     val selectedThemeId = themeId ?: config.defaultThemeId
-    val selectedTheme = themeOptions.firstOrNull { it.id == selectedThemeId } ?: themeOptions.first()
+    val selectedTheme =
+        themeOptions.firstOrNull { it.id == selectedThemeId } ?: themeOptions.first()
     val isDark = when (themeOverride) {
         ThemeOverride.LIGHT -> false
         ThemeOverride.DARK -> true
@@ -137,7 +141,8 @@ internal fun RuntimeSettings.resolve(config: PreviewConfig, systemIsDark: Boolea
             highContrastMode = highContrastMode ?: config.accessibilityState.highContrastMode,
             colorBlindMode = colorBlindMode ?: config.accessibilityState.colorBlindMode,
             reducedMotionMode = reducedMotionMode ?: config.accessibilityState.reducedMotionMode,
-            largeTouchTargetsMode = largeTouchTargetsMode ?: config.accessibilityState.largeTouchTargetsMode,
+            largeTouchTargetsMode = largeTouchTargetsMode
+                ?: config.accessibilityState.largeTouchTargetsMode,
         ),
     )
 }

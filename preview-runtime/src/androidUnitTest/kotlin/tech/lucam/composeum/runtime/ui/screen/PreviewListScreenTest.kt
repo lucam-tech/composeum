@@ -3,14 +3,18 @@ package tech.lucam.composeum.runtime.ui.screen
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import tech.lucam.composeum.annotation.PreviewGroup
-import tech.lucam.composeum.annotation.PreviewVariantGroup
 import tech.lucam.composeum.annotation.PreviewTag
+import tech.lucam.composeum.annotation.PreviewVariantGroup
 import tech.lucam.composeum.annotation.SimplePreviewTag
 import tech.lucam.composeum.runtime.PreviewEntry
 import tech.lucam.composeum.runtime.PreviewParamDefaults
@@ -19,13 +23,6 @@ import tech.lucam.composeum.runtime.config.GroupConfig
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.store.ResolvedSettings
 import tech.lucam.composeum.runtime.ui.component.LocalResolvedSettings
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Rule
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import java.util.Locale
 
 @RunWith(RobolectricTestRunner::class)
 class PreviewListScreenTest {
@@ -65,7 +62,9 @@ class PreviewListScreenTest {
     )
 
     private fun registryOf(vararg entries: PreviewEntry): PreviewRegistry =
-        object : PreviewRegistry { override val entries = entries.toList() }
+        object : PreviewRegistry {
+            override val entries = entries.toList()
+        }
 
     private val componentsKey = TestGroup.Components::class.qualifiedName!!
     private val screensKey = TestGroup.Screens::class.qualifiedName!!

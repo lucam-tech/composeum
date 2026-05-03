@@ -1,8 +1,5 @@
 package tech.lucam.composeum.ksp.codegen
 
-import tech.lucam.composeum.ksp.model.ParamModel
-import tech.lucam.composeum.ksp.model.PreviewModel
-import tech.lucam.composeum.ksp.model.SealedSubtype
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -14,13 +11,17 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.buildCodeBlock
 import com.squareup.kotlinpoet.ksp.writeTo
+import tech.lucam.composeum.ksp.model.ParamModel
+import tech.lucam.composeum.ksp.model.PreviewModel
+import tech.lucam.composeum.ksp.model.SealedSubtype
 
 internal object RegistryGenerator {
 
     private val previewGroupClass = ClassName("tech.lucam.composeum.annotation", "PreviewGroup")
     private val previewEntryClass = ClassName("tech.lucam.composeum.runtime", "PreviewEntry")
     private val previewRegistryClass = ClassName("tech.lucam.composeum.runtime", "PreviewRegistry")
-    private val previewParamDefaultsClass = ClassName("tech.lucam.composeum.runtime", "PreviewParamDefaults")
+    private val previewParamDefaultsClass =
+        ClassName("tech.lucam.composeum.runtime", "PreviewParamDefaults")
     private val localPreviewParamStateClass =
         ClassName("tech.lucam.composeum.runtime.ui.component", "LocalPreviewParamState")
     private val colorClass = ClassName("androidx.compose.ui.graphics", "Color")
@@ -138,7 +139,12 @@ internal object RegistryGenerator {
             }
             add(
                 "composable = %L,\n",
-                buildComposableLambda(functionMember, model.params, model.isViewPreview, model.hasContextParam),
+                buildComposableLambda(
+                    functionMember,
+                    model.params,
+                    model.isViewPreview,
+                    model.hasContextParam
+                ),
             )
             if (model.params.isEmpty()) {
                 addStatement("paramForm = null,")
@@ -207,13 +213,15 @@ internal object RegistryGenerator {
         param.isNullable -> {
             val isNullDefault = param.defaultValue.isEmpty() || param.defaultValue == "null"
             listOf("${param.name}#isNull" to CodeBlock.of("%L", isNullDefault)) +
-                expandDefaults(param.copy(isNullable = false))
+                    expandDefaults(param.copy(isNullable = false))
         }
+
         param.isDataClass -> {
             param.dataClassParams.flatMap { subParam ->
                 expandDefaults(subParam.copy(name = "${param.name}.${subParam.name}"))
             }
         }
+
         param.isSealedClass -> {
             val defaultVariant = param.defaultValue.ifEmpty {
                 param.sealedSubtypes.firstOrNull()?.name ?: ""
@@ -226,6 +234,7 @@ internal object RegistryGenerator {
             }
             variantEntry + subEntries
         }
+
         param.isList -> {
             val rawItems = param.defaultValue.split("|").filter { it.isNotEmpty() }
             val countEntry = listOf("${param.name}#count" to CodeBlock.of("%L", rawItems.size))
@@ -243,28 +252,34 @@ internal object RegistryGenerator {
 
     /** Converts a string-encoded default (from @PreviewParam.default) to a typed Kotlin literal. */
     private fun defaultValueLiteral(param: ParamModel): CodeBlock {
-        if (param.isEnum || param.options.isNotEmpty()) return CodeBlock.of("%S", param.defaultValue)
+        if (param.isEnum || param.options.isNotEmpty()) return CodeBlock.of(
+            "%S",
+            param.defaultValue
+        )
         return defaultLiteralForType(param.kotlinType, param.defaultValue)
     }
 
-    private fun defaultLiteralForType(kotlinType: String, raw: String): CodeBlock = when (kotlinType) {
-        "kotlin.Boolean" -> CodeBlock.of("%L", if (raw == "true") "true" else "false")
-        "kotlin.Int"     -> CodeBlock.of("%L", raw.toIntOrNull() ?: 0)
-        "kotlin.Long"    -> CodeBlock.of("%L", "${raw.toLongOrNull() ?: 0L}L")
-        "kotlin.Float"   -> CodeBlock.of("%L", "${raw.toFloatOrNull() ?: 0.0f}f")
-        "kotlin.Double"  -> CodeBlock.of("%L", raw.toDoubleOrNull() ?: 0.0)
-        "kotlin.String"  -> CodeBlock.of("%S", raw)
-        "androidx.compose.ui.graphics.Color" -> colorDefaultLiteral(raw)
-        "androidx.compose.ui.unit.Dp" -> {
-            val f = raw.toFloatOrNull() ?: 0f
-            CodeBlock.of("%T(%Lf)", dpClass, f)
+    private fun defaultLiteralForType(kotlinType: String, raw: String): CodeBlock =
+        when (kotlinType) {
+            "kotlin.Boolean" -> CodeBlock.of("%L", if (raw == "true") "true" else "false")
+            "kotlin.Int" -> CodeBlock.of("%L", raw.toIntOrNull() ?: 0)
+            "kotlin.Long" -> CodeBlock.of("%L", "${raw.toLongOrNull() ?: 0L}L")
+            "kotlin.Float" -> CodeBlock.of("%L", "${raw.toFloatOrNull() ?: 0.0f}f")
+            "kotlin.Double" -> CodeBlock.of("%L", raw.toDoubleOrNull() ?: 0.0)
+            "kotlin.String" -> CodeBlock.of("%S", raw)
+            "androidx.compose.ui.graphics.Color" -> colorDefaultLiteral(raw)
+            "androidx.compose.ui.unit.Dp" -> {
+                val f = raw.toFloatOrNull() ?: 0f
+                CodeBlock.of("%T(%Lf)", dpClass, f)
+            }
+
+            "androidx.compose.ui.unit.TextUnit" -> {
+                val f = raw.toFloatOrNull() ?: 16f
+                CodeBlock.of("%T(%Lf, %T.%L)", textUnitClass, f, textUnitTypeClass, "Sp")
+            }
+
+            else -> CodeBlock.of("%S", raw)
         }
-        "androidx.compose.ui.unit.TextUnit" -> {
-            val f = raw.toFloatOrNull() ?: 16f
-            CodeBlock.of("%T(%Lf, %T.%L)", textUnitClass, f, textUnitTypeClass, "Sp")
-        }
-        else -> CodeBlock.of("%S", raw)
-    }
 
     private fun defaultLiteralForListElement(kotlinType: String, raw: String): CodeBlock =
         defaultLiteralForType(kotlinType, raw)
@@ -287,6 +302,7 @@ internal object RegistryGenerator {
             param.isDataClass -> param.dataClassParams.forEach {
                 collectCustomKeys(it.copy(name = "${param.name}.${it.name}"), result)
             }
+
             param.isSealedClass -> param.sealedSubtypes.forEach { subtype ->
                 subtype.params.forEach { sub ->
                     collectCustomKeys(
@@ -295,6 +311,7 @@ internal object RegistryGenerator {
                     )
                 }
             }
+
             param.isList || param.isEnum || param.options.isNotEmpty() -> {}
             param.kotlinType in knownTypes -> {}
             else -> result[param.name] = param.kotlinType
@@ -325,9 +342,21 @@ internal object RegistryGenerator {
     ): CodeBlock {
         if (isViewPreview) {
             return if (hasContextParam) {
-                buildCodeBlock { add("{ %M(factory = { %M(it) }) }", androidViewMember, functionMember) }
+                buildCodeBlock {
+                    add(
+                        "{ %M(factory = { %M(it) }) }",
+                        androidViewMember,
+                        functionMember
+                    )
+                }
             } else {
-                buildCodeBlock { add("{ %M(factory = { %M() }) }", androidViewMember, functionMember) }
+                buildCodeBlock {
+                    add(
+                        "{ %M(factory = { %M() }) }",
+                        androidViewMember,
+                        functionMember
+                    )
+                }
             }
         }
         if (params.isEmpty()) {
@@ -362,10 +391,12 @@ internal object RegistryGenerator {
                 add("%T.valueOf(_state.get<String>(%S) ?: %S)", enumClass, param.name, default)
             }
         }
+
         param.options.isNotEmpty() -> {
             val default = param.defaultValue.ifEmpty { param.options.firstOrNull() ?: "" }
             buildCodeBlock { add("_state.get<String>(%S) ?: %S", param.name, default) }
         }
+
         else -> buildTypedRead(param.name, param.kotlinType, param.defaultValue)
     }
 
@@ -374,8 +405,10 @@ internal object RegistryGenerator {
         val defaultIsNull = param.defaultValue.isEmpty() || param.defaultValue == "null"
         val innerRead = buildParamRead(param.copy(isNullable = false))
         return buildCodeBlock {
-            add("if (_state.get<Boolean>(%S) ?: %L) null else %L",
-                isNullKey, defaultIsNull, innerRead)
+            add(
+                "if (_state.get<Boolean>(%S) ?: %L) null else %L",
+                isNullKey, defaultIsNull, innerRead
+            )
         }
     }
 
@@ -449,62 +482,115 @@ internal object RegistryGenerator {
             add("run {\n")
             indent()
             add("val _count = _state.get<Int>(%S) ?: %L\n", countKey, defaultCount)
-            add("(0 until _count).map { _i -> %L }\n",
-                buildListElementRead(param.listElementKotlinType, prefix))
+            add(
+                "(0 until _count).map { _i -> %L }\n",
+                buildListElementRead(param.listElementKotlinType, prefix)
+            )
             unindent()
             add("}")
         }
     }
 
-    private fun buildListElementRead(elementType: String, prefix: String): CodeBlock = when (elementType) {
-        "kotlin.String"  -> buildCodeBlock {
-            add("_state.get<String>(%S + _i.toString()) ?: %S", prefix, "")
+    private fun buildListElementRead(elementType: String, prefix: String): CodeBlock =
+        when (elementType) {
+            "kotlin.String" -> buildCodeBlock {
+                add("_state.get<String>(%S + _i.toString()) ?: %S", prefix, "")
+            }
+
+            "kotlin.Int" -> buildCodeBlock {
+                add(
+                    "_state.get<Int>(%S + _i.toString()) ?: 0",
+                    prefix
+                )
+            }
+
+            "kotlin.Long" -> buildCodeBlock {
+                add(
+                    "_state.get<Long>(%S + _i.toString()) ?: 0L",
+                    prefix
+                )
+            }
+
+            "kotlin.Float" -> buildCodeBlock {
+                add(
+                    "_state.get<Float>(%S + _i.toString()) ?: 0f",
+                    prefix
+                )
+            }
+
+            "kotlin.Double" -> buildCodeBlock {
+                add(
+                    "_state.get<Double>(%S + _i.toString()) ?: 0.0",
+                    prefix
+                )
+            }
+
+            "kotlin.Boolean" -> buildCodeBlock {
+                add(
+                    "_state.get<Boolean>(%S + _i.toString()) ?: false",
+                    prefix
+                )
+            }
+
+            else -> buildCodeBlock {
+                add("_state.get<String>(%S + _i.toString()) ?: %S", prefix, "")
+            }
         }
-        "kotlin.Int"     -> buildCodeBlock { add("_state.get<Int>(%S + _i.toString()) ?: 0", prefix) }
-        "kotlin.Long"    -> buildCodeBlock { add("_state.get<Long>(%S + _i.toString()) ?: 0L", prefix) }
-        "kotlin.Float"   -> buildCodeBlock { add("_state.get<Float>(%S + _i.toString()) ?: 0f", prefix) }
-        "kotlin.Double"  -> buildCodeBlock { add("_state.get<Double>(%S + _i.toString()) ?: 0.0", prefix) }
-        "kotlin.Boolean" -> buildCodeBlock { add("_state.get<Boolean>(%S + _i.toString()) ?: false", prefix) }
-        else             -> buildCodeBlock {
-            add("_state.get<String>(%S + _i.toString()) ?: %S", prefix, "")
-        }
-    }
 
     private fun buildTypedRead(name: String, kotlinType: String, defaultValue: String): CodeBlock =
         when (kotlinType) {
-            "kotlin.String"  -> buildCodeBlock { add("_state.get<String>(%S) ?: %S", name, defaultValue) }
-            "kotlin.Boolean" -> buildCodeBlock {
-                add("_state.get<Boolean>(%S) ?: %L", name,
-                    if (defaultValue == "true") "true" else "false")
+            "kotlin.String" -> buildCodeBlock {
+                add(
+                    "_state.get<String>(%S) ?: %S",
+                    name,
+                    defaultValue
+                )
             }
-            "kotlin.Int"     -> buildCodeBlock {
+
+            "kotlin.Boolean" -> buildCodeBlock {
+                add(
+                    "_state.get<Boolean>(%S) ?: %L", name,
+                    if (defaultValue == "true") "true" else "false"
+                )
+            }
+
+            "kotlin.Int" -> buildCodeBlock {
                 add("_state.get<Int>(%S) ?: %L", name, defaultValue.toIntOrNull() ?: 0)
             }
-            "kotlin.Long"    -> buildCodeBlock {
+
+            "kotlin.Long" -> buildCodeBlock {
                 add("_state.get<Long>(%S) ?: %L", name, "${defaultValue.toLongOrNull() ?: 0L}L")
             }
-            "kotlin.Float"   -> buildCodeBlock {
+
+            "kotlin.Float" -> buildCodeBlock {
                 add("_state.get<Float>(%S) ?: %L", name, "${defaultValue.toFloatOrNull() ?: 0.0f}f")
             }
-            "kotlin.Double"  -> buildCodeBlock {
+
+            "kotlin.Double" -> buildCodeBlock {
                 add("_state.get<Double>(%S) ?: %L", name, defaultValue.toDoubleOrNull() ?: 0.0)
             }
+
             "androidx.compose.ui.graphics.Color" -> buildCodeBlock {
                 add("_state.get<%T>(%S) ?: %L", colorClass, name, colorDefaultLiteral(defaultValue))
             }
+
             "androidx.compose.ui.unit.Dp" -> {
                 val f = defaultValue.toFloatOrNull() ?: 0f
                 buildCodeBlock {
                     add("_state.get<%T>(%S) ?: %T(%Lf)", dpClass, name, dpClass, f)
                 }
             }
+
             "androidx.compose.ui.unit.TextUnit" -> {
                 val f = defaultValue.toFloatOrNull() ?: 16f
                 buildCodeBlock {
-                    add("_state.get<%T>(%S) ?: %T(%Lf, %T.%L)",
-                        textUnitClass, name, textUnitClass, f, textUnitTypeClass, "Sp")
+                    add(
+                        "_state.get<%T>(%S) ?: %T(%Lf, %T.%L)",
+                        textUnitClass, name, textUnitClass, f, textUnitTypeClass, "Sp"
+                    )
                 }
             }
+
             else -> {
                 val typeClass = ClassName.bestGuess(kotlinType)
                 buildCodeBlock {
@@ -512,7 +598,7 @@ internal object RegistryGenerator {
                         "_state.get<%T>(%S) ?: error(%S)",
                         typeClass, name,
                         "No initial value for custom param '$name' of type '$kotlinType'. " +
-                        "Register a customTypeField in PreviewConfig.",
+                                "Register a customTypeField in PreviewConfig.",
                     )
                 }
             }

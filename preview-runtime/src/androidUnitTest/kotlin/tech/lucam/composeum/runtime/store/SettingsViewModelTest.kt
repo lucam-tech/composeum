@@ -1,12 +1,7 @@
 package tech.lucam.composeum.runtime.store
 
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.compose.ui.graphics.Color
-import tech.lucam.composeum.runtime.AccessibilityPreviewState
-import tech.lucam.composeum.runtime.ColorBlindMode
-import tech.lucam.composeum.runtime.config.PreviewConfig
-import tech.lucam.composeum.runtime.config.ThemeOption
-import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -17,6 +12,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import tech.lucam.composeum.runtime.AccessibilityPreviewState
+import tech.lucam.composeum.runtime.ColorBlindMode
+import tech.lucam.composeum.runtime.config.PreviewConfig
+import tech.lucam.composeum.runtime.config.ThemeOption
+import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
 
 class SettingsViewModelTest {
 
@@ -47,7 +47,8 @@ class SettingsViewModelTest {
     @Test
     fun `non-null runtime settings win over config defaults`() {
         val config = PreviewConfig(fontScale = 1.0f, uiScale = 1.0f, thumbnailColumns = 2)
-        val resolved = RuntimeSettings(fontScale = 1.8f, uiScale = 0.5f, thumbnailColumns = 4).resolve(config)
+        val resolved =
+            RuntimeSettings(fontScale = 1.8f, uiScale = 0.5f, thumbnailColumns = 4).resolve(config)
         assertEquals(1.8f, resolved.fontScale)
         assertEquals(0.5f, resolved.uiScale)
         assertEquals(4, resolved.thumbnailColumns)

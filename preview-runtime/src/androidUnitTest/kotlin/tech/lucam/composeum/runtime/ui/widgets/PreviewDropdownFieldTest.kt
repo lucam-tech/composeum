@@ -32,7 +32,11 @@ class PreviewDropdownFieldTest {
     fun `selecting an option fires onValue`() {
         var received = ""
         composeRule.setContent {
-            PreviewDropdownField(label = "Color", value = "Red", options = options, onValue = { received = it })
+            PreviewDropdownField(
+                label = "Color",
+                value = "Red",
+                options = options,
+                onValue = { received = it })
         }
         // Open the dropdown
         composeRule.onNodeWithContentDescription("Color").performClick()

@@ -1,8 +1,5 @@
 package tech.lucam.composeum.ksp
 
-import tech.lucam.composeum.ksp.model.ModelBuilder
-import tech.lucam.composeum.ksp.model.PreviewModel
-import tech.lucam.composeum.ksp.validation.Validator
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
@@ -16,6 +13,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import tech.lucam.composeum.ksp.model.ModelBuilder
+import tech.lucam.composeum.ksp.model.PreviewModel
+import tech.lucam.composeum.ksp.validation.Validator
 
 class ModelBuilderTest {
 

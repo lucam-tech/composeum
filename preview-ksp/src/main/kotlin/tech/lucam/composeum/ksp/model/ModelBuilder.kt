@@ -32,13 +32,16 @@ internal object ModelBuilder {
 
         val name = (args["name"] as? String ?: "").ifEmpty { function.simpleName.asString() }
         val description = (args["description"] as? String ?: "").ifEmpty { kdoc?.summary.orEmpty() }
-        val tags = ((args["tags"] as? List<*>)?.mapNotNull { (it as? KSType)?.let(::resolveTagExpression) } ?: emptyList())
-            .ifEmpty { kdoc?.tags.orEmpty().map(::simpleTagExpression) }
+        val tags =
+            ((args["tags"] as? List<*>)?.mapNotNull { (it as? KSType)?.let(::resolveTagExpression) }
+                ?: emptyList())
+                .ifEmpty { kdoc?.tags.orEmpty().map(::simpleTagExpression) }
         val groupType = args["group"] as? KSType
         val variantGroupType = args["variantGroup"] as? KSType
         val isDefaultVariant = args["isDefaultVariant"] as? Boolean ?: false
 
-        val hasExplicitGroup = groupType?.declaration?.qualifiedName?.asString() != PREVIEW_GROUP_FQN
+        val hasExplicitGroup =
+            groupType?.declaration?.qualifiedName?.asString() != PREVIEW_GROUP_FQN
         val (groupExpression, groupImport, syntheticGroupDisplayName) = if (hasExplicitGroup) {
             val (expression, groupImport) = resolveGroupExpression(groupType)
             Triple(expression, groupImport, null)
@@ -80,7 +83,10 @@ internal object ModelBuilder {
      * The group string from @Preview is mapped to a synthetic [PreviewGroup] object that will be
      * emitted alongside the registry. @PreviewParam parameters are supported just like @ComposePreview.
      */
-    fun buildAndroidPreview(function: KSFunctionDeclaration, enableKdoc: Boolean = false): PreviewModel {
+    fun buildAndroidPreview(
+        function: KSFunctionDeclaration,
+        enableKdoc: Boolean = false
+    ): PreviewModel {
         val ann = function.annotations.first { a ->
             a.annotationType.resolve().declaration.qualifiedName?.asString() == ANDROID_PREVIEW_FQN
         }
@@ -113,7 +119,10 @@ internal object ModelBuilder {
     }
 
     /** Converts a validated @ViewPreview function declaration into a [PreviewModel]. */
-    fun buildViewPreview(function: KSFunctionDeclaration, enableKdoc: Boolean = false): PreviewModel {
+    fun buildViewPreview(
+        function: KSFunctionDeclaration,
+        enableKdoc: Boolean = false
+    ): PreviewModel {
         val ann = function.annotations.first { a ->
             a.annotationType.resolve().declaration.qualifiedName?.asString() == VIEW_PREVIEW_FQN
         }
@@ -123,8 +132,10 @@ internal object ModelBuilder {
 
         val name = args["name"] as? String ?: ""
         val description = (args["description"] as? String ?: "").ifEmpty { kdoc?.summary.orEmpty() }
-        val tags = ((args["tags"] as? List<*>)?.mapNotNull { (it as? KSType)?.let(::resolveTagExpression) } ?: emptyList())
-            .ifEmpty { kdoc?.tags.orEmpty().map(::simpleTagExpression) }
+        val tags =
+            ((args["tags"] as? List<*>)?.mapNotNull { (it as? KSType)?.let(::resolveTagExpression) }
+                ?: emptyList())
+                .ifEmpty { kdoc?.tags.orEmpty().map(::simpleTagExpression) }
         val groupType = args["group"] as? KSType
         val variantGroupType = args["variantGroup"] as? KSType
         val isDefaultVariant = args["isDefaultVariant"] as? Boolean ?: false
@@ -177,6 +188,7 @@ internal object ModelBuilder {
             val paramName = param.name?.asString() ?: ""
             val paramDescription = (pArgs["description"] as? String ?: "")
                 .ifEmpty { kdocParamDescriptions[paramName].orEmpty() }
+
             @Suppress("UNCHECKED_CAST")
             val options = (pArgs["options"] as? List<*>)?.filterIsInstance<String>() ?: emptyList()
 
@@ -238,12 +250,14 @@ internal object ModelBuilder {
         } else emptyList()
 
         // Data class (limit to 1 level — sub-params of a data class are not recursed further)
-        val isDataClass = !isList && !isEnum && classDecl != null && Modifier.DATA in classDecl.modifiers
-        val dataClassParams = if (isDataClass) collectConstructorParams(classDecl!!) else emptyList()
+        val isDataClass =
+            !isList && !isEnum && classDecl != null && Modifier.DATA in classDecl.modifiers
+        val dataClassParams =
+            if (isDataClass) collectConstructorParams(classDecl!!) else emptyList()
 
         // Sealed class / sealed interface
         val isSealed = !isList && !isEnum && !isDataClass &&
-            classDecl != null && Modifier.SEALED in classDecl.modifiers
+                classDecl != null && Modifier.SEALED in classDecl.modifiers
         val sealedSubtypes = if (isSealed) collectSealedSubtypes(classDecl!!) else emptyList()
 
         return ParamModel(
@@ -362,9 +376,11 @@ internal object ModelBuilder {
                 result["${param.name}#isNull"] = "kotlin.Boolean"
                 collectParamTypeHints(param.copy(isNullable = false), result)
             }
+
             param.isDataClass -> param.dataClassParams.forEach { sub ->
                 collectParamTypeHints(sub.copy(name = "${param.name}.${sub.name}"), result)
             }
+
             param.isSealedClass -> {
                 result["${param.name}#variant"] = "kotlin.String"
                 param.sealedSubtypes.forEach { subtype ->
@@ -376,6 +392,7 @@ internal object ModelBuilder {
                     }
                 }
             }
+
             param.isList -> result["${param.name}#count"] = "kotlin.Int"
             param.isEnum || param.options.isNotEmpty() -> result[param.name] = "kotlin.String"
             else -> result[param.name] = param.kotlinType

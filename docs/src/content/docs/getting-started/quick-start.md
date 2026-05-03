@@ -48,9 +48,8 @@ class PreviewCatalogActivity : ComposeumBrowserActivity() {
 Register the activity in `AndroidManifest.xml`:
 
 ```xml
-<activity
-    android:name=".PreviewCatalogActivity"
-    android:exported="true" />
+
+<activity android:name=".PreviewCatalogActivity" android:exported="true" />
 ```
 
 ## 4. Add your app theme later

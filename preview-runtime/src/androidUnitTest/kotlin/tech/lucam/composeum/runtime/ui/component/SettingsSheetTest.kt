@@ -5,22 +5,13 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
-import tech.lucam.composeum.runtime.ColorBlindMode
-import tech.lucam.composeum.runtime.config.BuiltInSettingId
-import tech.lucam.composeum.runtime.config.PreviewConfig
-import tech.lucam.composeum.runtime.config.SettingItem
-import tech.lucam.composeum.runtime.config.ThemeOption
-import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
-import tech.lucam.composeum.runtime.store.RuntimeSettings
-import tech.lucam.composeum.runtime.store.SettingsStorage
-import tech.lucam.composeum.runtime.store.ThemeOverride
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -33,6 +24,15 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import tech.lucam.composeum.runtime.ColorBlindMode
+import tech.lucam.composeum.runtime.config.BuiltInSettingId
+import tech.lucam.composeum.runtime.config.PreviewConfig
+import tech.lucam.composeum.runtime.config.SettingItem
+import tech.lucam.composeum.runtime.config.ThemeOption
+import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
+import tech.lucam.composeum.runtime.store.RuntimeSettings
+import tech.lucam.composeum.runtime.store.SettingsStorage
+import tech.lucam.composeum.runtime.store.ThemeOverride
 
 @RunWith(RobolectricTestRunner::class)
 class SettingsSheetTest {

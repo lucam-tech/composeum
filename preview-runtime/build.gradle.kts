@@ -83,14 +83,15 @@ android {
 // For offline sandboxes, replace the task actions so the typedef file is written without
 // actually invoking lint-gradle (which cannot be downloaded with no network).
 afterEvaluate {
-    tasks.matching { it.name.startsWith("extract") && it.name.endsWith("Annotations") }.configureEach {
-        val variantName = name.removePrefix("extract").removeSuffix("Annotations").lowercase()
-        val typedefsFile = layout.buildDirectory
-            .file("intermediates/annotations_typedef_file/$variantName/${name}/typedefs.txt")
-        outputs.file(typedefsFile)
-        actions.clear()
-        doFirst {
-            typedefsFile.get().asFile.let { f -> f.parentFile.mkdirs(); f.writeText("") }
+    tasks.matching { it.name.startsWith("extract") && it.name.endsWith("Annotations") }
+        .configureEach {
+            val variantName = name.removePrefix("extract").removeSuffix("Annotations").lowercase()
+            val typedefsFile = layout.buildDirectory
+                .file("intermediates/annotations_typedef_file/$variantName/${name}/typedefs.txt")
+            outputs.file(typedefsFile)
+            actions.clear()
+            doFirst {
+                typedefsFile.get().asFile.let { f -> f.parentFile.mkdirs(); f.writeText("") }
+            }
         }
-    }
 }

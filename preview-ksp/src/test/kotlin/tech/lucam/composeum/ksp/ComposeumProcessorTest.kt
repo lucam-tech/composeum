@@ -2,11 +2,11 @@ package tech.lucam.composeum.ksp
 
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
-import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.kspArgs
+import com.tschuchort.compiletesting.kspSourcesDir
 import com.tschuchort.compiletesting.symbolProcessorProviders
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -169,6 +169,7 @@ class ComposeumProcessorTest {
         data class SimplePreviewTag(override val title: String) : PreviewTag
         """,
     )
+
     // Loose group type (KClass<*>) so we can pass non-PreviewGroup classes for rule-2 test.
     private val composePreviewStub = SourceFile.kotlin(
         "ComposePreview.kt",
@@ -198,6 +199,7 @@ class ComposeumProcessorTest {
         )
         """,
     )
+
     // Split into separate files — Kotlin only allows one package declaration per file.
     private val androidViewStub = SourceFile.kotlin(
         "AndroidView.kt",
@@ -221,7 +223,12 @@ class ComposeumProcessorTest {
         @Composable fun <T : android.view.View> AndroidView(factory: (android.content.Context) -> T) {}
         """,
     )
-    private val androidViewStubs get() = listOf(androidViewStub, androidContextStub, androidViewInteropStub)
+    private val androidViewStubs
+        get() = listOf(
+            androidViewStub,
+            androidContextStub,
+            androidViewInteropStub
+        )
 
     private val androidPreviewStub = SourceFile.kotlin(
         "AndroidPreview.kt",
@@ -699,7 +706,11 @@ class ComposeumProcessorTest {
             ),
         )
         // Verify no KSP validation errors — compilation of generated code may fail until TASK-009.
-        assertTrue(!result.messages.contains("error: @ComposePreview") && !result.messages.contains("error: @PreviewParam"))
+        assertTrue(
+            !result.messages.contains("error: @ComposePreview") && !result.messages.contains(
+                "error: @PreviewParam"
+            )
+        )
     }
 
     // Helper that keeps the KotlinCompilation object so callers can inspect generated sources.
@@ -1317,9 +1328,15 @@ class ComposeumProcessorTest {
         val file = findGeneratedFile(compilation, "GeneratedPreviewRegistry")
         assertNotNull("GeneratedPreviewRegistry.kt was not generated", file)
         val content = file!!.readText()
-        assertTrue("Registry should contain the view preview key", content.contains("myViewPreview"))
+        assertTrue(
+            "Registry should contain the view preview key",
+            content.contains("myViewPreview")
+        )
         assertTrue("Composable lambda should use AndroidView", content.contains("AndroidView"))
-        assertTrue("Factory lambda should forward context via 'it'", content.contains("myViewPreview(it)"))
+        assertTrue(
+            "Factory lambda should forward context via 'it'",
+            content.contains("myViewPreview(it)")
+        )
     }
 
     @Test
@@ -1346,7 +1363,10 @@ class ComposeumProcessorTest {
         assertNotNull("GeneratedPreviewRegistry.kt was not generated", file)
         val content = file!!.readText()
         assertTrue("Composable lambda should use AndroidView", content.contains("AndroidView"))
-        assertTrue("Factory lambda should call function with no args", content.contains("myViewPreview()"))
+        assertTrue(
+            "Factory lambda should call function with no args",
+            content.contains("myViewPreview()")
+        )
     }
 
     @Test
@@ -1622,7 +1642,8 @@ class ComposeumProcessorTest {
                 androidPreviewStub,
             ) + sources.toList()
             symbolProcessorProviders = listOf(ComposeumProcessorProvider())
-            kspArgs = kspArgs(includeAndroidPreview = includeAndroidPreview, enableKdoc = enableKdoc)
+            kspArgs =
+                kspArgs(includeAndroidPreview = includeAndroidPreview, enableKdoc = enableKdoc)
             inheritClassPath = false
         }.compile()
 
@@ -2036,13 +2057,19 @@ class ComposeumProcessorTest {
         val form = findGeneratedFile(compilation, "myPreviewParamForm")
         assertNotNull("myPreviewParamForm.kt was not generated", form)
         val formContent = form!!.readText()
-        assertTrue("Should use PreviewNullableWrapper", formContent.contains("PreviewNullableWrapper"))
+        assertTrue(
+            "Should use PreviewNullableWrapper",
+            formContent.contains("PreviewNullableWrapper")
+        )
         assertTrue("Should store isNull key", formContent.contains("title#isNull"))
 
         val registry = findGeneratedFile(compilation, "GeneratedPreviewRegistry")
         assertNotNull(registry)
         val regContent = registry!!.readText()
-        assertTrue("Registry composable should handle null check", regContent.contains("title#isNull"))
+        assertTrue(
+            "Registry composable should handle null check",
+            regContent.contains("title#isNull")
+        )
     }
 
     @Test
@@ -2072,7 +2099,10 @@ class ComposeumProcessorTest {
         val form = findGeneratedFile(compilation, "myPreviewParamForm")
         assertNotNull("myPreviewParamForm.kt was not generated", form)
         val formContent = form!!.readText()
-        assertTrue("Enum params should use PreviewDropdownField", formContent.contains("PreviewDropdownField"))
+        assertTrue(
+            "Enum params should use PreviewDropdownField",
+            formContent.contains("PreviewDropdownField")
+        )
         assertTrue("Form should include enum default", formContent.contains("?: \"Secondary\""))
         assertTrue("Form should list Primary option", formContent.contains("\"Primary\""))
         assertTrue("Form should list Secondary option", formContent.contains("\"Secondary\""))
@@ -2106,9 +2136,18 @@ class ComposeumProcessorTest {
         val registry = findGeneratedFile(compilation, "GeneratedPreviewRegistry")
         assertNotNull("GeneratedPreviewRegistry.kt was not generated", registry)
         val regContent = registry!!.readText()
-        assertTrue("Registry should read enum state as a String", regContent.contains("_state.get<String>(\"variant\")"))
-        assertTrue("Registry should use the enum default name", regContent.contains("?: \"Secondary\""))
-        assertTrue("Registry should convert state back to enum", regContent.contains("ButtonVariant.valueOf"))
+        assertTrue(
+            "Registry should read enum state as a String",
+            regContent.contains("_state.get<String>(\"variant\")")
+        )
+        assertTrue(
+            "Registry should use the enum default name",
+            regContent.contains("?: \"Secondary\"")
+        )
+        assertTrue(
+            "Registry should convert state back to enum",
+            regContent.contains("ButtonVariant.valueOf")
+        )
     }
 
     @Test
@@ -2137,8 +2176,14 @@ class ComposeumProcessorTest {
         val form = findGeneratedFile(compilation, "myPreviewParamForm")
         assertNotNull("myPreviewParamForm.kt was not generated", form)
         val formContent = form!!.readText()
-        assertTrue("Form should reference config.label sub-key", formContent.contains("config.label"))
-        assertTrue("Form should reference config.enabled sub-key", formContent.contains("config.enabled"))
+        assertTrue(
+            "Form should reference config.label sub-key",
+            formContent.contains("config.label")
+        )
+        assertTrue(
+            "Form should reference config.enabled sub-key",
+            formContent.contains("config.enabled")
+        )
 
         val registry = findGeneratedFile(compilation, "GeneratedPreviewRegistry")
         assertNotNull(registry)
@@ -2183,8 +2228,14 @@ class ComposeumProcessorTest {
         assertNotNull(registry)
         val regContent = registry!!.readText()
         assertTrue("Registry should have when on variant", regContent.contains("state#variant"))
-        assertTrue("Registry should construct UiState.Loading", regContent.contains("UiState.Loading"))
-        assertTrue("Registry should construct UiState.Success", regContent.contains("UiState.Success"))
+        assertTrue(
+            "Registry should construct UiState.Loading",
+            regContent.contains("UiState.Loading")
+        )
+        assertTrue(
+            "Registry should construct UiState.Success",
+            regContent.contains("UiState.Success")
+        )
     }
 
     @Test
@@ -2219,7 +2270,10 @@ class ComposeumProcessorTest {
         assertNotNull(registry)
         val regContent = registry!!.readText()
         assertTrue("Registry should read count", regContent.contains("tags#count"))
-        assertTrue("Registry defaults should contain count", regContent.contains("\"tags#count\" to 2"))
+        assertTrue(
+            "Registry defaults should contain count",
+            regContent.contains("\"tags#count\" to 2")
+        )
     }
 
     @Test
@@ -2244,8 +2298,10 @@ class ComposeumProcessorTest {
                 """,
             ),
         )
-        assertTrue("Data class should pass strict-mode validation",
-            !result.messages.contains("error: @PreviewParam"))
+        assertTrue(
+            "Data class should pass strict-mode validation",
+            !result.messages.contains("error: @PreviewParam")
+        )
     }
 
     @Test
@@ -2300,8 +2356,10 @@ class ComposeumProcessorTest {
                 """,
             ),
         )
-        assertTrue("Sealed class should pass strict-mode validation",
-            !result.messages.contains("error: @PreviewParam"))
+        assertTrue(
+            "Sealed class should pass strict-mode validation",
+            !result.messages.contains("error: @PreviewParam")
+        )
     }
 
     @Test
@@ -2359,8 +2417,10 @@ class ComposeumProcessorTest {
                 """,
             ),
         )
-        assertTrue("List<String> should pass strict-mode validation",
-            !result.messages.contains("error: @PreviewParam"))
+        assertTrue(
+            "List<String> should pass strict-mode validation",
+            !result.messages.contains("error: @PreviewParam")
+        )
     }
 
     @Test
@@ -2417,8 +2477,10 @@ class ComposeumProcessorTest {
             ),
         )
 
-        assertTrue("List<Enum> should pass strict-mode validation",
-            !result.messages.contains("error: @PreviewParam"))
+        assertTrue(
+            "List<Enum> should pass strict-mode validation",
+            !result.messages.contains("error: @PreviewParam")
+        )
     }
 
     @Test

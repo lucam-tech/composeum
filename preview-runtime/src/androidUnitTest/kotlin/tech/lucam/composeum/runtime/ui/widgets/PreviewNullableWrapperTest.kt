@@ -51,7 +51,10 @@ class PreviewNullableWrapperTest {
     fun `toggling switch fires onNullChange`() {
         var received: Boolean? = null
         composeRule.setContent {
-            PreviewNullableWrapper(label = "Value", isNull = true, onNullChange = { received = it }) {}
+            PreviewNullableWrapper(
+                label = "Value",
+                isNull = true,
+                onNullChange = { received = it }) {}
         }
         composeRule.onNodeWithContentDescription("Value null toggle").performClick()
         // The switch toggles from "is null" (checked = false in the switch) to non-null

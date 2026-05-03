@@ -63,6 +63,7 @@ internal object FunctionDefaultParser {
         return when {
             classDecl?.classKind == ClassKind.ENUM_CLASS ->
                 trimmed.substringAfterLast('.').substringBefore('(').trim()
+
             typeName == "kotlin.String" -> parseStringLiteral(trimmed) ?: trimmed
             typeName == "kotlin.Boolean" -> trimmed
             typeName == "kotlin.Int" -> trimmed.removeSuffix("_")
@@ -72,6 +73,7 @@ internal object FunctionDefaultParser {
             typeName == "androidx.compose.ui.unit.Dp" -> trimmed.substringBefore(".dp").trim()
             typeName == "androidx.compose.ui.unit.TextUnit" ->
                 trimmed.substringBefore(".sp").substringBefore(".em").trim()
+
             typeName == "androidx.compose.ui.graphics.Color" -> normalizeColor(trimmed)
             isSealedClass(classDecl) -> trimmed.substringAfterLast('.').substringBefore('(').trim()
             typeName == "kotlin.collections.List" -> normalizeList(resolvedType, trimmed)
@@ -86,6 +88,7 @@ internal object FunctionDefaultParser {
         return when {
             inner.startsWith("0x") || inner.startsWith("0X") ->
                 inner.removePrefix("0x").removePrefix("0X").toLong(16).toString()
+
             else -> inner.toLongOrNull()?.toString().orEmpty()
         }
     }
@@ -103,14 +106,19 @@ internal object FunctionDefaultParser {
             when {
                 elementDecl?.classKind == ClassKind.ENUM_CLASS ->
                     item.substringAfterLast('.').trim()
+
                 elementType.declaration.qualifiedName?.asString() == "kotlin.String" ->
                     parseStringLiteral(item) ?: item
+
                 elementType.declaration.qualifiedName?.asString() == "kotlin.Long" ->
                     item.removeSuffix("L").removeSuffix("l")
+
                 elementType.declaration.qualifiedName?.asString() == "kotlin.Float" ->
                     item.removeSuffix("f").removeSuffix("F")
+
                 elementType.declaration.qualifiedName?.asString() == "kotlin.Double" ->
                     item.removeSuffix("d").removeSuffix("D")
+
                 else -> item
             }
         }

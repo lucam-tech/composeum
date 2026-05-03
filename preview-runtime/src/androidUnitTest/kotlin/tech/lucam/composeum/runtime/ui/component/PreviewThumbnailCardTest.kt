@@ -5,13 +5,13 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import tech.lucam.composeum.annotation.PreviewGroup
-import tech.lucam.composeum.runtime.PreviewEntry
-import tech.lucam.composeum.runtime.PreviewParamDefaults
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.runtime.PreviewEntry
+import tech.lucam.composeum.runtime.PreviewParamDefaults
 
 @RunWith(RobolectricTestRunner::class)
 class PreviewThumbnailCardTest {
@@ -22,7 +22,9 @@ class PreviewThumbnailCardTest {
     private val entry = PreviewEntry(
         key = "test.thumbnail",
         name = "Card Name",
-        group = object : PreviewGroup { override val name = "Components" },
+        group = object : PreviewGroup {
+            override val name = "Components"
+        },
         description = "",
         tags = emptyList(),
         composable = { Text("Inner preview") },

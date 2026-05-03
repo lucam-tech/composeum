@@ -1,10 +1,10 @@
 package tech.lucam.composeum.runtime
 
 import androidx.compose.runtime.Immutable
-import tech.lucam.composeum.runtime.config.PreviewConfig
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toPersistentMap
+import tech.lucam.composeum.runtime.config.PreviewConfig
 
 /** Immutable snapshot of current parameter values for a preview. */
 @Immutable

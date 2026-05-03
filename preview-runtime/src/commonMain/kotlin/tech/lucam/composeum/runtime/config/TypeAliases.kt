@@ -10,7 +10,7 @@ import tech.lucam.composeum.runtime.PreviewParamState
 typealias BrowserWrapper = @Composable (content: @Composable () -> Unit) -> Unit
 
 /** Wraps the preview-list screen for a specific [PreviewGroup]. */
-typealias GroupWrapper   = @Composable (group: PreviewGroup, content: @Composable () -> Unit) -> Unit
+typealias GroupWrapper = @Composable (group: PreviewGroup, content: @Composable () -> Unit) -> Unit
 
 /** Wraps an individual preview render, for example to add padding or a device frame. */
 typealias PreviewWrapper = @Composable (entry: PreviewEntry, content: @Composable () -> Unit) -> Unit

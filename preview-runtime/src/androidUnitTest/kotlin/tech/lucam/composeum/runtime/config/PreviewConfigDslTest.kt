@@ -1,11 +1,11 @@
 package tech.lucam.composeum.runtime.config
 
 import androidx.compose.ui.graphics.Color
-import tech.lucam.composeum.annotation.PreviewGroup
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
+import tech.lucam.composeum.annotation.PreviewGroup
 
 class PreviewConfigDslTest {
 
@@ -122,8 +122,13 @@ class PreviewConfigDslTest {
     // --- Group overrides ---
 
     private sealed interface TestGroup : PreviewGroup {
-        data object Buttons : TestGroup { override val name = "Buttons" }
-        data object Cards : TestGroup { override val name = "Cards" }
+        data object Buttons : TestGroup {
+            override val name = "Buttons"
+        }
+
+        data object Cards : TestGroup {
+            override val name = "Cards"
+        }
     }
 
     @Test

@@ -22,15 +22,15 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 private val GRID_OPTIONS: List<Pair<String, Alignment>> = listOf(
-    "Top Start"    to Alignment.TopStart,
-    "Top Center"   to Alignment.TopCenter,
-    "Top End"      to Alignment.TopEnd,
+    "Top Start" to Alignment.TopStart,
+    "Top Center" to Alignment.TopCenter,
+    "Top End" to Alignment.TopEnd,
     "Center Start" to Alignment.CenterStart,
-    "Center"       to Alignment.Center,
-    "Center End"   to Alignment.CenterEnd,
+    "Center" to Alignment.Center,
+    "Center End" to Alignment.CenterEnd,
     "Bottom Start" to Alignment.BottomStart,
     "Bottom Center" to Alignment.BottomCenter,
-    "Bottom End"   to Alignment.BottomEnd,
+    "Bottom End" to Alignment.BottomEnd,
 )
 
 /**

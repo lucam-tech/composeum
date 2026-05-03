@@ -101,6 +101,7 @@ internal object KDocParser {
                         .split(',')
                         .asSequence()
                         .map { it.trim() }
+
                     else -> emptySequence()
                 }
             }

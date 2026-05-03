@@ -5,14 +5,14 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
-import tech.lucam.composeum.annotation.PreviewGroup
-import tech.lucam.composeum.runtime.PreviewEntry
-import tech.lucam.composeum.runtime.PreviewParamDefaults
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.runtime.PreviewEntry
+import tech.lucam.composeum.runtime.PreviewParamDefaults
 
 @RunWith(RobolectricTestRunner::class)
 class PreviewRendererTest {
@@ -23,7 +23,9 @@ class PreviewRendererTest {
     private fun entry(composable: @androidx.compose.runtime.Composable () -> Unit) = PreviewEntry(
         key = "test.key",
         name = "Test",
-        group = object : PreviewGroup { override val name = "Test" },
+        group = object : PreviewGroup {
+            override val name = "Test"
+        },
         description = "",
         tags = emptyList(),
         composable = composable,

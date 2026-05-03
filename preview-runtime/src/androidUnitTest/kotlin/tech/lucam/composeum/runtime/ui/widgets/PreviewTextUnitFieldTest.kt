@@ -36,7 +36,12 @@ class PreviewTextUnitFieldTest {
     @Test
     fun `description is shown when provided`() {
         composeRule.setContent {
-            PreviewTextUnitField(label = "Font Size", value = 14.sp, onValue = {}, description = "sp unit")
+            PreviewTextUnitField(
+                label = "Font Size",
+                value = 14.sp,
+                onValue = {},
+                description = "sp unit"
+            )
         }
         composeRule.onNodeWithText("sp unit").assertIsDisplayed()
     }

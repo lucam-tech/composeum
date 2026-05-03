@@ -49,7 +49,11 @@ class PreviewListFieldTest {
     fun `onAdd fires when plus button is clicked`() {
         var addClicked = false
         composeRule.setContent {
-            PreviewListField(label = "Items", itemCount = 0, onAdd = { addClicked = true }, onRemove = {}) { _ -> }
+            PreviewListField(
+                label = "Items",
+                itemCount = 0,
+                onAdd = { addClicked = true },
+                onRemove = {}) { _ -> }
         }
         composeRule.onNodeWithContentDescription("Items add item").performClick()
         assertEquals(true, addClicked)
@@ -67,7 +71,13 @@ class PreviewListFieldTest {
     @Test
     fun `description is shown when provided`() {
         composeRule.setContent {
-            PreviewListField(label = "Items", itemCount = 0, onAdd = {}, onRemove = {}, description = "hint") { _ -> }
+            PreviewListField(
+                label = "Items",
+                itemCount = 0,
+                onAdd = {},
+                onRemove = {},
+                description = "hint"
+            ) { _ -> }
         }
         composeRule.onNodeWithText("hint").assertIsDisplayed()
     }

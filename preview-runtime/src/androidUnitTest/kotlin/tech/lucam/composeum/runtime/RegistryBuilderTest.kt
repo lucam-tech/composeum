@@ -9,19 +9,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import tech.lucam.composeum.annotation.PreviewGroup
-import tech.lucam.composeum.annotation.PreviewVariantGroup
-import tech.lucam.composeum.annotation.SimplePreviewTag
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
+import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.annotation.PreviewVariantGroup
+import tech.lucam.composeum.annotation.SimplePreviewTag
 
 class RegistryBuilderTest {
 
-    private val group = object : PreviewGroup { override val name = "TestGroup" }
+    private val group = object : PreviewGroup {
+        override val name = "TestGroup"
+    }
     private val variantGroup = object : PreviewVariantGroup {}
 
     // --- buildRegistry structure ---
@@ -194,8 +196,12 @@ class RegistryBuilderTest {
 
     @Test
     fun `auto-generated keys stay distinct when groups share the same display name`() {
-        val alpha = object : PreviewGroup { override val name = "Shared" }
-        val beta = object : PreviewGroup { override val name = "Shared" }
+        val alpha = object : PreviewGroup {
+            override val name = "Shared"
+        }
+        val beta = object : PreviewGroup {
+            override val name = "Shared"
+        }
 
         val registry = buildRegistry {
             preview(name = "Card", group = alpha) {}
@@ -346,7 +352,12 @@ class RegistryBuilderTest {
         val registry = buildRegistry {
             preview(
                 name = "T", group = group,
-                params = previewParams { arrangementHorizontal(key = "arr", default = Arrangement.End) },
+                params = previewParams {
+                    arrangementHorizontal(
+                        key = "arr",
+                        default = Arrangement.End
+                    )
+                },
             ) { _ -> }
         }
         assertEquals(Arrangement.End, registry.entries[0].paramDefaults.defaults["arr"])
@@ -357,7 +368,12 @@ class RegistryBuilderTest {
         val registry = buildRegistry {
             preview(
                 name = "T", group = group,
-                params = previewParams { arrangementVertical(key = "arr", default = Arrangement.Bottom) },
+                params = previewParams {
+                    arrangementVertical(
+                        key = "arr",
+                        default = Arrangement.Bottom
+                    )
+                },
             ) { _ -> }
         }
         assertEquals(Arrangement.Bottom, registry.entries[0].paramDefaults.defaults["arr"])
@@ -369,7 +385,13 @@ class RegistryBuilderTest {
         val registry = buildRegistry {
             preview(
                 name = "T", group = group,
-                params = previewParams { contentSlot(key = "slot", options = options, defaultIndex = 1) },
+                params = previewParams {
+                    contentSlot(
+                        key = "slot",
+                        options = options,
+                        defaultIndex = 1
+                    )
+                },
             ) { _ -> }
         }
         val stored = registry.entries[0].paramDefaults.defaults["slot"] as? ContentSlotValue
@@ -438,7 +460,12 @@ class RegistryBuilderTest {
         val registry = buildRegistry {
             preview(
                 name = "T", group = group,
-                params = previewParams { layoutDirection(key = "ld", default = LayoutDirection.Rtl) },
+                params = previewParams {
+                    layoutDirection(
+                        key = "ld",
+                        default = LayoutDirection.Rtl
+                    )
+                },
             ) { _ -> }
         }
         assertEquals(LayoutDirection.Rtl, registry.entries[0].paramDefaults.defaults["ld"])

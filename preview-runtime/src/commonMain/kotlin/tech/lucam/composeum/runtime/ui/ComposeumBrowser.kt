@@ -9,16 +9,16 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -26,9 +26,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavBackStackEntry
@@ -39,21 +39,22 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.savedstate.read
-import tech.lucam.composeum.runtime.PreviewRegistry
+import kotlinx.coroutines.launch
 import tech.lucam.composeum.runtime.PreviewParamState
-import tech.lucam.composeum.runtime.familyKey
-import tech.lucam.composeum.runtime.families
-import tech.lucam.composeum.runtime.groupKey
-import tech.lucam.composeum.runtime.toPreviewParamState
-import tech.lucam.composeum.runtime.toShareableMap
+import tech.lucam.composeum.runtime.PreviewRegistry
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.ThemeOption
 import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
 import tech.lucam.composeum.runtime.config.mergedWith
 import tech.lucam.composeum.runtime.config.overriddenBy
+import tech.lucam.composeum.runtime.families
+import tech.lucam.composeum.runtime.familyKey
+import tech.lucam.composeum.runtime.groupKey
 import tech.lucam.composeum.runtime.store.RuntimeSettings
-import tech.lucam.composeum.runtime.store.resolve
 import tech.lucam.composeum.runtime.store.SettingsStorage
+import tech.lucam.composeum.runtime.store.resolve
+import tech.lucam.composeum.runtime.toPreviewParamState
+import tech.lucam.composeum.runtime.toShareableMap
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewConfig
 import tech.lucam.composeum.runtime.ui.component.LocalResolvedSettings
 import tech.lucam.composeum.runtime.ui.component.LocalRuntimeSettings
@@ -63,7 +64,6 @@ import tech.lucam.composeum.runtime.ui.component.SourceLocationDialog
 import tech.lucam.composeum.runtime.ui.screen.GroupListScreen
 import tech.lucam.composeum.runtime.ui.screen.PreviewDetailScreen
 import tech.lucam.composeum.runtime.ui.screen.PreviewListScreen
-import kotlinx.coroutines.launch
 
 /**
  * Composition local exposing the resolved dark-mode flag to [BrowserWrapper] lambdas.
@@ -138,6 +138,7 @@ fun ComposeumBrowser(
             }
             activeEntry ?: registry.families().find { it.key == familyKey }?.defaultEntry
         }
+
         else -> null
     }
 
@@ -149,6 +150,7 @@ fun ComposeumBrowser(
                 .firstOrNull { it.group.groupKey() == groupKey }
                 ?.group?.name ?: groupKey
         }
+
         PreviewRoute.PreviewDetail("").route -> currentDetailEntry?.name ?: ""
         else -> "Compose Preview"
     }
@@ -160,40 +162,47 @@ fun ComposeumBrowser(
     val currentFamilyKey = currentDetailEntry?.familyKey()
     val isFavorite = currentFamilyKey != null && currentFamilyKey in favoriteFamilyKeys
     val initialRoute = effectiveConfig.initialRoute ?: loadedRuntimeSettings.lastRoute
-    val navigateBackOneLevel = remember(navController, currentRoute, currentBackStack, registry.entries) {
-        {
-            val popped = navController.popBackStack()
-            if (!popped) {
-                when (currentRoute) {
-                    PreviewRoute.PreviewDetail("").route -> {
-                        val parentGroupKey = navArgumentValue(
-                            currentBackStack,
-                            PreviewRoute.PreviewDetail.PARENT_GROUP_ARG,
-                        )
-                        if (parentGroupKey.isNotBlank()) {
-                            navController.navigate(PreviewRoute.PreviewList.routeFor(parentGroupKey)) {
+    val navigateBackOneLevel =
+        remember(navController, currentRoute, currentBackStack, registry.entries) {
+            {
+                val popped = navController.popBackStack()
+                if (!popped) {
+                    when (currentRoute) {
+                        PreviewRoute.PreviewDetail("").route -> {
+                            val parentGroupKey = navArgumentValue(
+                                currentBackStack,
+                                PreviewRoute.PreviewDetail.PARENT_GROUP_ARG,
+                            )
+                            if (parentGroupKey.isNotBlank()) {
+                                navController.navigate(
+                                    PreviewRoute.PreviewList.routeFor(
+                                        parentGroupKey
+                                    )
+                                ) {
+                                    launchSingleTop = true
+                                }
+                            } else {
+                                navController.navigate(PreviewRoute.GroupList.routeFor()) {
+                                    launchSingleTop = true
+                                }
+                            }
+                        }
+
+                        PreviewRoute.PreviewList("").route -> {
+                            navController.navigate(PreviewRoute.GroupList.routeFor()) {
                                 launchSingleTop = true
                             }
-                        } else {
+                        }
+
+                        else -> {
                             navController.navigate(PreviewRoute.GroupList.routeFor()) {
                                 launchSingleTop = true
                             }
                         }
                     }
-                    PreviewRoute.PreviewList("").route -> {
-                        navController.navigate(PreviewRoute.GroupList.routeFor()) {
-                            launchSingleTop = true
-                        }
-                    }
-                    else -> {
-                        navController.navigate(PreviewRoute.GroupList.routeFor()) {
-                            launchSingleTop = true
-                        }
-                    }
                 }
             }
         }
-    }
 
     BackHandler(enabled = !isRoot && !showSettings && !showSourceDialog) {
         navigateBackOneLevel()
@@ -244,11 +253,12 @@ fun ComposeumBrowser(
                                         val familyKey = detailEntry.familyKey()
                                         scope.launch {
                                             storage.update {
-                                                val nextFavorites = if (familyKey in favoriteFamilyKeys) {
-                                                    favoriteFamilyKeys - familyKey
-                                                } else {
-                                                    favoriteFamilyKeys + familyKey
-                                                }.toList()
+                                                val nextFavorites =
+                                                    if (familyKey in favoriteFamilyKeys) {
+                                                        favoriteFamilyKeys - familyKey
+                                                    } else {
+                                                        favoriteFamilyKeys + familyKey
+                                                    }.toList()
                                                 copy(favoriteFamilyKeys = nextFavorites)
                                             }
                                         }
@@ -298,7 +308,8 @@ fun ComposeumBrowser(
                             navArgument(PreviewRoute.PreviewList.ARG) { type = NavType.StringType },
                         ),
                     ) { backStackEntry ->
-                        val groupKey = navArgumentValue(backStackEntry, PreviewRoute.PreviewList.ARG)
+                        val groupKey =
+                            navArgumentValue(backStackEntry, PreviewRoute.PreviewList.ARG)
                         PreviewListScreen(
                             groupKey = groupKey,
                             registry = registry,
@@ -317,10 +328,13 @@ fun ComposeumBrowser(
                     composable(
                         route = PreviewRoute.PreviewDetail("").route,
                         arguments = listOf(
-                            navArgument(PreviewRoute.PreviewDetail.ARG) { type = NavType.StringType },
+                            navArgument(PreviewRoute.PreviewDetail.ARG) {
+                                type = NavType.StringType
+                            },
                         ),
                     ) { backStackEntry ->
-                        val familyKey = navArgumentValue(backStackEntry, PreviewRoute.PreviewDetail.ARG)
+                        val familyKey =
+                            navArgumentValue(backStackEntry, PreviewRoute.PreviewDetail.ARG)
                         val routeState = decodeShareablePreviewState(
                             navArgumentValue(backStackEntry, PreviewRoute.STATE_ARG),
                         )
@@ -344,9 +358,9 @@ fun ComposeumBrowser(
                                             val familyKeyForRecent = entry.familyKey()
                                             copy(
                                                 recentFamilyKeys = (
-                                                    listOf(familyKeyForRecent) +
-                                                        recentFamilyKeys.filterNot { it == familyKeyForRecent }
-                                                    ).take(12),
+                                                        listOf(familyKeyForRecent) +
+                                                                recentFamilyKeys.filterNot { it == familyKeyForRecent }
+                                                        ).take(12),
                                             )
                                         }
                                     }
@@ -407,6 +421,7 @@ fun ComposeumBrowser(
                 val groupKey = navArgumentValue(currentBackStack, PreviewRoute.PreviewList.ARG)
                 PreviewRoute.PreviewList.routeFor(groupKey, shareState)
             }
+
             PreviewRoute.PreviewDetail("").route -> {
                 val familyKey = navArgumentValue(currentBackStack, PreviewRoute.PreviewDetail.ARG)
                 val parentGroupKey = navArgumentValue(
@@ -415,6 +430,7 @@ fun ComposeumBrowser(
                 ).ifBlank { null }
                 PreviewRoute.PreviewDetail.routeFor(familyKey, parentGroupKey, shareState)
             }
+
             else -> return@LaunchedEffect
         }
         effectiveConfig.onShareableRouteChanged?.invoke(route)

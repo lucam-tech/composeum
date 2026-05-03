@@ -45,7 +45,10 @@ class PreviewColorFieldTest {
         var received: Color? = null
         composeRule.setContent {
             MaterialTheme {
-                PreviewColorField(label = "Tint", value = Color.Unspecified, onValue = { received = it })
+                PreviewColorField(
+                    label = "Tint",
+                    value = Color.Unspecified,
+                    onValue = { received = it })
             }
         }
         composeRule.onNodeWithContentDescription("Tint: Primary").performClick()

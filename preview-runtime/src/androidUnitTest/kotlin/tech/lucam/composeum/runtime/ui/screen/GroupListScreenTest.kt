@@ -1,9 +1,8 @@
 package tech.lucam.composeum.runtime.ui.screen
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.Text
-import androidx.compose.ui.test.assertDoesNotExist
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
@@ -11,6 +10,14 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import tech.lucam.composeum.annotation.PreviewGroup
 import tech.lucam.composeum.annotation.PreviewTag
 import tech.lucam.composeum.annotation.SimplePreviewTag
@@ -24,14 +31,6 @@ import tech.lucam.composeum.runtime.store.RuntimeSettings
 import tech.lucam.composeum.runtime.store.SettingsStorage
 import tech.lucam.composeum.runtime.ui.component.LocalRuntimeSettings
 import tech.lucam.composeum.runtime.ui.component.LocalSettingsStorage
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Rule
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 
 @RunWith(RobolectricTestRunner::class)
 class GroupListScreenTest {
@@ -194,7 +193,12 @@ class GroupListScreenTest {
             MaterialTheme {
                 CompositionLocalProvider(
                     LocalRuntimeSettings provides RuntimeSettings(
-                        favoriteFamilyKeys = listOf(entry("PrimaryButton", TestGroup.Buttons).familyKey()),
+                        favoriteFamilyKeys = listOf(
+                            entry(
+                                "PrimaryButton",
+                                TestGroup.Buttons
+                            ).familyKey()
+                        ),
                     ),
                     LocalSettingsStorage provides storage,
                 ) {
@@ -258,7 +262,11 @@ class GroupListScreenTest {
             MaterialTheme {
                 GroupListScreen(
                     registry = registryOf(
-                        entry("PrimaryButton", TestGroup.Buttons, tags = tags("cta", "interactive")),
+                        entry(
+                            "PrimaryButton",
+                            TestGroup.Buttons,
+                            tags = tags("cta", "interactive")
+                        ),
                         entry("DefaultCard", TestGroup.Cards),
                     ),
                     onGroupSelected = {},

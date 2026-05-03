@@ -5,8 +5,8 @@ import tech.lucam.composeum.runtime.PreviewRegistry
 import tech.lucam.composeum.runtime.buildRegistry
 import tech.lucam.composeum.runtime.previewParams
 import tech.lucam.composeum.sample.previews.GreetingPreview
-import tech.lucam.composeum.sample.previews.InboxSummaryPreview
 import tech.lucam.composeum.sample.previews.InboxFilter
+import tech.lucam.composeum.sample.previews.InboxSummaryPreview
 import tech.lucam.composeum.sample.previews.PrimaryButtonPreview
 import tech.lucam.composeum.sample.previews.ProfileCardPreview
 

@@ -31,8 +31,8 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import tech.lucam.composeum.runtime.util.tryOpenInIde
 import kotlinx.coroutines.launch
+import tech.lucam.composeum.runtime.util.tryOpenInIde
 
 @Composable
 internal fun SourceLocationDialog(

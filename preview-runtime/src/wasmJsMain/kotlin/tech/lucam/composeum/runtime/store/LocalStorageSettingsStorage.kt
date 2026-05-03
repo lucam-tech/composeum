@@ -3,7 +3,6 @@ package tech.lucam.composeum.runtime.store
 import kotlinx.browser.window
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**

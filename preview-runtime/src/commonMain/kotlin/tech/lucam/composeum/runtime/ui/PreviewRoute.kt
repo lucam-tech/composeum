@@ -1,9 +1,9 @@
 package tech.lucam.composeum.runtime.ui
 
-import tech.lucam.composeum.runtime.store.ThemeOverride
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import tech.lucam.composeum.runtime.store.ThemeOverride
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
@@ -36,6 +36,7 @@ sealed class PreviewRoute(val route: String) {
         companion object {
             /** Navigation argument name used to pass the selected preview family key. */
             const val ARG = "familyKey"
+
             /** Optional parent group key used to synthesize one-level-back navigation. */
             const val PARENT_GROUP_ARG = "parentGroupKey"
 

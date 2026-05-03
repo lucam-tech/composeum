@@ -30,4 +30,5 @@ data class PreviewRenderContext(
  * The default (`isThumbnail = false`) is correct for any composable rendered outside the
  * browser (e.g. in a standalone app or a standard Compose preview tool).
  */
-val LocalPreviewRenderContext = staticCompositionLocalOf { PreviewRenderContext(isThumbnail = false) }
+val LocalPreviewRenderContext =
+    staticCompositionLocalOf { PreviewRenderContext(isThumbnail = false) }

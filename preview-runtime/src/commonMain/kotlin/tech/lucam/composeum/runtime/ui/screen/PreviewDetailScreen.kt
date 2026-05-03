@@ -10,30 +10,30 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import tech.lucam.composeum.runtime.PreviewEntry
 import tech.lucam.composeum.runtime.PreviewParamState
 import tech.lucam.composeum.runtime.PreviewRegistry
-import tech.lucam.composeum.runtime.PreviewEntry
-import tech.lucam.composeum.runtime.families
-import tech.lucam.composeum.runtime.withCustomTypeDefaults
 import tech.lucam.composeum.runtime.config.PreviewConfig
+import tech.lucam.composeum.runtime.families
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewParamState
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewRenderContext
 import tech.lucam.composeum.runtime.ui.component.ParamPanel
 import tech.lucam.composeum.runtime.ui.component.PreviewRenderContext
 import tech.lucam.composeum.runtime.ui.component.PreviewRenderer
+import tech.lucam.composeum.runtime.withCustomTypeDefaults
 
 private val DETAIL_CONTEXT = PreviewRenderContext(isThumbnail = false)
 
@@ -87,10 +87,12 @@ fun PreviewDetailScreen(
         )
     }
     val activeConfig = config
-    val activeEntry = family.entries.firstOrNull { it.key == selectedEntryKey } ?: family.defaultEntry
+    val activeEntry =
+        family.entries.firstOrNull { it.key == selectedEntryKey } ?: family.defaultEntry
     val previewOverride = activeConfig.previewOverrides[activeEntry.key]
     val groupConfig = activeConfig.groupOverrides[activeEntry.group::class]
-    val effectivePreviewWrapper = previewOverride?.previewWrapper ?: groupConfig?.previewWrapper ?: activeConfig.previewWrapper
+    val effectivePreviewWrapper = previewOverride?.previewWrapper ?: groupConfig?.previewWrapper
+    ?: activeConfig.previewWrapper
     val showParamPanel = previewOverride?.showParamPanel ?: activeConfig.showParamPanel
     val effectiveParamForm = previewOverride?.paramForm ?: activeEntry.paramForm
     val hasParams = effectiveParamForm != null && showParamPanel
@@ -103,7 +105,8 @@ fun PreviewDetailScreen(
     }
 
     fun initialState(entry: PreviewEntry): PreviewParamState {
-        val overrideDefaults = activeConfig.previewOverrides[entry.key]?.paramDefaults?.defaults.orEmpty()
+        val overrideDefaults =
+            activeConfig.previewOverrides[entry.key]?.paramDefaults?.defaults.orEmpty()
         return tech.lucam.composeum.runtime.PreviewParamDefaults(
             defaults = entry.paramDefaults.defaults + overrideDefaults,
         ).toInitialState().withCustomTypeDefaults(entry, activeConfig)

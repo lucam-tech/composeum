@@ -1,20 +1,18 @@
 package tech.lucam.composeum.runtime.ui.component
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.createComposeRule
-import tech.lucam.composeum.annotation.PreviewGroup
-import tech.lucam.composeum.runtime.PreviewEntry
-import tech.lucam.composeum.runtime.PreviewParamDefaults
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import tech.lucam.composeum.annotation.PreviewGroup
+import tech.lucam.composeum.runtime.PreviewEntry
+import tech.lucam.composeum.runtime.PreviewParamDefaults
 
 @RunWith(RobolectricTestRunner::class)
 class PreviewRenderContextTest {
@@ -22,7 +20,9 @@ class PreviewRenderContextTest {
     @get:Rule
     val composeRule = createComposeRule()
 
-    private val group = object : PreviewGroup { override val name = "Test" }
+    private val group = object : PreviewGroup {
+        override val name = "Test"
+    }
 
     private fun entry(captureContext: (PreviewRenderContext) -> Unit) = PreviewEntry(
         key = "test/ctx",

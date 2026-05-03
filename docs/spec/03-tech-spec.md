@@ -80,35 +80,35 @@ composeum/
 
 ```toml
 [versions]
-kotlin               = "2.0.21"
-ksp                  = "2.0.21-1.0.28"
-compose-bom          = "2024.12.01"
-android-gradle       = "8.7.3"
-ksp-api              = "2.0.21-1.0.28"
-datastore            = "1.1.1"
+kotlin = "2.0.21"
+ksp = "2.0.21-1.0.28"
+compose-bom = "2024.12.01"
+android-gradle = "8.7.3"
+ksp-api = "2.0.21-1.0.28"
+datastore = "1.1.1"
 collections-immutable = "0.3.8"
-compile-testing-ksp  = "1.6.0"
-junit                = "4.13.2"
-robolectric          = "4.13"
-navigation-compose   = "2.8.5"
+compile-testing-ksp = "1.6.0"
+junit = "4.13.2"
+robolectric = "4.13"
+navigation-compose = "2.8.5"
 compose-multiplatform = "1.8.2"
 
 [libraries]
-compose-bom               = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
-compose-ui                = { group = "androidx.compose.ui", name = "ui" }
-compose-ui-tooling        = { group = "androidx.compose.ui", name = "ui-tooling" }
-compose-material3         = { group = "androidx.compose.material3", name = "material3" }
-compose-foundation        = { group = "androidx.compose.foundation", name = "foundation" }
-navigation-compose-cmp    = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "navigation-compose" }
-datastore-preferences     = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
-collections-immutable     = { group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version.ref = "collections-immutable" }
+compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
+compose-ui = { group = "androidx.compose.ui", name = "ui" }
+compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
+navigation-compose-cmp = { group = "org.jetbrains.androidx.navigation", name = "navigation-compose", version.ref = "navigation-compose" }
+datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+collections-immutable = { group = "org.jetbrains.kotlinx", name = "kotlinx-collections-immutable", version.ref = "collections-immutable" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version = "1.7.3" }
-ksp-api                   = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp-api" }
-compile-testing-ksp       = { group = "com.github.tschuchortdev", name = "kotlin-compile-testing-ksp", version.ref = "compile-testing-ksp" }
-junit                     = { group = "junit", name = "junit", version.ref = "junit" }
-robolectric               = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
-kotlin-poet               = { group = "com.squareup", name = "kotlinpoet", version = "1.18.1" }
-kotlin-poet-ksp           = { group = "com.squareup", name = "kotlinpoet-ksp", version = "1.18.1" }
+ksp-api = { group = "com.google.devtools.ksp", name = "symbol-processing-api", version.ref = "ksp-api" }
+compile-testing-ksp = { group = "com.github.tschuchortdev", name = "kotlin-compile-testing-ksp", version.ref = "compile-testing-ksp" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+kotlin-poet = { group = "com.squareup", name = "kotlinpoet", version = "1.18.1" }
+kotlin-poet-ksp = { group = "com.squareup", name = "kotlinpoet-ksp", version = "1.18.1" }
 ```
 
 ### Convention plugins
@@ -212,18 +212,18 @@ import tech.lucam.composeum.runtime.PreviewRegistry
 public object GeneratedPreviewRegistry : PreviewRegistry {
     override val entries: List<PreviewEntry> = listOf(
         PreviewEntry(
-            key         = "com.example.ui.PrimaryButtonPreview",
-            name        = "Primary Button",
-            group       = AppGroup.Components.Buttons,
+            key = "com.example.ui.PrimaryButtonPreview",
+            name = "Primary Button",
+            group = AppGroup.Components.Buttons,
             description = "The main CTA button.",
-            tags        = listOf("cta", "interactive"),
-            composable  = { PrimaryButtonPreview() },
-            paramForm   = { state, onUpdate ->
-                              PrimaryButtonPreviewParamForm(state, onUpdate)
-                          },
+            tags = listOf("cta", "interactive"),
+            composable = { PrimaryButtonPreview() },
+            paramForm = { state, onUpdate ->
+                PrimaryButtonPreviewParamForm(state, onUpdate)
+            },
             paramDefaults = PreviewParamDefaults(
                 defaults = mapOf(
-                    "label"   to "Click me",
+                    "label" to "Click me",
                     "enabled" to true,
                     "loading" to false,
                 )
@@ -245,18 +245,18 @@ internal fun PrimaryButtonPreviewParamForm(
     onUpdate: (PreviewParamState) -> Unit,
 ) {
     PreviewStringField(
-        label   = "Label",
-        value   = state["label"] ?: "Click me",
+        label = "Label",
+        value = state["label"] ?: "Click me",
         onValue = { onUpdate(state.put("label", it)) },
     )
     PreviewBooleanField(
-        label   = "Enabled",
-        value   = state["enabled"] ?: true,
+        label = "Enabled",
+        value = state["enabled"] ?: true,
         onValue = { onUpdate(state.put("enabled", it)) },
     )
     PreviewBooleanField(
-        label   = "Loading",
-        value   = state["loading"] ?: false,
+        label = "Loading",
+        value = state["loading"] ?: false,
         onValue = { onUpdate(state.put("loading", it)) },
     )
 }
@@ -277,11 +277,15 @@ sealed class PreviewRoute(val route: String) {
     data object GroupList : PreviewRoute("group_list")
     data class PreviewList(val groupKey: String) :
         PreviewRoute("preview_list/{groupKey}") {
-        companion object { const val ARG = "groupKey" }
+        companion object {
+            const val ARG = "groupKey"
+        }
     }
     data class PreviewDetail(val entryKey: String) :
         PreviewRoute("preview_detail/{entryKey}") {
-        companion object { const val ARG = "entryKey" }
+        companion object {
+            const val ARG = "entryKey"
+        }
     }
 }
 ```
@@ -365,27 +369,33 @@ class PreviewConfigBuilder {
     private var previewWrapper: PreviewWrapper? = null
     private val groupOverrides = mutableMapOf<KClass<out PreviewGroup>, GroupConfig>()
 
-    fun browserWrapper(block: BrowserWrapper) { browserWrapper = block }
-    fun groupWrapper(block: GroupWrapper) { groupWrapper = block }
-    fun previewWrapper(block: PreviewWrapper) { previewWrapper = block }
+    fun browserWrapper(block: BrowserWrapper) {
+        browserWrapper = block
+    }
+    fun groupWrapper(block: GroupWrapper) {
+        groupWrapper = block
+    }
+    fun previewWrapper(block: PreviewWrapper) {
+        previewWrapper = block
+    }
 
     fun groups(block: GroupOverrideBuilder.() -> Unit) {
         GroupOverrideBuilder(groupOverrides).apply(block)
     }
 
     fun build(): PreviewConfig = PreviewConfig(
-        fontScale       = fontScale,
-        uiScale         = uiScale,
-        isDarkMode      = isDarkMode,
-        locale          = locale,
+        fontScale = fontScale,
+        uiScale = uiScale,
+        isDarkMode = isDarkMode,
+        locale = locale,
         showDescription = showDescription,
-        showTags        = showTags,
-        showParamPanel  = showParamPanel,
+        showTags = showTags,
+        showParamPanel = showParamPanel,
         thumbnailColumns = thumbnailColumns,
-        browserWrapper  = browserWrapper,
-        groupWrapper    = groupWrapper,
-        previewWrapper  = previewWrapper,
-        groupOverrides  = groupOverrides,
+        browserWrapper = browserWrapper,
+        groupWrapper = groupWrapper,
+        previewWrapper = previewWrapper,
+        groupOverrides = groupOverrides,
     )
 }
 
