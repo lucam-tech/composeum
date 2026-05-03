@@ -49,6 +49,10 @@ data class RuntimeSettings(
     val expandedGroupKeys: List<String>? = null,
     /** Persisted inline-expanded leaf group keys. Null means use runtime defaults. */
     val inlineExpandedGroupKeys: List<String>? = null,
+    /** Whether the Favorites section is expanded on the root screen. Null means expanded. */
+    val favoritesExpanded: Boolean? = null,
+    /** Whether the Recent section is expanded on the root screen. Null means expanded. */
+    val recentExpanded: Boolean? = null,
     /** Favorited preview family keys. */
     val favoriteFamilyKeys: List<String> = emptyList(),
     /** Most-recently opened preview family keys, newest first. */

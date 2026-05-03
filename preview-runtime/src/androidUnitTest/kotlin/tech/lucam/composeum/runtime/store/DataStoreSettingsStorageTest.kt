@@ -120,6 +120,20 @@ class DataStoreSettingsStorageTest {
     }
 
     @Test
+    fun `update persists root section expansion settings`() = runTest {
+        val storage = buildStorage()
+        storage.update {
+            copy(
+                favoritesExpanded = false,
+                recentExpanded = false,
+            )
+        }
+        val settings = storage.settings.first()
+        assertEquals(false, settings.favoritesExpanded)
+        assertEquals(false, settings.recentExpanded)
+    }
+
+    @Test
     fun `reset clears all keys so settings reverts to defaults`() = runTest {
         val storage = buildStorage()
         storage.update {
@@ -154,6 +168,8 @@ class DataStoreSettingsStorageTest {
         assertNull(settings.colorBlindMode)
         assertNull(settings.reducedMotionMode)
         assertNull(settings.largeTouchTargetsMode)
+        assertNull(settings.favoritesExpanded)
+        assertNull(settings.recentExpanded)
     }
 
     @Test

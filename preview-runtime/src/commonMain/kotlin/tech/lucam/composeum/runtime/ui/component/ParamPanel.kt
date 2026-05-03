@@ -1,6 +1,5 @@
 package tech.lucam.composeum.runtime.ui.component
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -89,7 +88,7 @@ fun ParamPanel(
                 }
             }
 
-            AnimatedVisibility(visible = expanded) {
+            if (expanded) {
                 if (entry.paramForm == null) {
                     Text(
                         text = "No parameters",

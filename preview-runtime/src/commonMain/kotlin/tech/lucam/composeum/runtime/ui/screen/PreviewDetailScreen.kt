@@ -30,7 +30,6 @@ import tech.lucam.composeum.runtime.families
 import tech.lucam.composeum.runtime.withCustomTypeDefaults
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewConfig
-import tech.lucam.composeum.runtime.ui.component.LocalAccessibilityPreviewState
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewParamState
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewRenderContext
 import tech.lucam.composeum.runtime.ui.component.ParamPanel
@@ -93,8 +92,6 @@ fun PreviewDetailScreen(
     val previewOverride = activeConfig.previewOverrides[activeEntry.key]
     val groupConfig = activeConfig.groupOverrides[activeEntry.group::class]
     val effectivePreviewWrapper = previewOverride?.previewWrapper ?: groupConfig?.previewWrapper ?: activeConfig.previewWrapper
-    val accessibilityState = LocalAccessibilityPreviewState.current
-    val accessibilityWrapper = activeConfig.accessibilityWrapper
     val showParamPanel = previewOverride?.showParamPanel ?: activeConfig.showParamPanel
     val hasParams = activeEntry.paramForm != null && showParamPanel
     val paramStates = remember(familyKey, initialSelectedEntryKey, initialParamState) {
@@ -157,24 +154,12 @@ fun PreviewDetailScreen(
                 LocalPreviewParamState provides paramState,
                 LocalPreviewRenderContext provides DETAIL_CONTEXT,
             ) {
-                if (accessibilityWrapper != null) {
-                    accessibilityWrapper(accessibilityState, activeEntry) {
-                        if (effectivePreviewWrapper != null) {
-                            effectivePreviewWrapper(activeEntry) {
-                                PreviewRenderer(entry = activeEntry, modifier = Modifier.wrapContentSize())
-                            }
-                        } else {
-                            PreviewRenderer(entry = activeEntry, modifier = Modifier.wrapContentSize())
-                        }
-                    }
-                } else {
-                    if (effectivePreviewWrapper != null) {
-                        effectivePreviewWrapper(activeEntry) {
-                            PreviewRenderer(entry = activeEntry, modifier = Modifier.wrapContentSize())
-                        }
-                    } else {
+                if (effectivePreviewWrapper != null) {
+                    effectivePreviewWrapper(activeEntry) {
                         PreviewRenderer(entry = activeEntry, modifier = Modifier.wrapContentSize())
                     }
+                } else {
+                    PreviewRenderer(entry = activeEntry, modifier = Modifier.wrapContentSize())
                 }
             }
         }

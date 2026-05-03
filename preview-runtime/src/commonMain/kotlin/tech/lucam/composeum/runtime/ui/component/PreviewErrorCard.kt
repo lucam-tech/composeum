@@ -1,6 +1,5 @@
 package tech.lucam.composeum.runtime.ui.component
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -48,7 +47,7 @@ internal fun PreviewErrorCard(throwable: Throwable, modifier: Modifier = Modifie
             TextButton(onClick = { stackExpanded = !stackExpanded }) {
                 Text(if (stackExpanded) "Hide stack trace" else "Show stack trace")
             }
-            AnimatedVisibility(visible = stackExpanded) {
+            if (stackExpanded) {
                 Text(
                     text = throwable.stackTraceToString(),
                     style = MaterialTheme.typography.bodySmall,

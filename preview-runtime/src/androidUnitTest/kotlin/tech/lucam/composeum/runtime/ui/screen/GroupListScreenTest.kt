@@ -1,7 +1,9 @@
 package tech.lucam.composeum.runtime.ui.screen
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.Text
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
@@ -17,12 +19,19 @@ import tech.lucam.composeum.runtime.PreviewParamDefaults
 import tech.lucam.composeum.runtime.PreviewRegistry
 import tech.lucam.composeum.runtime.config.GroupExpansionMode
 import tech.lucam.composeum.runtime.config.PreviewConfig
+import tech.lucam.composeum.runtime.familyKey
+import tech.lucam.composeum.runtime.store.RuntimeSettings
+import tech.lucam.composeum.runtime.store.SettingsStorage
+import tech.lucam.composeum.runtime.ui.component.LocalRuntimeSettings
+import tech.lucam.composeum.runtime.ui.component.LocalSettingsStorage
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 
 @RunWith(RobolectricTestRunner::class)
 class GroupListScreenTest {
@@ -74,6 +83,22 @@ class GroupListScreenTest {
         object : PreviewRegistry {
             override val entries = entries.toList()
         }
+
+    private class FakeSettingsStorage(
+        initial: RuntimeSettings = RuntimeSettings(),
+    ) : SettingsStorage {
+        private val state = MutableStateFlow(initial)
+
+        override val settings: Flow<RuntimeSettings> = state
+
+        override suspend fun update(block: RuntimeSettings.() -> RuntimeSettings) {
+            state.value = state.value.block()
+        }
+
+        override suspend fun reset() {
+            state.value = RuntimeSettings()
+        }
+    }
 
     /** Finds the search text field using [hasSetTextAction] in the unmerged tree. */
     private fun typeInSearchField(text: String) {
@@ -156,6 +181,33 @@ class GroupListScreenTest {
         }
 
         composeRule.onNode(hasSetTextAction(), useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `favorites section can be collapsed from root screen`() {
+        val storage = FakeSettingsStorage(
+            RuntimeSettings(
+                favoriteFamilyKeys = listOf(entry("PrimaryButton", TestGroup.Buttons).familyKey()),
+            ),
+        )
+        composeRule.setContent {
+            MaterialTheme {
+                CompositionLocalProvider(
+                    LocalRuntimeSettings provides RuntimeSettings(
+                        favoriteFamilyKeys = listOf(entry("PrimaryButton", TestGroup.Buttons).familyKey()),
+                    ),
+                    LocalSettingsStorage provides storage,
+                ) {
+                    GroupListScreen(
+                        registry = registryOf(entry("PrimaryButton", TestGroup.Buttons)),
+                        onGroupSelected = {},
+                    )
+                }
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Collapse Favorites").performClick()
+        composeRule.onNodeWithText("PrimaryButton").assertDoesNotExist()
     }
 
     // --- Search filters ---

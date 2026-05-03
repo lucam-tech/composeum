@@ -47,7 +47,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import tech.lucam.composeum.runtime.ColorBlindMode
 import tech.lucam.composeum.runtime.config.BuiltInSettingId
 import tech.lucam.composeum.runtime.config.LocaleOption
 import tech.lucam.composeum.runtime.config.PreviewConfig
@@ -78,11 +77,6 @@ private val defaultSettingsItems: List<SettingItem> = listOf(
     SettingItem.BuiltIn(BuiltInSettingId.SHOW_DESCRIPTIONS),
     SettingItem.BuiltIn(BuiltInSettingId.SHOW_TAGS),
     SettingItem.BuiltIn(BuiltInSettingId.LOCALE),
-    SettingItem.BuiltIn(BuiltInSettingId.ACCESSIBILITY_SCREEN_READER),
-    SettingItem.BuiltIn(BuiltInSettingId.ACCESSIBILITY_HIGH_CONTRAST),
-    SettingItem.BuiltIn(BuiltInSettingId.ACCESSIBILITY_COLOR_BLIND),
-    SettingItem.BuiltIn(BuiltInSettingId.ACCESSIBILITY_REDUCED_MOTION),
-    SettingItem.BuiltIn(BuiltInSettingId.ACCESSIBILITY_LARGE_TOUCH_TARGETS),
     SettingItem.BuiltIn(BuiltInSettingId.RESET),
 )
 
@@ -161,45 +155,12 @@ private fun BuiltInSetting(
         BuiltInSettingId.THUMBNAIL_COLUMNS -> ThumbnailColumnsSetting(config, runtimeSettings, storage, scope)
         BuiltInSettingId.SHOW_DESCRIPTIONS -> ShowDescriptionsSetting(config, runtimeSettings, storage, scope)
         BuiltInSettingId.SHOW_TAGS -> ShowTagsSetting(config, runtimeSettings, storage, scope)
-        BuiltInSettingId.LOCALE -> LocaleSetting(runtimeSettings, storage, scope,
-            config.localeOptions ?: defaultLocaleOptions)
-        BuiltInSettingId.ACCESSIBILITY_SCREEN_READER -> AccessibilityToggleSetting(
-            title = "Screen reader mode",
-            description = "Expose a screen-reader-focused preview environment.",
-            checked = runtimeSettings.screenReaderMode ?: config.accessibilityState.screenReaderMode,
-            contentDescription = "Screen reader mode switch",
-            onCheckedChange = { checked ->
-                scope.launch { storage.update { copy(screenReaderMode = checked) } }
-            },
-        )
-        BuiltInSettingId.ACCESSIBILITY_HIGH_CONTRAST -> AccessibilityToggleSetting(
-            title = "High contrast",
-            description = "Expose a high-contrast preview environment.",
-            checked = runtimeSettings.highContrastMode ?: config.accessibilityState.highContrastMode,
-            contentDescription = "High contrast switch",
-            onCheckedChange = { checked ->
-                scope.launch { storage.update { copy(highContrastMode = checked) } }
-            },
-        )
-        BuiltInSettingId.ACCESSIBILITY_COLOR_BLIND -> ColorBlindModeSetting(config, runtimeSettings, storage, scope)
-        BuiltInSettingId.ACCESSIBILITY_REDUCED_MOTION -> AccessibilityToggleSetting(
-            title = "Reduced motion",
-            description = "Render previews as if motion reduction is preferred.",
-            checked = runtimeSettings.reducedMotionMode ?: config.accessibilityState.reducedMotionMode,
-            contentDescription = "Reduced motion switch",
-            onCheckedChange = { checked ->
-                scope.launch { storage.update { copy(reducedMotionMode = checked) } }
-            },
-        )
-        BuiltInSettingId.ACCESSIBILITY_LARGE_TOUCH_TARGETS -> AccessibilityToggleSetting(
-            title = "Large touch targets",
-            description = "Expose a large-target preview environment.",
-            checked = runtimeSettings.largeTouchTargetsMode ?: config.accessibilityState.largeTouchTargetsMode,
-            contentDescription = "Large touch targets switch",
-            onCheckedChange = { checked ->
-                scope.launch { storage.update { copy(largeTouchTargetsMode = checked) } }
-            },
-        )
+        BuiltInSettingId.LOCALE -> LocaleSetting(runtimeSettings, storage, scope, config.localeOptions ?: defaultLocaleOptions)
+        BuiltInSettingId.ACCESSIBILITY_SCREEN_READER,
+        BuiltInSettingId.ACCESSIBILITY_HIGH_CONTRAST,
+        BuiltInSettingId.ACCESSIBILITY_COLOR_BLIND,
+        BuiltInSettingId.ACCESSIBILITY_REDUCED_MOTION,
+        BuiltInSettingId.ACCESSIBILITY_LARGE_TOUCH_TARGETS -> Unit
         BuiltInSettingId.RESET -> ResetSetting(storage, scope)
         // Unknown IDs are silently ignored to allow forward compatibility.
     }
@@ -455,85 +416,6 @@ private fun LocaleSetting(
     }
 }
 
-@Composable
-private fun AccessibilityToggleSetting(
-    title: String,
-    description: String,
-    checked: Boolean,
-    contentDescription: String,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    SettingLabel(title)
-    Text(
-        text = description,
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = if (checked) "On" else "Off",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            modifier = Modifier.semantics { this.contentDescription = contentDescription },
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ColorBlindModeSetting(
-    config: PreviewConfig,
-    runtimeSettings: RuntimeSettings,
-    storage: SettingsStorage,
-    scope: CoroutineScope,
-) {
-    var menuExpanded by remember { mutableStateOf(false) }
-    val selectedMode = runtimeSettings.colorBlindMode ?: config.accessibilityState.colorBlindMode
-
-    SettingLabel("Color blindness mode")
-    Text(
-        text = "Select a color-vision simulation mode for accessibility testing.",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    ExposedDropdownMenuBox(
-        expanded = menuExpanded,
-        onExpandedChange = { menuExpanded = it },
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        OutlinedTextField(
-            value = selectedMode.displayName(),
-            onValueChange = {},
-            readOnly = true,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(menuExpanded) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                .semantics { contentDescription = "Color blindness mode dropdown" },
-        )
-        ExposedDropdownMenu(
-            expanded = menuExpanded,
-            onDismissRequest = { menuExpanded = false },
-        ) {
-            ColorBlindMode.entries.forEach { mode ->
-                DropdownMenuItem(
-                    text = { Text(mode.displayName()) },
-                    onClick = {
-                        scope.launch { storage.update { copy(colorBlindMode = mode) } }
-                        menuExpanded = false
-                    },
-                )
-            }
-        }
-    }
-}
 
 @Composable
 private fun ResetSetting(
@@ -640,13 +522,6 @@ private fun Float.format1dp(): String {
     val whole = toInt()
     val dec = kotlin.math.abs(((this - whole) * 10).toInt())
     return "$whole.$dec"
-}
-
-private fun ColorBlindMode.displayName(): String = when (this) {
-    ColorBlindMode.NONE -> "None"
-    ColorBlindMode.PROTANOPIA -> "Protanopia"
-    ColorBlindMode.DEUTERANOPIA -> "Deuteranopia"
-    ColorBlindMode.TRITANOPIA -> "Tritanopia"
 }
 
 private fun resolveSelectedTheme(

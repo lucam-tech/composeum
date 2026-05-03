@@ -1,5 +1,6 @@
 package tech.lucam.composeum.runtime.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -22,14 +23,13 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavType
@@ -49,10 +49,9 @@ import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.ThemeOption
 import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
 import tech.lucam.composeum.runtime.config.mergedWith
-import tech.lucam.composeum.runtime.ui.component.LocalAccessibilityPreviewState
 import tech.lucam.composeum.runtime.store.RuntimeSettings
+import tech.lucam.composeum.runtime.store.resolve
 import tech.lucam.composeum.runtime.store.SettingsStorage
-import tech.lucam.composeum.runtime.store.SettingsViewModel
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewConfig
 import tech.lucam.composeum.runtime.ui.component.LocalResolvedSettings
 import tech.lucam.composeum.runtime.ui.component.LocalRuntimeSettings
@@ -104,18 +103,15 @@ fun ComposeumBrowser(
 ) {
     val effectiveConfig = remember(registry, config) { registry.config.mergedWith(config) }
     val scope = rememberCoroutineScope()
-
-    // Bridge isSystemInDarkTheme() — a composable — into a flow so SettingsViewModel
-    // can combine it with the persisted ThemeOverride when resolving isDark.
     val systemIsDark = isSystemInDarkTheme()
-    val systemIsDarkFlow = remember { snapshotFlow { systemIsDark } }
-
-    val viewModel = remember(storage, effectiveConfig) {
-        SettingsViewModel(storage, effectiveConfig, scope, systemIsDarkFlow)
+    val runtimeSettings by produceState<RuntimeSettings?>(initialValue = null, storage) {
+        storage.settings.collect { value = it }
     }
-
-    val resolvedSettings by viewModel.resolvedSettings.collectAsState()
-    val runtimeSettings by storage.settings.collectAsState(initial = RuntimeSettings())
+    if (runtimeSettings == null) return
+    val loadedRuntimeSettings = runtimeSettings!!
+    val resolvedSettings = remember(loadedRuntimeSettings, effectiveConfig, systemIsDark) {
+        loadedRuntimeSettings.resolve(effectiveConfig, systemIsDark)
+    }
 
     val navController = rememberNavController()
     val currentBackStack by navController.currentBackStackEntryAsState()
@@ -156,46 +152,55 @@ fun ComposeumBrowser(
     var showSettings by remember { mutableStateOf(false) }
     var showSourceDialog by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val favoriteFamilyKeys = runtimeSettings.favoriteFamilyKeys.toSet()
+    val favoriteFamilyKeys = loadedRuntimeSettings.favoriteFamilyKeys.toSet()
     val currentFamilyKey = currentDetailEntry?.familyKey()
     val isFavorite = currentFamilyKey != null && currentFamilyKey in favoriteFamilyKeys
-    val initialRoute = effectiveConfig.initialRoute ?: runtimeSettings.lastRoute
-    var restoredInitialRoute by remember(initialRoute) { mutableStateOf(false) }
-
-    LaunchedEffect(navController, initialRoute, restoredInitialRoute) {
-        if (!restoredInitialRoute && !initialRoute.isNullOrBlank()) {
-            restoredInitialRoute = true
-            navController.navigate(initialRoute) {
-                launchSingleTop = true
+    val initialRoute = effectiveConfig.initialRoute ?: loadedRuntimeSettings.lastRoute
+    val navigateBackOneLevel = remember(navController, currentRoute, currentBackStack, registry.entries) {
+        {
+            val popped = navController.popBackStack()
+            if (!popped) {
+                when (currentRoute) {
+                    PreviewRoute.PreviewDetail("").route -> {
+                        val parentGroupKey = navArgumentValue(
+                            currentBackStack,
+                            PreviewRoute.PreviewDetail.PARENT_GROUP_ARG,
+                        )
+                        if (parentGroupKey.isNotBlank()) {
+                            navController.navigate(PreviewRoute.PreviewList.routeFor(parentGroupKey)) {
+                                launchSingleTop = true
+                            }
+                        } else {
+                            navController.navigate(PreviewRoute.GroupList.routeFor()) {
+                                launchSingleTop = true
+                            }
+                        }
+                    }
+                    PreviewRoute.PreviewList("").route -> {
+                        navController.navigate(PreviewRoute.GroupList.routeFor()) {
+                            launchSingleTop = true
+                        }
+                    }
+                    else -> {
+                        navController.navigate(PreviewRoute.GroupList.routeFor()) {
+                            launchSingleTop = true
+                        }
+                    }
+                }
             }
         }
     }
 
-    LaunchedEffect(currentShareableState) {
-        val state = currentShareableState ?: return@LaunchedEffect
-        storage.update {
-            copy(
-                themeOverride = state.themeOverride ?: themeOverride,
-                themeId = state.themeId ?: themeId,
-                fontScale = state.fontScale ?: fontScale,
-                uiScale = state.uiScale ?: uiScale,
-                locale = state.locale ?: locale,
-                screenReaderMode = state.accessibilityState.screenReaderMode,
-                highContrastMode = state.accessibilityState.highContrastMode,
-                colorBlindMode = state.accessibilityState.colorBlindMode,
-                reducedMotionMode = state.accessibilityState.reducedMotionMode,
-                largeTouchTargetsMode = state.accessibilityState.largeTouchTargetsMode,
-            )
-        }
+    BackHandler(enabled = !isRoot && !showSettings && !showSourceDialog) {
+        navigateBackOneLevel()
     }
 
     val browserContent: @Composable () -> Unit = {
         CompositionLocalProvider(
             LocalResolvedSettings provides resolvedSettings,
-            LocalRuntimeSettings provides runtimeSettings,
+            LocalRuntimeSettings provides loadedRuntimeSettings,
             LocalSettingsStorage provides storage,
             LocalPreviewConfig provides effectiveConfig,
-            LocalAccessibilityPreviewState provides resolvedSettings.accessibilityState,
         ) {
             Scaffold(
                 modifier = modifier,
@@ -204,7 +209,9 @@ fun ComposeumBrowser(
                         title = { Text(title) },
                         navigationIcon = {
                             if (!isRoot) {
-                                IconButton(onClick = { navController.popBackStack() }) {
+                                IconButton(
+                                    onClick = navigateBackOneLevel,
+                                ) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                         contentDescription = "Navigate back",
@@ -265,7 +272,7 @@ fun ComposeumBrowser(
             ) { innerPadding ->
                 NavHost(
                     navController = navController,
-                    startDestination = PreviewRoute.GroupList.route,
+                    startDestination = initialRoute ?: PreviewRoute.GroupList.routeFor(),
                     modifier = Modifier.padding(innerPadding),
                 ) {
                     composable(route = PreviewRoute.GroupList.route) {
@@ -294,7 +301,12 @@ fun ComposeumBrowser(
                             config = effectiveConfig,
                             onEntrySelected = { familyKey ->
                                 activeDetailEntryKey = null
-                                navController.navigate(PreviewRoute.PreviewDetail.routeFor(familyKey))
+                                navController.navigate(
+                                    PreviewRoute.PreviewDetail.routeFor(
+                                        familyKey = familyKey,
+                                        parentGroupKey = groupKey,
+                                    ),
+                                )
                             },
                         )
                     }
@@ -371,7 +383,7 @@ fun ComposeumBrowser(
         currentDetailEntry,
         activeDetailParamState,
         resolvedSettings,
-        runtimeSettings.themeOverride,
+        loadedRuntimeSettings.themeOverride,
     ) {
         val routePattern = currentRoute ?: return@LaunchedEffect
         val shareState = ShareablePreviewState(
@@ -380,11 +392,10 @@ fun ComposeumBrowser(
                 activeDetailParamState?.toShareableMap(entry)
             }.orEmpty(),
             themeId = resolvedSettings.theme.id,
-            themeOverride = runtimeSettings.themeOverride,
+            themeOverride = loadedRuntimeSettings.themeOverride,
             fontScale = resolvedSettings.fontScale,
             uiScale = resolvedSettings.uiScale,
             locale = resolvedSettings.locale,
-            accessibilityState = resolvedSettings.accessibilityState,
         )
         val route = when (routePattern) {
             PreviewRoute.GroupList.route -> PreviewRoute.GroupList.routeFor(shareState)
@@ -394,13 +405,18 @@ fun ComposeumBrowser(
             }
             PreviewRoute.PreviewDetail("").route -> {
                 val familyKey = navArgumentValue(currentBackStack, PreviewRoute.PreviewDetail.ARG)
-                PreviewRoute.PreviewDetail.routeFor(familyKey, shareState)
+                val parentGroupKey = navArgumentValue(
+                    currentBackStack,
+                    PreviewRoute.PreviewDetail.PARENT_GROUP_ARG,
+                ).ifBlank { null }
+                PreviewRoute.PreviewDetail.routeFor(familyKey, parentGroupKey, shareState)
             }
             else -> return@LaunchedEffect
         }
         effectiveConfig.onShareableRouteChanged?.invoke(route)
-        if (runtimeSettings.lastRoute != route) {
-            storage.update { copy(lastRoute = route) }
+        val persistedRoute = route.substringBefore('?')
+        if (loadedRuntimeSettings.lastRoute != persistedRoute) {
+            storage.update { copy(lastRoute = persistedRoute) }
         }
     }
 

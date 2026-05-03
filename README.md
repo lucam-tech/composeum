@@ -87,11 +87,6 @@ consumer flow today.
 
 ## Target support
 
-Use [docs/spec/08-target-support.md](docs/spec/08-target-support.md) for the
-plain-language support matrix and stability guidance.
-
-Short version:
-
 - Stable and recommended: Android hosting via `ComposeumBrowserActivity`
 - Stable: shared preview declarations consumed by Android builds
 - Experimental: wasm/browser hosting and opt-in Android Studio `@Preview` import
@@ -1071,9 +1066,3 @@ Key versions:
 | KotlinPoet            | 2.3.0         |
 
 ---
-
-## Release checklist
-
-Use [docs/release-checklist.md](docs/release-checklist.md) for the canonical
-Maven Central publishing flow, signing environment variables, and verification
-commands.

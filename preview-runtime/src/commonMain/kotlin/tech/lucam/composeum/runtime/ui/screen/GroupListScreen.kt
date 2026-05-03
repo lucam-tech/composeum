@@ -33,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,6 +53,7 @@ import tech.lucam.composeum.runtime.ui.component.LocalResolvedSettings
 import tech.lucam.composeum.runtime.ui.component.LocalRuntimeSettings
 import tech.lucam.composeum.runtime.ui.component.LocalSettingsStorage
 import tech.lucam.composeum.runtime.ui.component.PreviewThumbnailCard
+import kotlinx.coroutines.launch
 
 /**
  * Displays a searchable, expandable tree of preview groups.
@@ -84,6 +86,7 @@ fun GroupListScreen(
     val settings = LocalResolvedSettings.current
     val runtimeSettings = LocalRuntimeSettings.current
     val storage = LocalSettingsStorage.current
+    val scope = rememberCoroutineScope()
     var query by remember { mutableStateOf("") }
     val families = remember(registry.entries) { registry.families() }
     val rootNodes = remember(families) {
@@ -103,10 +106,12 @@ fun GroupListScreen(
     var expandedKeys by remember(rootNodes, runtimeSettings.expandedGroupKeys) {
         mutableStateOf(runtimeSettings.expandedGroupKeys?.toSet() ?: rootNodes.map { it.key }.toSet())
     }
+    var expandedKeysDirty by remember { mutableStateOf(false) }
     // Tracks which leaf nodes are expanded inline (all start collapsed).
     var inlineExpandedKeys by remember(runtimeSettings.inlineExpandedGroupKeys) {
         mutableStateOf(runtimeSettings.inlineExpandedGroupKeys?.toSet() ?: emptySet())
     }
+    var inlineExpandedKeysDirty by remember { mutableStateOf(false) }
     val favoriteFamilyKeys = remember(runtimeSettings.favoriteFamilyKeys) {
         runtimeSettings.favoriteFamilyKeys.toSet()
     }
@@ -114,11 +119,19 @@ fun GroupListScreen(
     val hasFlavoredFamilies = remember(families) { families.any { it.entries.size > 1 } }
     var favoritesOnly by remember { mutableStateOf(false) }
     var flavoredOnly by remember { mutableStateOf(false) }
+    var favoritesExpanded by remember(runtimeSettings.favoritesExpanded) {
+        mutableStateOf(runtimeSettings.favoritesExpanded ?: true)
+    }
+    var recentExpanded by remember(runtimeSettings.recentExpanded) {
+        mutableStateOf(runtimeSettings.recentExpanded ?: true)
+    }
 
-    LaunchedEffect(expandedKeys) {
+    LaunchedEffect(expandedKeys, expandedKeysDirty) {
+        if (!expandedKeysDirty) return@LaunchedEffect
         storage.update { copy(expandedGroupKeys = expandedKeys.toList()) }
     }
-    LaunchedEffect(inlineExpandedKeys) {
+    LaunchedEffect(inlineExpandedKeys, inlineExpandedKeysDirty) {
+        if (!inlineExpandedKeysDirty) return@LaunchedEffect
         storage.update { copy(inlineExpandedGroupKeys = inlineExpandedKeys.toList()) }
     }
 
@@ -199,24 +212,50 @@ fun GroupListScreen(
         if (!isFiltered) {
             LazyColumn {
                 if (favoriteFamilies.isNotEmpty()) {
-                    item(key = "favorites_header") { SectionHeader("Favorites") }
-                    entryGridItem(
-                        nodeKey = "favorites",
-                        entries = favoriteFamilies.map(PreviewFamily::defaultEntry),
-                        config = config,
-                        depth = 0,
-                        onEntrySelected = onEntrySelected,
-                    )
+                    item(key = "favorites_header") {
+                        SectionHeader(
+                            title = "Favorites",
+                            expanded = favoritesExpanded,
+                            onToggle = {
+                                favoritesExpanded = !favoritesExpanded
+                                scope.launch {
+                                    storage.update { copy(favoritesExpanded = favoritesExpanded) }
+                                }
+                            },
+                        )
+                    }
+                    if (favoritesExpanded) {
+                        entryGridItem(
+                            nodeKey = "favorites",
+                            entries = favoriteFamilies.map(PreviewFamily::defaultEntry),
+                            config = config,
+                            depth = 0,
+                            onEntrySelected = onEntrySelected,
+                        )
+                    }
                 }
                 if (recentFamilies.isNotEmpty()) {
-                    item(key = "recents_header") { SectionHeader("Recent") }
-                    entryGridItem(
-                        nodeKey = "recent",
-                        entries = recentFamilies.map(PreviewFamily::defaultEntry),
-                        config = config,
-                        depth = 0,
-                        onEntrySelected = onEntrySelected,
-                    )
+                    item(key = "recents_header") {
+                        SectionHeader(
+                            title = "Recent",
+                            expanded = recentExpanded,
+                            onToggle = {
+                                recentExpanded = !recentExpanded
+                                scope.launch {
+                                    storage.update { copy(recentExpanded = recentExpanded) }
+                                }
+                            },
+                        )
+                    }
+                    if (recentExpanded) {
+                        entryGridItem(
+                            nodeKey = "recent",
+                            entries = recentFamilies.map(PreviewFamily::defaultEntry),
+                            config = config,
+                            depth = 0,
+                            onEntrySelected = onEntrySelected,
+                        )
+                    }
                 }
                 rootPreviewNodes.forEach { node ->
                     entryGridItem(node.key, node.entries, config, 0, onEntrySelected)
@@ -226,10 +265,12 @@ fun GroupListScreen(
                     expandedKeys = expandedKeys,
                     inlineExpandedKeys = inlineExpandedKeys,
                     onToggle = { key ->
+                        expandedKeysDirty = true
                         expandedKeys = if (key in expandedKeys) expandedKeys - key
                         else expandedKeys + key
                     },
                     onInlineToggle = { key ->
+                        inlineExpandedKeysDirty = true
                         inlineExpandedKeys = if (key in inlineExpandedKeys) inlineExpandedKeys - key
                         else inlineExpandedKeys + key
                     },
@@ -270,6 +311,7 @@ fun GroupListScreen(
                         nodes = filteredGroupedNodes,
                         inlineExpandedKeys = inlineExpandedKeys,
                         onInlineToggle = { key ->
+                            inlineExpandedKeysDirty = true
                             inlineExpandedKeys = if (key in inlineExpandedKeys) inlineExpandedKeys - key
                             else inlineExpandedKeys + key
                         },
@@ -286,12 +328,30 @@ fun GroupListScreen(
 }
 
 @Composable
-private fun SectionHeader(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleSmall,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-    )
+private fun SectionHeader(
+    title: String,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onToggle)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .semantics { role = Role.Button },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            imageVector = if (expanded) Icons.Default.KeyboardArrowDown
+            else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = if (expanded) "Collapse $title" else "Expand $title",
+        )
+    }
 }
 
 // ── Lazy list builders ────────────────────────────────────────────────────────

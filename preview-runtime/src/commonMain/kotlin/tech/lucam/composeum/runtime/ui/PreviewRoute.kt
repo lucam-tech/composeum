@@ -1,6 +1,5 @@
 package tech.lucam.composeum.runtime.ui
 
-import tech.lucam.composeum.runtime.AccessibilityPreviewState
 import tech.lucam.composeum.runtime.store.ThemeOverride
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -13,7 +12,7 @@ sealed class PreviewRoute(val route: String) {
     /** Root screen showing the group tree. */
     data object GroupList : PreviewRoute("group_list?${STATE_ARG}={${STATE_ARG}}") {
         fun routeFor(state: ShareablePreviewState? = null): String =
-            buildRoute("group_list", state)
+            buildRoute("group_list", state = state)
     }
 
     /** Grid screen listing previews that belong to one resolved group key. */
@@ -25,20 +24,33 @@ sealed class PreviewRoute(val route: String) {
 
             /** Builds a concrete navigation route for [groupKey]. */
             fun routeFor(groupKey: String, state: ShareablePreviewState? = null): String =
-                buildRoute("preview_list/${groupKey.encodePathSegment()}", state)
+                buildRoute("preview_list/${groupKey.encodePathSegment()}", state = state)
         }
     }
 
     /** Detail screen for one preview family, addressed by [familyKey]. */
     data class PreviewDetail(val familyKey: String) :
-        PreviewRoute("preview_detail/{${ARG}}?${STATE_ARG}={${STATE_ARG}}") {
+        PreviewRoute(
+            "preview_detail/{${ARG}}?${PARENT_GROUP_ARG}={${PARENT_GROUP_ARG}}&${STATE_ARG}={${STATE_ARG}}",
+        ) {
         companion object {
             /** Navigation argument name used to pass the selected preview family key. */
             const val ARG = "familyKey"
+            /** Optional parent group key used to synthesize one-level-back navigation. */
+            const val PARENT_GROUP_ARG = "parentGroupKey"
 
             /** Builds a concrete navigation route for [familyKey]. */
-            fun routeFor(familyKey: String, state: ShareablePreviewState? = null): String =
-                buildRoute("preview_detail/${familyKey.encodePathSegment()}", state)
+            fun routeFor(
+                familyKey: String,
+                parentGroupKey: String? = null,
+                state: ShareablePreviewState? = null,
+            ): String = buildRoute(
+                "preview_detail/${familyKey.encodePathSegment()}",
+                buildMap {
+                    parentGroupKey?.let { put(PARENT_GROUP_ARG, it.encodePathSegment()) }
+                },
+                state,
+            )
         }
     }
 
@@ -61,11 +73,19 @@ data class ShareablePreviewState(
     val fontScale: Float? = null,
     val uiScale: Float? = null,
     val locale: String? = null,
-    val accessibilityState: AccessibilityPreviewState = AccessibilityPreviewState(),
 )
 
-private fun buildRoute(basePath: String, state: ShareablePreviewState?): String =
-    state?.encodedOrNull()?.let { encoded -> "$basePath?${PreviewRoute.STATE_ARG}=$encoded" } ?: basePath
+private fun buildRoute(
+    basePath: String,
+    queryParams: Map<String, String> = emptyMap(),
+    state: ShareablePreviewState?,
+): String {
+    val params = buildList {
+        queryParams.forEach { (key, value) -> add("$key=$value") }
+        state?.encodedOrNull()?.let { add("${PreviewRoute.STATE_ARG}=$it") }
+    }
+    return if (params.isEmpty()) basePath else "$basePath?${params.joinToString("&")}"
+}
 
 @OptIn(ExperimentalEncodingApi::class)
 fun ShareablePreviewState.encodedOrNull(): String? = runCatching {

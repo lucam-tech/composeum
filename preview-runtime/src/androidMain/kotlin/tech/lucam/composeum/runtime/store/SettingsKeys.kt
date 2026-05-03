@@ -22,6 +22,8 @@ internal object SettingsKeys {
     val LAST_ROUTE = stringPreferencesKey("last_route")
     val EXPANDED_GROUP_KEYS = stringPreferencesKey("expanded_group_keys")
     val INLINE_EXPANDED_GROUP_KEYS = stringPreferencesKey("inline_expanded_group_keys")
+    val FAVORITES_EXPANDED = booleanPreferencesKey("favorites_expanded")
+    val RECENT_EXPANDED = booleanPreferencesKey("recent_expanded")
     val FAVORITE_FAMILY_KEYS = stringPreferencesKey("favorite_family_keys")
     val RECENT_FAMILY_KEYS = stringPreferencesKey("recent_family_keys")
 }

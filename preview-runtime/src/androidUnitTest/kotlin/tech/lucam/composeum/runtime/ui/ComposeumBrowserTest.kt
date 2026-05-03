@@ -3,6 +3,7 @@ package tech.lucam.composeum.runtime.ui
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -10,18 +11,22 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import tech.lucam.composeum.annotation.PreviewGroup
-import tech.lucam.composeum.runtime.AccessibilityPreviewState
-import tech.lucam.composeum.runtime.ColorBlindMode
 import tech.lucam.composeum.runtime.PreviewEntry
 import tech.lucam.composeum.runtime.PreviewParamDefaults
 import tech.lucam.composeum.runtime.PreviewRegistry
+import tech.lucam.composeum.runtime.familyKey
 import tech.lucam.composeum.runtime.config.GroupExpansionMode
 import tech.lucam.composeum.runtime.config.PreviewConfig
-import tech.lucam.composeum.runtime.ui.component.LocalAccessibilityPreviewState
+import tech.lucam.composeum.runtime.store.RuntimeSettings
+import tech.lucam.composeum.runtime.store.SettingsStorage
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 @RunWith(RobolectricTestRunner::class)
 class ComposeumBrowserTest {
@@ -50,6 +55,22 @@ class ComposeumBrowserTest {
 
     private fun registryOf(vararg entries: PreviewEntry): PreviewRegistry =
         object : PreviewRegistry { override val entries = entries.toList() }
+
+    private class FakeSettingsStorage(
+        initial: RuntimeSettings = RuntimeSettings(),
+    ) : SettingsStorage {
+        private val state = MutableStateFlow(initial)
+
+        override val settings: Flow<RuntimeSettings> = state
+
+        override suspend fun update(block: RuntimeSettings.() -> RuntimeSettings) {
+            state.value = state.value.block()
+        }
+
+        override suspend fun reset() {
+            state.value = RuntimeSettings()
+        }
+    }
 
     // --- Initial state ---
 
@@ -286,72 +307,28 @@ class ComposeumBrowserTest {
     }
 
     @Test
-    fun `previews receive resolved accessibility state from config`() {
-        val entry = PreviewEntry(
-            key = "test.accessibility",
-            name = "Accessibility",
-            group = TestGroup.Components,
-            description = "",
-            tags = emptyList(),
-            composable = {
-                val state = LocalAccessibilityPreviewState.current
-                Text("sr=${state.screenReaderMode},cb=${state.colorBlindMode.name},motion=${state.reducedMotionMode}")
-            },
-            paramForm = null,
-            paramDefaults = PreviewParamDefaults(emptyMap()),
-        )
+    fun `persisted route stores screen path without share state`() {
+        val storage = FakeSettingsStorage()
+        val detailEntry = entry("ButtonA")
 
         composeRule.setContent {
             MaterialTheme {
                 ComposeumBrowser(
-                    registry = registryOf(entry),
-                    config = PreviewConfig(
-                        accessibilityState = AccessibilityPreviewState(
-                            screenReaderMode = true,
-                            colorBlindMode = ColorBlindMode.TRITANOPIA,
-                            reducedMotionMode = true,
-                        ),
-                    ),
+                    registry = registryOf(detailEntry),
+                    config = PreviewConfig(),
+                    storage = storage,
                 )
             }
         }
 
         composeRule.onNodeWithText("Components").performClick()
-        composeRule.onNodeWithText("Accessibility").performClick()
-        composeRule.onNodeWithText("sr=true,cb=TRITANOPIA,motion=true").assertIsDisplayed()
-    }
+        composeRule.onNodeWithText("ButtonA").performClick()
 
-    @Test
-    fun `accessibility wrapper is applied to preview renders`() {
-        val entry = PreviewEntry(
-            key = "test.wrapper",
-            name = "Wrapper",
-            group = TestGroup.Components,
-            description = "",
-            tags = emptyList(),
-            composable = { Text("Inner Preview") },
-            paramForm = null,
-            paramDefaults = PreviewParamDefaults(emptyMap()),
+        val settings = runBlocking { storage.settings.first() }
+        kotlin.test.assertEquals(
+            "preview_detail/${detailEntry.familyKey()}",
+            settings.lastRoute,
         )
-
-        composeRule.setContent {
-            MaterialTheme {
-                ComposeumBrowser(
-                    registry = registryOf(entry),
-                    config = PreviewConfig(
-                        accessibilityState = AccessibilityPreviewState(highContrastMode = true),
-                        accessibilityWrapper = { state, _, content ->
-                            WrapperProbe(state.highContrastMode, content)
-                        },
-                    ),
-                )
-            }
-        }
-
-        composeRule.onNodeWithText("Components").performClick()
-        composeRule.onNodeWithText("Wrapper").performClick()
-        composeRule.onNodeWithText("Wrapper highContrast=true").assertIsDisplayed()
-        composeRule.onNodeWithText("Inner Preview").assertIsDisplayed()
     }
 
     // --- Browser wrapper ---
@@ -379,13 +356,4 @@ class ComposeumBrowserTest {
         composeRule.waitForIdle()
         assert(wrapperInvoked) { "browserWrapper was not invoked" }
     }
-}
-
-@Composable
-private fun WrapperProbe(
-    highContrastEnabled: Boolean,
-    content: @Composable () -> Unit,
-) {
-    Text("Wrapper highContrast=$highContrastEnabled")
-    content()
 }

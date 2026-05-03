@@ -46,6 +46,8 @@ class DataStoreSettingsStorage(private val dataStore: DataStore<Preferences>) : 
             prefs -= SettingsKeys.LAST_ROUTE
             prefs -= SettingsKeys.EXPANDED_GROUP_KEYS
             prefs -= SettingsKeys.INLINE_EXPANDED_GROUP_KEYS
+            prefs -= SettingsKeys.FAVORITES_EXPANDED
+            prefs -= SettingsKeys.RECENT_EXPANDED
             prefs -= SettingsKeys.FAVORITE_FAMILY_KEYS
             prefs -= SettingsKeys.RECENT_FAMILY_KEYS
         }
@@ -71,6 +73,8 @@ class DataStoreSettingsStorage(private val dataStore: DataStore<Preferences>) : 
         lastRoute = this[SettingsKeys.LAST_ROUTE],
         expandedGroupKeys = this[SettingsKeys.EXPANDED_GROUP_KEYS]?.decodeStringList(),
         inlineExpandedGroupKeys = this[SettingsKeys.INLINE_EXPANDED_GROUP_KEYS]?.decodeStringList(),
+        favoritesExpanded = this[SettingsKeys.FAVORITES_EXPANDED],
+        recentExpanded = this[SettingsKeys.RECENT_EXPANDED],
         favoriteFamilyKeys = this[SettingsKeys.FAVORITE_FAMILY_KEYS]?.decodeStringList() ?: emptyList(),
         recentFamilyKeys = this[SettingsKeys.RECENT_FAMILY_KEYS]?.decodeStringList() ?: emptyList(),
     )
@@ -110,6 +114,10 @@ class DataStoreSettingsStorage(private val dataStore: DataStore<Preferences>) : 
         } else {
             this -= SettingsKeys.INLINE_EXPANDED_GROUP_KEYS
         }
+        if (s.favoritesExpanded != null) this[SettingsKeys.FAVORITES_EXPANDED] = s.favoritesExpanded
+        else this -= SettingsKeys.FAVORITES_EXPANDED
+        if (s.recentExpanded != null) this[SettingsKeys.RECENT_EXPANDED] = s.recentExpanded
+        else this -= SettingsKeys.RECENT_EXPANDED
         this[SettingsKeys.FAVORITE_FAMILY_KEYS] = encodeStringList(s.favoriteFamilyKeys)
         this[SettingsKeys.RECENT_FAMILY_KEYS] = encodeStringList(s.recentFamilyKeys)
     }
