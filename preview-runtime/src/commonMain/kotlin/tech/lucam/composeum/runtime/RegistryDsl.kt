@@ -17,9 +17,10 @@ import tech.lucam.composeum.annotation.PreviewGroup
 import tech.lucam.composeum.annotation.PreviewTag
 import tech.lucam.composeum.annotation.PreviewVariantGroup
 import tech.lucam.composeum.runtime.config.GroupConfigBuilder
-import tech.lucam.composeum.runtime.config.PreviewConfig
-import tech.lucam.composeum.runtime.config.PreviewConfigBuilder
+import tech.lucam.composeum.runtime.config.PreviewConfigOverride
+import tech.lucam.composeum.runtime.config.PreviewConfigOverrideBuilder
 import tech.lucam.composeum.runtime.config.PreviewOverrideBuilder
+import tech.lucam.composeum.runtime.config.asOverride
 import tech.lucam.composeum.runtime.config.mergedWith
 import tech.lucam.composeum.runtime.ui.component.LocalPreviewParamState
 import tech.lucam.composeum.runtime.ui.widgets.PreviewAlignmentField
@@ -65,11 +66,11 @@ fun previewParams(block: PreviewParamsDsl.() -> Unit): PreviewParamsDsl =
 class RegistryBuilder {
 
     private val entries = mutableListOf<PreviewEntry>()
-    private val includedConfigs = mutableListOf<PreviewConfig>()
-    private val configBuilder = PreviewConfigBuilder()
+    private val includedConfigOverrides = mutableListOf<PreviewConfigOverride>()
+    private val configBuilder = PreviewConfigOverrideBuilder()
 
     /** Applies registry-local browser configuration. */
-    fun config(block: PreviewConfigBuilder.() -> Unit) {
+    fun config(block: PreviewConfigOverrideBuilder.() -> Unit) {
         configBuilder.apply(block)
     }
 
@@ -86,7 +87,7 @@ class RegistryBuilder {
     /** Includes another registry's entries and configuration. */
     fun include(registry: PreviewRegistry) {
         entries += registry.entries
-        includedConfigs += registry.config
+        includedConfigOverrides += registry.config.asOverride().mergedWith(registry.configOverride)
     }
 
     /** Alias for [include]. */
@@ -212,13 +213,14 @@ class RegistryBuilder {
     }
 
     internal fun build(): PreviewRegistry {
-        val localConfig = configBuilder.build()
-        val mergedConfig = includedConfigs.fold(PreviewConfig()) { acc, next -> acc.mergedWith(next) }
-            .mergedWith(localConfig)
+        val localConfigOverride = configBuilder.build()
+        val mergedConfigOverride = includedConfigOverrides.fold(PreviewConfigOverride()) { acc, next ->
+            acc.mergedWith(next)
+        }.mergedWith(localConfigOverride)
         val builtEntries = entries.toList().distinctBy { it.key }
         return object : PreviewRegistry {
             override val entries: List<PreviewEntry> = builtEntries
-            override val config: PreviewConfig = mergedConfig
+            override val configOverride: PreviewConfigOverride = mergedConfigOverride
         }
     }
 
@@ -231,7 +233,7 @@ class GroupScope internal constructor(
     private val parent: RegistryBuilder,
     private val defaultGroup: PreviewGroup,
 ) {
-    fun config(block: PreviewConfigBuilder.() -> Unit) {
+    fun config(block: PreviewConfigOverrideBuilder.() -> Unit) {
         parent.config(block)
     }
 

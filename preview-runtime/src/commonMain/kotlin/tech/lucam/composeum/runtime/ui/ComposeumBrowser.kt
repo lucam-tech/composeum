@@ -50,6 +50,7 @@ import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.ThemeOption
 import tech.lucam.composeum.runtime.config.ThemeOptionDefaults
 import tech.lucam.composeum.runtime.config.mergedWith
+import tech.lucam.composeum.runtime.config.overriddenBy
 import tech.lucam.composeum.runtime.store.RuntimeSettings
 import tech.lucam.composeum.runtime.store.resolve
 import tech.lucam.composeum.runtime.store.SettingsStorage
@@ -102,7 +103,9 @@ fun ComposeumBrowser(
     storage: SettingsStorage,
     modifier: Modifier = Modifier,
 ) {
-    val effectiveConfig = remember(registry, config) { registry.config.mergedWith(config) }
+    val effectiveConfig = remember(registry, config) {
+        registry.config.overriddenBy(registry.configOverride).mergedWith(config)
+    }
     val scope = rememberCoroutineScope()
     val systemIsDark = isSystemInDarkTheme()
     val runtimeSettings by produceState<RuntimeSettings?>(initialValue = null, storage) {

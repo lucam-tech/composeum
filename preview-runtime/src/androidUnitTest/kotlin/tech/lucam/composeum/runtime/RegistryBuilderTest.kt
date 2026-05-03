@@ -148,6 +148,19 @@ class RegistryBuilderTest {
         assertEquals("B", b.entries[0].name)
     }
 
+    @Test
+    fun `included registry config overrides are merged explicitly`() {
+        val included = buildRegistry {
+            config { thumbnailColumns = 4 }
+        }
+
+        val registry = buildRegistry {
+            include(included)
+        }
+
+        assertEquals(4, registry.configOverride.thumbnailColumns)
+    }
+
     // --- Parameterized preview ---
 
     @Test

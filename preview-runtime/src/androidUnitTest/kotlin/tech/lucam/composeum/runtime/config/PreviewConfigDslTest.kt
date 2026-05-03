@@ -206,4 +206,27 @@ class PreviewConfigDslTest {
         assertEquals(1, a.thumbnailColumns)
         assertEquals(3, b.thumbnailColumns)
     }
+
+    @Test
+    fun `previewConfigOverride captures only explicit values`() {
+        val override = previewConfigOverride {
+            thumbnailColumns = 4
+            showTags = false
+        }
+
+        assertEquals(4, override.thumbnailColumns)
+        assertEquals(false, override.showTags)
+        assertNull(override.fontScale)
+    }
+
+    @Test
+    fun `PreviewConfigOverride merges explicit values without consulting library defaults`() {
+        val base = PreviewConfig(thumbnailColumns = 1, showTags = true)
+        val override = previewConfigOverride { thumbnailColumns = 3 }
+
+        val merged = base.overriddenBy(override)
+
+        assertEquals(3, merged.thumbnailColumns)
+        assertEquals(true, merged.showTags)
+    }
 }

@@ -1,6 +1,7 @@
 package tech.lucam.composeum.runtime
 
-import tech.lucam.composeum.runtime.config.PreviewConfig
+import tech.lucam.composeum.runtime.config.PreviewConfigOverride
+import tech.lucam.composeum.runtime.config.asOverride
 import tech.lucam.composeum.runtime.config.mergedWith
 
 /**
@@ -24,8 +25,8 @@ class CompositePreviewRegistry(
             .flatMap { it.entries }
             .distinctBy { it.key }
 
-    override val config: PreviewConfig =
+    override val configOverride: PreviewConfigOverride =
         registries
-            .map { it.config }
-            .fold(PreviewConfig()) { acc, next -> acc.mergedWith(next) }
+            .map { it.config.asOverride().mergedWith(it.configOverride) }
+            .fold(PreviewConfigOverride()) { acc, next -> acc.mergedWith(next) }
 }

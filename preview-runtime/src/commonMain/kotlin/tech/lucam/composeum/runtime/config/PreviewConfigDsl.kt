@@ -21,6 +21,9 @@ import kotlin.reflect.KClass
 fun previewConfig(block: PreviewConfigBuilder.() -> Unit): PreviewConfig =
     PreviewConfigBuilder().apply(block).build()
 
+fun previewConfigOverride(block: PreviewConfigOverrideBuilder.() -> Unit): PreviewConfigOverride =
+    PreviewConfigOverrideBuilder().apply(block).build()
+
 /** Builder for [PreviewConfig]. Use via [previewConfig]. */
 class PreviewConfigBuilder {
     /** Initial font scale applied before any user override. */
@@ -204,6 +207,127 @@ class PreviewConfigBuilder {
 
     /** Builds the immutable [PreviewConfig]. */
     fun build(): PreviewConfig = PreviewConfig(
+        fontScale = fontScale,
+        uiScale = uiScale,
+        isDarkMode = isDarkMode,
+        defaultThemeId = defaultThemeId,
+        locale = locale,
+        accessibilityState = accessibilityState,
+        showDescriptions = showDescriptions,
+        showTags = showTags,
+        showParamPanel = showParamPanel,
+        thumbnailColumns = thumbnailColumns,
+        groupExpansionMode = groupExpansionMode,
+        settingsItems = settingsItems,
+        topBarActions = topBarActionsList.toList(),
+        sourceBaseUrl = sourceBaseUrl,
+        sourceStripPrefix = sourceStripPrefix,
+        sourceStripPrefixes = sourceStripPrefixes,
+        initialRoute = initialRoute,
+        onShareableRouteChanged = onShareableRouteChanged,
+        browserWrapper = browserWrapper,
+        groupWrapper = groupWrapper,
+        previewWrapper = previewWrapper,
+        accessibilityWrapper = accessibilityWrapper,
+        groupOverrides = groupOverrides,
+        previewOverrides = previewOverrides,
+        localeOptions = localeOptions,
+        themeOptions = themeOptions + themeOptionsList,
+        customTypeFields = customTypeFieldsMap.toMap(),
+    )
+}
+
+/** Builder for [PreviewConfigOverride]. Use via [previewConfigOverride]. */
+class PreviewConfigOverrideBuilder {
+    var fontScale: Float? = null
+    var uiScale: Float? = null
+    var isDarkMode: Boolean? = null
+    var defaultThemeId: String? = null
+    var locale: String? = null
+    var accessibilityState: AccessibilityPreviewState? = null
+    var showDescriptions: Boolean? = null
+    var showTags: Boolean? = null
+    var showParamPanel: Boolean? = null
+    var thumbnailColumns: Int? = null
+    var groupExpansionMode: GroupExpansionMode? = null
+    var settingsItems: List<SettingItem>? = null
+    var sourceBaseUrl: String? = null
+    var sourceStripPrefix: String? = null
+    var sourceStripPrefixes: List<String> = emptyList()
+    var initialRoute: String? = null
+    var localeOptions: List<LocaleOption>? = null
+    var themeOptions: List<ThemeOption> = emptyList()
+
+    private var browserWrapper: BrowserWrapper? = null
+    private var onShareableRouteChanged: ((String) -> Unit)? = null
+    private var groupWrapper: GroupWrapper? = null
+    private var previewWrapper: PreviewWrapper? = null
+    private var accessibilityWrapper: AccessibilityWrapper? = null
+    private val groupOverrides = mutableMapOf<KClass<out PreviewGroup>, GroupConfig>()
+    private val previewOverrides = mutableMapOf<String, PreviewOverride>()
+    private val topBarActionsList = mutableListOf<TopBarAction>()
+    private val customTypeFieldsMap = mutableMapOf<String, CustomParamField>()
+    private val themeOptionsList = mutableListOf<ThemeOption>()
+
+    fun browserWrapper(block: BrowserWrapper) {
+        browserWrapper = block
+    }
+
+    fun onShareableRouteChanged(block: (String) -> Unit) {
+        onShareableRouteChanged = block
+    }
+
+    fun groupWrapper(block: GroupWrapper) {
+        groupWrapper = block
+    }
+
+    fun previewWrapper(block: PreviewWrapper) {
+        previewWrapper = block
+    }
+
+    fun accessibilityWrapper(block: AccessibilityWrapper) {
+        accessibilityWrapper = block
+    }
+
+    fun groups(block: GroupOverrideBuilder.() -> Unit) {
+        GroupOverrideBuilder(groupOverrides).apply(block)
+    }
+
+    fun preview(key: String, block: PreviewOverrideBuilder.() -> Unit) {
+        val override = PreviewOverrideBuilder().apply(block).build()
+        if (override != PreviewOverride()) {
+            previewOverrides[key] = override
+        }
+    }
+
+    inline fun <reified T : Any> customTypeField(
+        initialValue: T,
+        noinline widget: @Composable (value: T, onValue: (T) -> Unit) -> Unit,
+    ) {
+        val typeName = T::class.qualifiedName
+            ?: error("Cannot register a customTypeField for an anonymous type")
+        customTypeFieldsMap[typeName] = CustomParamField(
+            initialValue = initialValue,
+            widget = { v, ov ->
+                @Suppress("UNCHECKED_CAST")
+                widget(v as T) { ov(it) }
+            },
+        )
+    }
+
+    fun topBarAction(
+        contentDescription: String,
+        icon: @Composable () -> Unit,
+        onClick: () -> Unit,
+    ) {
+        topBarActionsList.add(TopBarAction(contentDescription, icon, onClick))
+    }
+
+    fun themeOption(option: ThemeOption) {
+        themeOptionsList.add(option)
+    }
+
+    fun build(): PreviewConfigOverride = PreviewConfigOverride(
         fontScale = fontScale,
         uiScale = uiScale,
         isDarkMode = isDarkMode,
