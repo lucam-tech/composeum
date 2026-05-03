@@ -222,7 +222,7 @@ class RegistryBuilder {
         }
     }
 
-    internal fun defaultKey(group: PreviewGroup, name: String): String = "${group.name}/$name"
+    internal fun defaultKey(group: PreviewGroup, name: String): String = "${group.groupKey()}/$name"
 }
 
 /** Nested DSL scope with a default [PreviewGroup]. */

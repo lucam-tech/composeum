@@ -51,11 +51,11 @@ class RegistryBuilderTest {
     }
 
     @Test
-    fun `auto-generated key is group name slash preview name`() {
+    fun `auto-generated key is group identity slash preview name`() {
         val registry = buildRegistry {
             preview(name = "Bar", group = group) {}
         }
-        assertEquals("TestGroup/Bar", registry.entries[0].key)
+        assertEquals("${group.groupKey()}/Bar", registry.entries[0].key)
     }
 
     @Test
@@ -172,11 +172,25 @@ class RegistryBuilderTest {
     }
 
     @Test
-    fun `parameterized preview auto-key uses group slash name`() {
+    fun `parameterized preview auto-key uses group identity slash name`() {
         val registry = buildRegistry {
             preview(name = "P", group = group, params = previewParams {}) { _ -> }
         }
-        assertEquals("TestGroup/P", registry.entries[0].key)
+        assertEquals("${group.groupKey()}/P", registry.entries[0].key)
+    }
+
+    @Test
+    fun `auto-generated keys stay distinct when groups share the same display name`() {
+        val alpha = object : PreviewGroup { override val name = "Shared" }
+        val beta = object : PreviewGroup { override val name = "Shared" }
+
+        val registry = buildRegistry {
+            preview(name = "Card", group = alpha) {}
+            preview(name = "Card", group = beta) {}
+        }
+
+        assertEquals(2, registry.entries.size)
+        assertTrue(registry.entries.map { it.key }.distinct().size == 2)
     }
 
     // --- previewParams defaults ---

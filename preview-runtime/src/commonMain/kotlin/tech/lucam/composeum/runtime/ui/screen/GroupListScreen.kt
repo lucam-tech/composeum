@@ -49,6 +49,7 @@ import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.PreviewFamily
 import tech.lucam.composeum.runtime.families
 import tech.lucam.composeum.runtime.familyKey
+import tech.lucam.composeum.runtime.tagKey
 import tech.lucam.composeum.runtime.ui.component.LocalResolvedSettings
 import tech.lucam.composeum.runtime.ui.component.LocalRuntimeSettings
 import tech.lucam.composeum.runtime.ui.component.LocalSettingsStorage
@@ -98,7 +99,10 @@ fun GroupListScreen(
 
     // All unique tags from the registry, sorted alphabetically.
     val allTags = remember(registry.entries) {
-        registry.entries.flatMap { entry -> entry.tags.map { it.title } }.distinct().sorted()
+        registry.entries
+            .flatMap(PreviewEntry::tags)
+            .distinctBy { it.tagKey() }
+            .sortedBy { it.title.lowercase() }
     }
     var selectedTags by remember { mutableStateOf(emptySet<String>()) }
 
@@ -166,14 +170,15 @@ fun GroupListScreen(
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(allTags) { tag ->
+                items(allTags, key = { it.tagKey() }) { tag ->
                     FilterChip(
-                        selected = tag in selectedTags,
+                        selected = tag.tagKey() in selectedTags,
                         onClick = {
-                            selectedTags = if (tag in selectedTags) selectedTags - tag
-                            else selectedTags + tag
+                            val tagKey = tag.tagKey()
+                            selectedTags = if (tagKey in selectedTags) selectedTags - tagKey
+                            else selectedTags + tagKey
                         },
-                        label = { Text(tag) },
+                        label = { Text(tag.title) },
                     )
                 }
             }
@@ -635,7 +640,7 @@ private fun filterNodes(
     fun PreviewEntry.passes(): Boolean {
         if (favoritesOnly && familyKey() !in favoriteFamilyKeys) return false
         if (flavoredOnly && variantGroup == null) return false
-        if (selectedTags.isNotEmpty() && tags.none { it.title in selectedTags }) return false
+        if (selectedTags.isNotEmpty() && tags.none { it.tagKey() in selectedTags }) return false
         if (q.isNotEmpty()) {
             return name.lowercase().contains(q) ||
                 description.lowercase().contains(q) ||

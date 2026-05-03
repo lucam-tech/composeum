@@ -2,6 +2,7 @@ package tech.lucam.composeum.runtime.ui.screen
 
 import tech.lucam.composeum.annotation.PreviewGroup
 import tech.lucam.composeum.runtime.PreviewEntry
+import tech.lucam.composeum.runtime.groupKey
 
 /**
  * wasmJs actual: builds the group tree using explicit [PreviewGroup.parent] links.
@@ -32,7 +33,7 @@ internal actual fun buildGroupTree(allEntries: List<PreviewEntry>): List<GroupNo
         while (ancestor != null) {
             if (ancestor !in nodeByGroup) {
                 nodeByGroup[ancestor] = MutableNode(
-                    key = ancestor::class.qualifiedName ?: ancestor.name,
+                    key = ancestor.groupKey(),
                     name = ancestor.name,
                     description = ancestor.description,
                     entries = emptyList(),
@@ -47,7 +48,7 @@ internal actual fun buildGroupTree(allEntries: List<PreviewEntry>): List<GroupNo
         val existing = nodeByGroup[group]
         nodeByGroup[group] = existing?.copy(entries = existing.entries + groupEntries)
             ?: MutableNode(
-                key = group::class.qualifiedName ?: group.name,
+                key = group.groupKey(),
                 name = group.name,
                 description = group.description,
                 entries = groupEntries,

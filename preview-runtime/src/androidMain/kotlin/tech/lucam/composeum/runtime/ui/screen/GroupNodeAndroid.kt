@@ -2,6 +2,7 @@ package tech.lucam.composeum.runtime.ui.screen
 
 import tech.lucam.composeum.annotation.PreviewGroup
 import tech.lucam.composeum.runtime.PreviewEntry
+import tech.lucam.composeum.runtime.groupKey
 
 /**
  * Android actual: builds the group tree using explicit [PreviewGroup.parent] links
@@ -71,7 +72,7 @@ internal actual fun buildGroupTree(allEntries: List<PreviewEntry>): List<GroupNo
     for (ancestor in explicitAncestors) {
         if (ancestor !in nodeByGroup) {
             nodeByGroup[ancestor] = MutableNode(
-                key = ancestor::class.qualifiedName ?: ancestor.name,
+                key = ancestor.groupKey(),
                 name = ancestor.name,
                 description = ancestor.description,
                 entries = emptyList(),
@@ -83,7 +84,7 @@ internal actual fun buildGroupTree(allEntries: List<PreviewEntry>): List<GroupNo
     for ((group, groupEntries) in entriesByGroup) {
         nodeByGroup.getOrPut(group) {
             MutableNode(
-                key = group::class.qualifiedName ?: group::class.java.name,
+                key = group.groupKey(),
                 name = group.name,
                 description = group.description,
                 entries = groupEntries,

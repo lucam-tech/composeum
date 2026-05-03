@@ -12,7 +12,7 @@ import tech.lucam.composeum.annotation.PreviewVariantGroup
  * The [composable] lambda is rendered by [tech.lucam.composeum.runtime.ui.component.PreviewRenderer].
  */
 data class PreviewEntry(
-    /** Unique key used for deduplication and navigation. Generated as `"${group.name}/$name"` by default. */
+    /** Unique key used for deduplication and navigation. Manual registries default to `"${group.groupKey()}/$name"`. */
     val key: String,
     /** Human-readable display name shown in the browser list. */
     val name: String,

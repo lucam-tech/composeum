@@ -12,9 +12,7 @@ internal data class PreviewFamily(
 }
 
 internal fun PreviewEntry.familyKey(): String =
-    variantGroup?.let { group ->
-        group::class.qualifiedName ?: group::class.simpleName ?: group.toString()
-    } ?: key
+    variantGroup?.variantGroupKey() ?: key
 
 internal fun List<PreviewEntry>.groupIntoFamilies(): List<PreviewFamily> {
     val families = linkedMapOf<String, MutableList<PreviewEntry>>()

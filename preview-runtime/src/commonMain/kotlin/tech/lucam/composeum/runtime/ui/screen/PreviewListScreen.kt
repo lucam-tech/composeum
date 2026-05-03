@@ -19,6 +19,7 @@ import tech.lucam.composeum.runtime.PreviewRegistry
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.PreviewWrapper
 import tech.lucam.composeum.runtime.families
+import tech.lucam.composeum.runtime.groupKey
 import tech.lucam.composeum.runtime.ui.component.LocalResolvedSettings
 import tech.lucam.composeum.runtime.ui.component.LocalRuntimeSettings
 import tech.lucam.composeum.runtime.ui.component.PreviewThumbnailCard
@@ -52,7 +53,7 @@ fun PreviewListScreen(
     val families = remember(registry.entries, groupKey, favoriteFamilyKeys) {
         registry.families().filter { family ->
             val entry = family.defaultEntry
-            (entry.group::class.qualifiedName ?: entry.group::class.simpleName ?: "") == groupKey
+            entry.group.groupKey() == groupKey
         }.sortedWith(
             compareByDescending<tech.lucam.composeum.runtime.PreviewFamily> { it.key in favoriteFamilyKeys }
                 .thenBy { it.defaultEntry.name.lowercase() },

@@ -43,6 +43,7 @@ import tech.lucam.composeum.runtime.PreviewRegistry
 import tech.lucam.composeum.runtime.PreviewParamState
 import tech.lucam.composeum.runtime.familyKey
 import tech.lucam.composeum.runtime.families
+import tech.lucam.composeum.runtime.groupKey
 import tech.lucam.composeum.runtime.toPreviewParamState
 import tech.lucam.composeum.runtime.toShareableMap
 import tech.lucam.composeum.runtime.config.PreviewConfig
@@ -142,7 +143,7 @@ fun ComposeumBrowser(
         PreviewRoute.PreviewList("").route -> {
             val groupKey = navArgumentValue(currentBackStack, PreviewRoute.PreviewList.ARG)
             registry.entries
-                .firstOrNull { (it.group::class.qualifiedName ?: it.group.name) == groupKey }
+                .firstOrNull { it.group.groupKey() == groupKey }
                 ?.group?.name ?: groupKey
         }
         PreviewRoute.PreviewDetail("").route -> currentDetailEntry?.name ?: ""
