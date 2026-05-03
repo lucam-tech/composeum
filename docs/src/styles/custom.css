@@ -1,0 +1,90 @@
+:root {
+  --sl-font: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
+  --sl-font-system-mono: "IBM Plex Mono", "SFMono-Regular", "Consolas", monospace;
+  --sl-color-accent-low: #172f2d;
+  --sl-color-accent: #2f8f79;
+  --sl-color-accent-high: #d6fff5;
+  --sl-color-white: #f7fbfa;
+  --sl-color-gray-1: #e8f1ef;
+  --sl-color-gray-2: #c6d6d2;
+  --sl-color-gray-3: #9aaca7;
+  --sl-color-gray-4: #6e837e;
+  --sl-color-gray-5: #465956;
+  --sl-color-gray-6: #2a3a38;
+  --sl-color-black: #0b1514;
+  --sl-content-width: 52rem;
+}
+
+:root[data-theme="light"] {
+  --sl-color-bg: #f7fbfa;
+  --sl-color-bg-nav: rgba(247, 251, 250, 0.88);
+  --sl-color-bg-sidebar: #eef6f3;
+  --sl-color-hairline-light: rgba(19, 45, 43, 0.08);
+}
+
+:root[data-theme="dark"] {
+  --sl-color-bg: #0b1514;
+  --sl-color-bg-nav: rgba(11, 21, 20, 0.82);
+  --sl-color-bg-sidebar: #101c1b;
+}
+
+hero {
+  position: relative;
+}
+
+.hero .tagline {
+  max-width: 44rem;
+}
+
+.landing-grid {
+  display: grid;
+  gap: 1rem;
+  margin: 2rem 0 1rem;
+}
+
+@media (min-width: 52rem) {
+  .landing-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.landing-card {
+  border: 1px solid var(--sl-color-hairline-light);
+  border-radius: 1.25rem;
+  padding: 1.15rem;
+  background:
+    radial-gradient(circle at top right, rgba(47, 143, 121, 0.18), transparent 35%),
+    linear-gradient(180deg, rgba(247, 251, 250, 0.06), rgba(19, 45, 43, 0.06));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.landing-card h2,
+.landing-card h3 {
+  margin-top: 0;
+}
+
+.landing-callout {
+  border-left: 4px solid #e56b2f;
+  padding: 1rem 1.2rem;
+  margin: 2rem 0;
+  border-radius: 0 1rem 1rem 0;
+  background: linear-gradient(90deg, rgba(229, 107, 47, 0.12), transparent);
+}
+
+.code-frame {
+  margin: 2rem 0;
+  padding: 1rem;
+  border-radius: 1.25rem;
+  border: 1px solid var(--sl-color-hairline-light);
+  background:
+    linear-gradient(180deg, rgba(229, 107, 47, 0.08), rgba(47, 143, 121, 0.08)),
+    var(--sl-color-bg-sidebar);
+}
+
+.code-frame pre {
+  margin: 0;
+}
+
+.sl-markdown-content a.card {
+  text-decoration: none;
+}

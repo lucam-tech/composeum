@@ -1,0 +1,84 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version_tag:
+        description: "Version tag to publish, for example v0.2.0"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: maven-central
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses
+
+      - name: Install Android platform
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Verify tag matches VERSION_NAME
+        shell: bash
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            raw_tag="${{ inputs.version_tag }}"
+          else
+            raw_tag="${GITHUB_REF_NAME}"
+          fi
+          tag="${raw_tag#v}"
+          version="$(grep '^VERSION_NAME=' gradle.properties | cut -d= -f2)"
+          if [[ -z "$version" ]]; then
+            echo "VERSION_NAME is missing from gradle.properties"
+            exit 1
+          fi
+          if [[ "$tag" != "$version" ]]; then
+            echo "Tag version '$tag' does not match VERSION_NAME '$version'"
+            exit 1
+          fi
+
+      - name: Run release verification before publish
+        run: >
+          ./gradlew
+          :preview-annotation:check
+          :preview-ksp:test
+          :preview-runtime:testDebugUnitTest
+          nmcpCheckAggregationFiles
+          --stacktrace
+
+      - name: Publish to Maven Central
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingKeyId: ${{ secrets.GPG_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_SIGNING_PASSWORD }}
+        run: ./gradlew publishAggregationToCentralPortal --stacktrace

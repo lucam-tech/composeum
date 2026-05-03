@@ -114,11 +114,13 @@ kotlin-poet-ksp           = { group = "com.squareup", name = "kotlinpoet-ksp", v
 ### Convention plugins
 
 **`preview-annotation/build.gradle.kts`**:
+
 - `kotlin("multiplatform")`
 - targets: `jvm()`, `wasmJs { browser() }`
 - no Compose or Android dependencies
 
 **`preview-runtime/build.gradle.kts`**:
+
 - `org.jetbrains.kotlin.multiplatform`
 - `com.android.library`
 - `org.jetbrains.kotlin.plugin.compose`
@@ -128,6 +130,7 @@ kotlin-poet-ksp           = { group = "com.squareup", name = "kotlinpoet-ksp", v
 - `wasmJsMain` adds `kotlinx-serialization-json`
 
 **`preview-ksp/build.gradle.kts`**:
+
 - JVM-only Kotlin library
 - compile-time processor only; no runtime target
 
@@ -137,7 +140,9 @@ kotlin-poet-ksp           = { group = "com.squareup", name = "kotlinpoet-ksp", v
 
 ### Entry point
 
-`ComposeumProcessorProvider` implements `SymbolProcessorProvider` and instantiates `ComposeumProcessor`. Registered via `resources/META-INF/services/com.google.devtools.ksp.processing.SymbolProcessorProvider`.
+`ComposeumProcessorProvider` implements `SymbolProcessorProvider` and instantiates
+`ComposeumProcessor`. Registered via
+`resources/META-INF/services/com.google.devtools.ksp.processing.SymbolProcessorProvider`.
 
 ### Processing flow
 
@@ -165,29 +170,32 @@ ComposeumProcessor.process(resolver)
 
 ### Validation rules (in `Validator.kt`)
 
-| Rule | KSP error message |
-|---|---|
-| Function is not `@Composable` | `"@ComposePreview can only be applied to @Composable functions"` |
-| `group` KClass does not implement `PreviewGroup` | `"group must implement PreviewGroup"` |
+| Rule                                                          | KSP error message                                                                                                                                                         |
+|---------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Function is not `@Composable`                                 | `"@ComposePreview can only be applied to @Composable functions"`                                                                                                          |
+| `group` KClass does not implement `PreviewGroup`              | `"group must implement PreviewGroup"`                                                                                                                                     |
 | `@PreviewParam` on unsupported type (with `strictTypes=true`) | `"@PreviewParam: unsupported type {type}. Supported: String, Boolean, Int, Long, Float, Double, Color, Enum. Add options=[] to use a dropdown, or remove @PreviewParam."` |
-| `@PreviewParam` parameter has no default value | `"@PreviewParam parameter '{name}' must have a default value in the function signature"` |
+| `@PreviewParam` parameter has no default value                | `"@PreviewParam parameter '{name}' must have a default value in the function signature"`                                                                                  |
 
 ### Multiplatform source-set rule
 
 - `@ComposePreview` is expected in `commonMain` or any platform source set.
 - `@ViewPreview` is valid only in Android-capable compilations.
-- Generated `AndroidView { ... }` wrappers must only be emitted when the processor is running in an Android compilation that can resolve `android.view.View` and `androidx.compose.ui.viewinterop.AndroidView`.
-- wasm/web-targeted compilations must never contain generated code that references Android framework types.
+- Generated `AndroidView { ... }` wrappers must only be emitted when the processor is running in an
+  Android compilation that can resolve `android.view.View` and
+  `androidx.compose.ui.viewinterop.AndroidView`.
+- wasm/web-targeted compilations must never contain generated code that references Android framework
+  types.
 
 ### KSP arguments
 
-| Argument | Default | Description |
-|---|---|---|
-| `composeum.registryPackage` | `{module-package}.preview.generated` | Package for generated registry |
-| `composeum.registryName` | `GeneratedPreviewRegistry` | Class name of registry |
-| `composeum.strictTypes` | `"true"` | Fail on unsupported `@PreviewParam` types |
-| `composeum.includeAndroidPreview` | `"false"` | Also process Jetpack Compose `@Preview` annotations |
-| `composeum.enableKdoc` | `"false"` | Use KDoc for description/tag/`@param` fallbacks |
+| Argument                          | Default                              | Description                                         |
+|-----------------------------------|--------------------------------------|-----------------------------------------------------|
+| `composeum.registryPackage`       | `{module-package}.preview.generated` | Package for generated registry                      |
+| `composeum.registryName`          | `GeneratedPreviewRegistry`           | Class name of registry                              |
+| `composeum.strictTypes`           | `"true"`                             | Fail on unsupported `@PreviewParam` types           |
+| `composeum.includeAndroidPreview` | `"false"`                            | Also process Jetpack Compose `@Preview` annotations |
+| `composeum.enableKdoc`            | `"false"`                            | Use KDoc for description/tag/`@param` fallbacks     |
 
 ### Generated code format
 
@@ -307,7 +315,8 @@ fun PreviewRenderer(entry: PreviewEntry, modifier: Modifier = Modifier) {
 }
 ```
 
-Note: full crash isolation is not currently implemented in the shared runtime; the browser relies on normal Compose composition behavior and targeted defensive handling around generated/stateful paths.
+Note: full crash isolation is not currently implemented in the shared runtime; the browser relies on
+normal Compose composition behavior and targeted defensive handling around generated/stateful paths.
 
 ---
 
@@ -326,7 +335,8 @@ Platform implementations:
 - Android: `DataStoreSettingsStorage`
 - wasmJs: `LocalStorageSettingsStorage`
 
-`SettingsViewModel` holds a reference to `SettingsStorage` and the `PreviewConfig`. It exposes `resolvedSettings: StateFlow<ResolvedSettings>`.
+`SettingsViewModel` holds a reference to `SettingsStorage` and the `PreviewConfig`. It exposes
+`resolvedSettings: StateFlow<ResolvedSettings>`.
 
 On Android, the convenience `ComposeumBrowser(...)` overload creates a `DataStoreSettingsStorage`.
 On wasmJs, callers construct `LocalStorageSettingsStorage()` themselves and pass it to the common
@@ -396,6 +406,7 @@ class GroupOverrideBuilder(
 ## 3.8 Embedding vs Standalone
 
 **Standalone** — user creates a `:catalog` module with:
+
 ```kotlin
 class CatalogActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -417,7 +428,8 @@ renderComposable(rootElementId = "root") {
 }
 ```
 
-**Embedded Android** — user adds `ComposeumBrowserActivity` to their debug `AndroidManifest.xml`. `ComposeumBrowserActivity` is shipped in `:preview-runtime` as an open Android-only wrapper:
+**Embedded Android** — user adds `ComposeumBrowserActivity` to their debug `AndroidManifest.xml`.
+`ComposeumBrowserActivity` is shipped in `:preview-runtime` as an open Android-only wrapper:
 
 ```kotlin
 open class ComposeumBrowserActivity : ComponentActivity() {
@@ -428,7 +440,8 @@ open class ComposeumBrowserActivity : ComponentActivity() {
 
 Users subclass `ComposeumBrowserActivity` to provide their registry and config.
 
-The `:sample` module demonstrates this Android-only integration pattern; it is not itself a CMP target.
+The `:sample` module demonstrates this Android-only integration pattern; it is not itself a CMP
+target.
 
 For the consumer-facing support matrix and target-status guidance, see
 `08-target-support.md`.

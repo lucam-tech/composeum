@@ -300,7 +300,7 @@ class PreviewConfigOverrideBuilder {
         }
     }
 
-    inline fun <reified T : Any> customTypeField(
+    internal inline fun <reified T : Any> customTypeField(
         initialValue: T,
         noinline widget: @Composable (value: T, onValue: (T) -> Unit) -> Unit,
     ) {

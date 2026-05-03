@@ -12,5 +12,8 @@ local.properties
 .kotlin/
 .claude/
 .devcontainer/
-docs/
+docs/node_modules/
+docs/dist/
+docs/.astro/
+docs/spec/
 CLAUDE.md

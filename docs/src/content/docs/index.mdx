@@ -1,0 +1,70 @@
+---
+title: Composeum
+description: Compile-time Jetpack Compose preview infrastructure for Android-first teams.
+template: splash
+hero:
+  title: Compose previews that behave like product tooling
+  tagline: Annotate composables, run KSP, and browse a generated preview catalog with live parameters, grouping, tags, deep links, and browser-level runtime controls.
+  actions:
+    - text: Get started
+      link: /getting-started/installation/
+      icon: right-arrow
+    - text: View GitHub
+      link: https://github.com/lucam-tech/composeum
+      icon: external
+---
+
+<div class="landing-grid">
+  <section class="landing-card">
+    <h2>Compile-time registry</h2>
+    <p>No reflection. Previews are discovered during KSP and emitted as a typed registry your app can host directly.</p>
+  </section>
+  <section class="landing-card">
+    <h2>Interactive parameter panels</h2>
+    <p>Use simple <code>@PreviewParam</code> annotations for common cases, then opt into richer DSL-backed controls when a single preview needs more surface area.</p>
+  </section>
+  <section class="landing-card">
+    <h2>App-level runtime controls</h2>
+    <p>Theme, locale, font scale, density, accessibility state, wrappers, source links, and per-preview overrides live in the browser config rather than ad hoc glue code.</p>
+  </section>
+</div>
+
+<div class="landing-callout">
+  Composeum is optimized for teams that already treat previews as a review and debugging tool, not just as IDE thumbnails.
+</div>
+
+## What you get
+
+- Generated preview discovery from `@ComposePreview`
+- Group and tag browsing with type-based identity
+- Favorites and recent previews in the browser UI
+- Live parameter editing for strings, booleans, numbers, enums, Compose values, and custom widgets
+- Per-group and per-preview configuration overrides
+- Deep-linkable preview routes and source code links
+
+<div class="code-frame">
+
+```kotlin
+@ComposePreview(
+    name = "Primary Button",
+    group = AppPreviews.Components::class,
+)
+@Composable
+fun PrimaryButtonPreview(
+    @PreviewParam(label = "Label") label: String = "Continue",
+) {
+    PrimaryButton(label = label)
+}
+```
+
+</div>
+
+## Start with the Android path
+
+The most direct setup is still Android-first:
+
+1. Add `preview-annotation` and `preview-ksp` to the module that declares previews.
+2. Add `preview-runtime` to the host app or debug tools module.
+3. Subclass `ComposeumBrowserActivity` and return the generated registry.
+
+Use the pages in this site for the full setup, API shape, and advanced registry/config patterns.
