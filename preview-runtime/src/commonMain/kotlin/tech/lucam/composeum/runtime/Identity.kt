@@ -6,7 +6,7 @@ import tech.lucam.composeum.annotation.PreviewVariantGroup
 import tech.lucam.composeum.annotation.SimplePreviewTag
 
 internal fun PreviewGroup.groupKey(): String =
-    this::class.qualifiedName ?: this::class.simpleName ?: name
+    this::class.qualifiedName ?: this::class.simpleName ?: toString()
 
 internal fun PreviewVariantGroup.variantGroupKey(): String =
     this::class.qualifiedName ?: this::class.simpleName ?: toString()

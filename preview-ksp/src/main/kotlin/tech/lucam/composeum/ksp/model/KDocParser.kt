@@ -92,22 +92,26 @@ internal object KDocParser {
         return result
     }
 
-    private fun buildTags(lines: List<String>): List<String> =
-        lines.asSequence()
-            .flatMap { line ->
-                when {
-                    line.startsWith("@tag ") -> sequenceOf(line.removePrefix("@tag ").trim())
-                    line.startsWith("@tags ") -> line.removePrefix("@tags ")
-                        .split(',')
-                        .asSequence()
-                        .map { it.trim() }
+    private fun buildTags(lines: List<String>): List<String> {
+        val tags = linkedSetOf<String>()
+        for (line in lines) {
+            when {
+                line.startsWith("@tag ") -> {
+                    val tag = line.removePrefix("@tag ").trim()
+                    if (tag.isNotEmpty()) tags += tag
+                }
 
-                    else -> emptySequence()
+                line.startsWith("@tags ") -> {
+                    line.removePrefix("@tags ")
+                        .split(',')
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() }
+                        .forEach(tags::add)
                 }
             }
-            .filter { it.isNotEmpty() }
-            .distinct()
-            .toList()
+        }
+        return tags.toList()
+    }
 
     private fun String.normalizeWhitespace(): String =
         replace(Regex("\\s+"), " ").trim()

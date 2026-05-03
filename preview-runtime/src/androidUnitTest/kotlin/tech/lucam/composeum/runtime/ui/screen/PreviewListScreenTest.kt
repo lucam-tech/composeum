@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -287,9 +288,10 @@ class PreviewListScreenTest {
 
     @Test
     fun `global previewWrapper is applied around each card composable`() {
+        var wrapperInvoked = false
         val config = PreviewConfig(
             previewWrapper = { _, content ->
-                Text("wrapper-sentinel")
+                wrapperInvoked = true
                 content()
             },
         )
@@ -305,7 +307,9 @@ class PreviewListScreenTest {
             }
         }
 
-        composeRule.onNodeWithText("wrapper-sentinel").assertIsDisplayed()
+        composeRule.runOnIdle {
+            assertTrue(wrapperInvoked)
+        }
     }
 }
 

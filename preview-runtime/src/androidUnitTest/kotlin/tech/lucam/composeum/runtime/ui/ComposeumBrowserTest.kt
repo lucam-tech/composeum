@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -23,6 +25,7 @@ import tech.lucam.composeum.runtime.PreviewRegistry
 import tech.lucam.composeum.runtime.config.GroupExpansionMode
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.familyKey
+import tech.lucam.composeum.runtime.groupKey
 import tech.lucam.composeum.runtime.store.RuntimeSettings
 import tech.lucam.composeum.runtime.store.SettingsStorage
 
@@ -56,6 +59,22 @@ class ComposeumBrowserTest {
             override val entries = entries.toList()
         }
 
+    private fun setBrowserContent(
+        vararg entries: PreviewEntry,
+        config: PreviewConfig = PreviewConfig(),
+        storage: SettingsStorage = FakeSettingsStorage(),
+    ) {
+        composeRule.setContent {
+            MaterialTheme {
+                ComposeumBrowser(
+                    registry = registryOf(*entries),
+                    config = config,
+                    storage = storage,
+                )
+            }
+        }
+    }
+
     private class FakeSettingsStorage(
         initial: RuntimeSettings = RuntimeSettings(),
     ) : SettingsStorage {
@@ -76,14 +95,7 @@ class ComposeumBrowserTest {
 
     @Test
     fun `GroupListScreen is shown initially`() {
-        composeRule.setContent {
-            MaterialTheme {
-                ComposeumBrowser(
-                    registry = registryOf(entry("ButtonA")),
-                    config = PreviewConfig(),
-                )
-            }
-        }
+        setBrowserContent(entry("ButtonA"))
 
         // Search field is the hallmark of GroupListScreen
         composeRule.onNode(hasSetTextAction(), useUnmergedTree = true).assertIsDisplayed()
@@ -91,28 +103,14 @@ class ComposeumBrowserTest {
 
     @Test
     fun `top app bar shows app title on root screen`() {
-        composeRule.setContent {
-            MaterialTheme {
-                ComposeumBrowser(
-                    registry = registryOf(entry("ButtonA")),
-                    config = PreviewConfig(),
-                )
-            }
-        }
+        setBrowserContent(entry("ButtonA"))
 
         composeRule.onNodeWithText("Compose Preview").assertIsDisplayed()
     }
 
     @Test
     fun `back button is not shown on root screen`() {
-        composeRule.setContent {
-            MaterialTheme {
-                ComposeumBrowser(
-                    registry = registryOf(entry("ButtonA")),
-                    config = PreviewConfig(),
-                )
-            }
-        }
+        setBrowserContent(entry("ButtonA"))
 
         composeRule.onNodeWithContentDescription("Navigate back").assertDoesNotExist()
     }
@@ -121,14 +119,7 @@ class ComposeumBrowserTest {
 
     @Test
     fun `tapping a group navigates to PreviewListScreen`() {
-        composeRule.setContent {
-            MaterialTheme {
-                ComposeumBrowser(
-                    registry = registryOf(entry("ButtonA")),
-                    config = PreviewConfig(),
-                )
-            }
-        }
+        setBrowserContent(entry("ButtonA"))
 
         composeRule.onNodeWithText("Components").performClick()
 
@@ -138,14 +129,7 @@ class ComposeumBrowserTest {
 
     @Test
     fun `back button navigates from PreviewListScreen to GroupListScreen`() {
-        composeRule.setContent {
-            MaterialTheme {
-                ComposeumBrowser(
-                    registry = registryOf(entry("ButtonA")),
-                    config = PreviewConfig(),
-                )
-            }
-        }
+        setBrowserContent(entry("ButtonA"))
 
         // Navigate to PreviewListScreen
         composeRule.onNodeWithText("Components").performClick()
@@ -159,14 +143,7 @@ class ComposeumBrowserTest {
 
     @Test
     fun `back button is shown on non-root screens`() {
-        composeRule.setContent {
-            MaterialTheme {
-                ComposeumBrowser(
-                    registry = registryOf(entry("ButtonA")),
-                    config = PreviewConfig(),
-                )
-            }
-        }
+        setBrowserContent(entry("ButtonA"))
 
         composeRule.onNodeWithText("Components").performClick()
 
@@ -177,28 +154,14 @@ class ComposeumBrowserTest {
 
     @Test
     fun `settings icon is shown on root screen`() {
-        composeRule.setContent {
-            MaterialTheme {
-                ComposeumBrowser(
-                    registry = registryOf(entry("ButtonA")),
-                    config = PreviewConfig(),
-                )
-            }
-        }
+        setBrowserContent(entry("ButtonA"))
 
         composeRule.onNodeWithContentDescription("Open settings").assertIsDisplayed()
     }
 
     @Test
     fun `settings sheet opens when settings icon is tapped`() {
-        composeRule.setContent {
-            MaterialTheme {
-                ComposeumBrowser(
-                    registry = registryOf(entry("ButtonA")),
-                    config = PreviewConfig(),
-                )
-            }
-        }
+        setBrowserContent(entry("ButtonA"))
 
         composeRule.onNodeWithContentDescription("Open settings").performClick()
 
@@ -207,14 +170,7 @@ class ComposeumBrowserTest {
 
     @Test
     fun `settings icon is shown on non-root screens`() {
-        composeRule.setContent {
-            MaterialTheme {
-                ComposeumBrowser(
-                    registry = registryOf(entry("ButtonA")),
-                    config = PreviewConfig(),
-                )
-            }
-        }
+        setBrowserContent(entry("ButtonA"))
 
         composeRule.onNodeWithText("Components").performClick()
 
@@ -242,28 +198,17 @@ class ComposeumBrowserTest {
 
     @Test
     fun `source link icon is not shown on root screen`() {
-        composeRule.setContent {
-            MaterialTheme {
-                ComposeumBrowser(
-                    registry = registryOf(entryWithSource("ButtonA")),
-                    config = PreviewConfig(),
-                )
-            }
-        }
+        setBrowserContent(entryWithSource("ButtonA"))
 
         composeRule.onNodeWithContentDescription("Open source file").assertDoesNotExist()
     }
 
     @Test
     fun `source link icon is not shown on list screen`() {
-        composeRule.setContent {
-            MaterialTheme {
-                ComposeumBrowser(
-                    registry = registryOf(entryWithSource("ButtonA")),
-                    config = PreviewConfig(groupExpansionMode = GroupExpansionMode.SUBSCREEN),
-                )
-            }
-        }
+        setBrowserContent(
+            entryWithSource("ButtonA"),
+            config = PreviewConfig(groupExpansionMode = GroupExpansionMode.SUBSCREEN),
+        )
 
         composeRule.onNodeWithText("Components").performClick()
 
@@ -272,14 +217,10 @@ class ComposeumBrowserTest {
 
     @Test
     fun `source link icon is shown on detail screen when sourceFile is set`() {
-        composeRule.setContent {
-            MaterialTheme {
-                ComposeumBrowser(
-                    registry = registryOf(entryWithSource("ButtonA")),
-                    config = PreviewConfig(groupExpansionMode = GroupExpansionMode.SUBSCREEN),
-                )
-            }
-        }
+        setBrowserContent(
+            entryWithSource("ButtonA"),
+            config = PreviewConfig(groupExpansionMode = GroupExpansionMode.SUBSCREEN),
+        )
 
         composeRule.onNodeWithText("Components").performClick()
         composeRule.onNodeWithText("ButtonA").performClick()
@@ -289,16 +230,10 @@ class ComposeumBrowserTest {
 
     @Test
     fun `source link icon is not shown on detail screen when sourceFile is empty`() {
-        composeRule.setContent {
-            MaterialTheme {
-                ComposeumBrowser(
-                    registry = registryOf(
-                        entryWithSource("ButtonA", sourceFile = ""),
-                    ),
-                    config = PreviewConfig(groupExpansionMode = GroupExpansionMode.SUBSCREEN),
-                )
-            }
-        }
+        setBrowserContent(
+            entryWithSource("ButtonA", sourceFile = ""),
+            config = PreviewConfig(groupExpansionMode = GroupExpansionMode.SUBSCREEN),
+        )
 
         composeRule.onNodeWithText("Components").performClick()
         composeRule.onNodeWithText("ButtonA").performClick()
@@ -324,9 +259,13 @@ class ComposeumBrowserTest {
         composeRule.onNodeWithText("Components").performClick()
         composeRule.onNodeWithText("ButtonA").performClick()
 
+        val expectedRoute = "preview_detail/${detailEntry.familyKey()}"
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            runBlocking { storage.settings.first().lastRoute == expectedRoute }
+        }
         val settings = runBlocking { storage.settings.first() }
-        kotlin.test.assertEquals(
-            "preview_detail/${detailEntry.familyKey()}",
+        assertEquals(
+            expectedRoute,
             settings.lastRoute,
         )
     }
@@ -344,16 +283,10 @@ class ComposeumBrowserTest {
             },
         )
 
-        composeRule.setContent {
-            MaterialTheme {
-                ComposeumBrowser(
-                    registry = registryOf(entry("ButtonA")),
-                    config = config,
-                )
-            }
-        }
+        setBrowserContent(entry("ButtonA"), config = config)
 
-        composeRule.waitForIdle()
-        assert(wrapperInvoked) { "browserWrapper was not invoked" }
+        composeRule.runOnIdle {
+            assertTrue("browserWrapper was not invoked", wrapperInvoked)
+        }
     }
 }

@@ -175,12 +175,6 @@ private fun BuiltInSetting(
             config.localeOptions ?: defaultLocaleOptions
         )
 
-        BuiltInSettingId.ACCESSIBILITY_SCREEN_READER,
-        BuiltInSettingId.ACCESSIBILITY_HIGH_CONTRAST,
-        BuiltInSettingId.ACCESSIBILITY_COLOR_BLIND,
-        BuiltInSettingId.ACCESSIBILITY_REDUCED_MOTION,
-        BuiltInSettingId.ACCESSIBILITY_LARGE_TOUCH_TARGETS -> Unit
-
         BuiltInSettingId.RESET -> ResetSetting(storage, scope)
         // Unknown IDs are silently ignored to allow forward compatibility.
     }

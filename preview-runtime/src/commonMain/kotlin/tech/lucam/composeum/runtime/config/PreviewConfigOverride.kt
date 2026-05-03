@@ -1,7 +1,6 @@
 package tech.lucam.composeum.runtime.config
 
 import tech.lucam.composeum.annotation.PreviewGroup
-import tech.lucam.composeum.runtime.AccessibilityPreviewState
 import kotlin.reflect.KClass
 
 /**
@@ -17,7 +16,6 @@ data class PreviewConfigOverride(
     val isDarkMode: Boolean? = null,
     val defaultThemeId: String? = null,
     val locale: String? = null,
-    val accessibilityState: AccessibilityPreviewState? = null,
     val showDescriptions: Boolean? = null,
     val showTags: Boolean? = null,
     val showParamPanel: Boolean? = null,
@@ -33,7 +31,6 @@ data class PreviewConfigOverride(
     val browserWrapper: BrowserWrapper? = null,
     val groupWrapper: GroupWrapper? = null,
     val previewWrapper: PreviewWrapper? = null,
-    val accessibilityWrapper: AccessibilityWrapper? = null,
     val groupOverrides: Map<KClass<out PreviewGroup>, GroupConfig> = emptyMap(),
     val previewOverrides: Map<String, PreviewOverride> = emptyMap(),
     val localeOptions: List<LocaleOption>? = null,
@@ -48,7 +45,6 @@ internal fun PreviewConfigOverride.mergedWith(override: PreviewConfigOverride): 
         isDarkMode = override.isDarkMode ?: isDarkMode,
         defaultThemeId = override.defaultThemeId ?: defaultThemeId,
         locale = override.locale ?: locale,
-        accessibilityState = override.accessibilityState ?: accessibilityState,
         showDescriptions = override.showDescriptions ?: showDescriptions,
         showTags = override.showTags ?: showTags,
         showParamPanel = override.showParamPanel ?: showParamPanel,
@@ -64,7 +60,6 @@ internal fun PreviewConfigOverride.mergedWith(override: PreviewConfigOverride): 
         browserWrapper = override.browserWrapper ?: browserWrapper,
         groupWrapper = override.groupWrapper ?: groupWrapper,
         previewWrapper = override.previewWrapper ?: previewWrapper,
-        accessibilityWrapper = override.accessibilityWrapper ?: accessibilityWrapper,
         groupOverrides = groupOverrides + override.groupOverrides,
         previewOverrides = previewOverrides + override.previewOverrides,
         localeOptions = override.localeOptions ?: localeOptions,
@@ -79,7 +74,6 @@ internal fun PreviewConfig.overriddenBy(override: PreviewConfigOverride): Previe
         isDarkMode = override.isDarkMode ?: isDarkMode,
         defaultThemeId = override.defaultThemeId ?: defaultThemeId,
         locale = override.locale ?: locale,
-        accessibilityState = override.accessibilityState ?: accessibilityState,
         showDescriptions = override.showDescriptions ?: showDescriptions,
         showTags = override.showTags ?: showTags,
         showParamPanel = override.showParamPanel ?: showParamPanel,
@@ -95,7 +89,6 @@ internal fun PreviewConfig.overriddenBy(override: PreviewConfigOverride): Previe
         browserWrapper = override.browserWrapper ?: browserWrapper,
         groupWrapper = override.groupWrapper ?: groupWrapper,
         previewWrapper = override.previewWrapper ?: previewWrapper,
-        accessibilityWrapper = override.accessibilityWrapper ?: accessibilityWrapper,
         groupOverrides = groupOverrides + override.groupOverrides,
         previewOverrides = previewOverrides + override.previewOverrides,
         localeOptions = override.localeOptions ?: localeOptions,
@@ -109,7 +102,6 @@ internal fun PreviewConfig.asOverride(): PreviewConfigOverride = PreviewConfigOv
     isDarkMode = isDarkMode,
     defaultThemeId = defaultThemeId,
     locale = locale,
-    accessibilityState = accessibilityState,
     showDescriptions = showDescriptions,
     showTags = showTags,
     showParamPanel = showParamPanel,
@@ -125,7 +117,6 @@ internal fun PreviewConfig.asOverride(): PreviewConfigOverride = PreviewConfigOv
     browserWrapper = browserWrapper,
     groupWrapper = groupWrapper,
     previewWrapper = previewWrapper,
-    accessibilityWrapper = accessibilityWrapper,
     groupOverrides = groupOverrides,
     previewOverrides = previewOverrides,
     localeOptions = localeOptions,

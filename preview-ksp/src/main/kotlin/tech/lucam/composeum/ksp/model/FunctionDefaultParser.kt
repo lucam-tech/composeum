@@ -68,11 +68,10 @@ internal object FunctionDefaultParser {
             typeName == "kotlin.Boolean" -> trimmed
             typeName == "kotlin.Int" -> trimmed.removeSuffix("_")
             typeName == "kotlin.Long" -> trimmed.removeSuffix("L").removeSuffix("l")
-            typeName == "kotlin.Float" -> trimmed.removeSuffix("f").removeSuffix("F")
+            typeName == "kotlin.Float" -> normalizeFloatLiteral(trimmed)
             typeName == "kotlin.Double" -> trimmed.removeSuffix("d").removeSuffix("D")
-            typeName == "androidx.compose.ui.unit.Dp" -> trimmed.substringBefore(".dp").trim()
-            typeName == "androidx.compose.ui.unit.TextUnit" ->
-                trimmed.substringBefore(".sp").substringBefore(".em").trim()
+            typeName == "androidx.compose.ui.unit.Dp" -> normalizeDpDefault(trimmed)
+            typeName == "androidx.compose.ui.unit.TextUnit" -> normalizeTextUnitDefault(trimmed)
 
             typeName == "androidx.compose.ui.graphics.Color" -> normalizeColor(trimmed)
             isSealedClass(classDecl) -> trimmed.substringAfterLast('.').substringBefore('(').trim()
@@ -92,6 +91,29 @@ internal object FunctionDefaultParser {
             else -> inner.toLongOrNull()?.toString().orEmpty()
         }
     }
+
+    private fun normalizeDpDefault(raw: String): String = when {
+        raw.endsWith(".dp") -> raw.substringBefore(".dp").trim()
+        raw.startsWith("Dp(") -> normalizeFloatLiteral(
+            raw.substringAfter("Dp(").substringBeforeLast(")").trim()
+        )
+        else -> normalizeFloatLiteral(raw)
+    }
+
+    private fun normalizeTextUnitDefault(raw: String): String = when {
+        raw.endsWith(".sp") -> raw.substringBefore(".sp").trim()
+        raw.endsWith(".em") -> raw.substringBefore(".em").trim()
+        raw.startsWith("TextUnit(") -> normalizeFloatLiteral(
+            raw.substringAfter("TextUnit(")
+                .substringBefore(',')
+                .substringBeforeLast(")")
+                .trim()
+        )
+        else -> normalizeFloatLiteral(raw)
+    }
+
+    private fun normalizeFloatLiteral(raw: String): String =
+        raw.removeSuffix("f").removeSuffix("F")
 
     private fun normalizeList(type: com.google.devtools.ksp.symbol.KSType, raw: String): String {
         val elementType = type.arguments.firstOrNull()?.type?.resolve() ?: return ""

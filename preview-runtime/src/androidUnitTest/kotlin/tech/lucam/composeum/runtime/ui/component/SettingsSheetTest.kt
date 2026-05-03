@@ -24,7 +24,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import tech.lucam.composeum.runtime.ColorBlindMode
 import tech.lucam.composeum.runtime.config.BuiltInSettingId
 import tech.lucam.composeum.runtime.config.PreviewConfig
 import tech.lucam.composeum.runtime.config.SettingItem
@@ -117,12 +116,7 @@ class SettingsSheetTest {
     @Test
     fun `selecting built in theme updates themeId`() {
         setContent(configWithOnly(BuiltInSettingId.THEME))
-        composeRule.onNodeWithContentDescription("Theme dropdown").performClick()
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            composeRule.onAllNodes(hasText("Ocean"), useUnmergedTree = true)
-                .fetchSemanticsNodes().isNotEmpty()
-        }
-        composeRule.onNodeWithText("Ocean", useUnmergedTree = true).performClick()
+        composeRule.onNodeWithContentDescription("Theme palette Ocean").performClick()
         val settings = awaitSettings { it.themeId == ThemeOptionDefaults.Ocean.id }
         assertEquals(ThemeOptionDefaults.Ocean.id, settings.themeId)
     }
@@ -133,12 +127,7 @@ class SettingsSheetTest {
         setContent(
             configWithOnly(BuiltInSettingId.THEME).copy(themeOptions = listOf(customTheme)),
         )
-        composeRule.onNodeWithContentDescription("Theme dropdown").performClick()
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            composeRule.onAllNodes(hasText("Brand"), useUnmergedTree = true)
-                .fetchSemanticsNodes().isNotEmpty()
-        }
-        composeRule.onNodeWithText("Brand", useUnmergedTree = true).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Theme palette Brand").assertIsDisplayed()
     }
 
     // ── Font scale slider ─────────────────────────────────────────────────────
@@ -279,11 +268,6 @@ class SettingsSheetTest {
                     showDescriptions = false,
                     showTags = false,
                     locale = "ja",
-                    screenReaderMode = true,
-                    highContrastMode = true,
-                    colorBlindMode = ColorBlindMode.TRITANOPIA,
-                    reducedMotionMode = true,
-                    largeTouchTargetsMode = true,
                 )
             }
         }
@@ -298,10 +282,5 @@ class SettingsSheetTest {
         assertNull(settings.showDescriptions)
         assertNull(settings.showTags)
         assertNull(settings.locale)
-        assertNull(settings.screenReaderMode)
-        assertNull(settings.highContrastMode)
-        assertNull(settings.colorBlindMode)
-        assertNull(settings.reducedMotionMode)
-        assertNull(settings.largeTouchTargetsMode)
     }
 }
